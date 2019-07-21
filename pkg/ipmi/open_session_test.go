@@ -20,20 +20,20 @@ func TestOpenSessionReqSerializeTo(t *testing.T) {
 				MaxPrivilegeLevel: PrivilegeLevelUser,
 				SessionID:         0x03020401,
 				AuthenticationPayloads: []AuthenticationPayload{
-					AuthenticationPayload{
+					{
 						Wildcard: true,
 					},
 				},
 				IntegrityPayloads: []IntegrityPayload{
-					IntegrityPayload{
+					{
 						Algorithm: IntegrityAlgorithmHMACSHA196,
 					},
 				},
 				ConfidentialityPayloads: []ConfidentialityPayload{
-					ConfidentialityPayload{
+					{
 						Algorithm: ConfidentialityAlgorithmAESCBC128,
 					},
-					ConfidentialityPayload{
+					{
 						Algorithm: ConfidentialityAlgorithmXRC4128,
 					},
 				},
