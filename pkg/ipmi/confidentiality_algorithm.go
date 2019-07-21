@@ -9,14 +9,15 @@ type ConfidentialityAlgorithm uint8
 const (
 	ConfidentialityAlgorithmNone ConfidentialityAlgorithm = 0x00
 
-	// ConfidentialityAlgorithmAESCBC128 specifies the use of AES-CBC-128 for
-	// encrypted packets. The confidentiality header in the IPMI payload is a
-	// 16-byte IV, randomly generated for each message. The confidentiality
-	// trailer consists of a pad of length between 0 and 15 to get the data to
-	// encrypt to be a multiple of the algorithm block size (16), followed by
-	// the number of these bytes added. The pad bytes start at 0x01, and
-	// increment each byte; implementations must validate this. Support for this
-	// algorithm is mandatory.
+	// ConfidentialityAlgorithmAESCBC128 specifies the use of AES-128-CBC (the
+	// naming is to be consistent with the spec) for encrypted packets. The
+	// confidentiality header in the IPMI payload is a 16-byte IV, randomly
+	// generated for each message. The confidentiality trailer consists of a pad
+	// of length between 0 and 15 to get the data to encrypt to be a multiple of
+	// the algorithm block size (16), followed by the number of these bytes
+	// added. The pad bytes start at 0x01, and increment each byte;
+	// implementations must validate this. Support for this algorithm is
+	// mandatory.
 	ConfidentialityAlgorithmAESCBC128 ConfidentialityAlgorithm = 0x01
 
 	ConfidentialityAlgorithmXRC4128 ConfidentialityAlgorithm = 0x02
