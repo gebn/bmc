@@ -1,0 +1,3 @@
+build --verbose_failures
+test --features=race
+test --test_output=errors

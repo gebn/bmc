@@ -1,0 +1,23 @@
+Connection/session establishment logic (all of this builds on top of a reliable transport, implementing retries, timeouts and eventually pipelining of certain requests with parallelism limits (this is harder as it requires some sort of sequence number/book keeping - ignore for now); this just sends and returns []bytes. how many underlying sockets we use (custom (which could be number of CPUs), or one per BMC) is entirely encapsulated within this package; should be under pkg and have no dependency on anything IPMI; think about the interface - should probably involve reimplementing Go's interfaces; instrument the fuck out of it - messages/bytes sent/received etc.):
+
+The backoff is simply an exponential backoff.
+
+Package transport implements a reliable UDP interface, with retries and timeouts. It can multiplex over a custom number of sockets, or use one per endpoint.
+
+
+Issues:
+	Retry logic cannot be generically applied - may need to increment fields in the packet, which could involve recalculation of HMACs etc.
+		The good news is something like this (for matching responses with requests) is required for pipelining.
+	How do we load-balance across sockets? Do we have to worry about this? Does SO_REUSEADDR help?
+	Do we ever have to worry about spurious receives - where we receive when not waiting in a send?
+		If not, allocate one receive []byte per connection - don't allocate 512 bytes each packet...
+
+
+trans := transport.New()
+
+// SocketLimit is the maximum number of sockets the transport will open. One socket keeps things lightweight, however there may be contention on the kernel read and write buffer mutexes if it receiving and sending large amounts of traffic respectively. On the other end of the spectrum, a value of 0 indicates to open one socket per host connected to. A value equal to the logical number of cores is usually a good choice.
+SocketLimit int
+
+
+conn := transport.Connect(address, port)
+conn.Send(ctx, []byte) ([]byte, error)

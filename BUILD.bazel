@@ -1,0 +1,49 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("@bazel_gazelle//:def.bzl", "gazelle")
+
+# gazelle:prefix github.com/gebn/bmc
+gazelle(name = "gazelle")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "authenticator.go",
+        "bmc.go",
+        "confidentiality.go",
+        "connection.go",
+        "doc.go",
+        "firmware.go",
+        "hasher.go",
+        "sequence_numbers.go",
+        "session_commands.go",
+        "sessionless_commands.go",
+        "sessionless_transport.go",
+        "transport.go",
+        "v1session_new.go",
+        "v1sessionless.go",
+        "v2session.go",
+        "v2session_new.go",
+        "v2sessionless.go",
+    ],
+    importpath = "github.com/gebn/bmc",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/pkg/transport:go_default_library",
+        "//pkg/iana:go_default_library",
+        "//pkg/ipmi:go_default_library",
+        "//pkg/layerexts:go_default_library",
+        "@com_github_cenkalti_backoff//:go_default_library",
+        "@com_github_google_gopacket//:go_default_library",
+        "@com_github_google_gopacket//layers:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["firmware_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//pkg/iana:go_default_library",
+        "//pkg/ipmi:go_default_library",
+    ],
+)
