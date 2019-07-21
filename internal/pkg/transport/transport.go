@@ -2,9 +2,7 @@ package transport
 
 import (
 	"context"
-	//"encoding/hex"
 	"fmt"
-	//"log"
 	"net"
 )
 
@@ -27,7 +25,6 @@ func New(addr string) (*transport, error) {
 	if err != nil {
 		return nil, err
 	}
-	//log.Printf("connected to %v on %v", c.RemoteAddr(), c.LocalAddr())
 	return &transport{
 		fd: c,
 	}, nil
@@ -47,7 +44,6 @@ func (t *transport) Send(ctx context.Context, b []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	//log.Printf("wrote %v bytes: %v", n, hex.EncodeToString(b))
 	if n != len(b) {
 		return nil, fmt.Errorf("wrote incomplete message (%v/%v bytes)", n,
 			len(b))
@@ -64,7 +60,6 @@ func (t *transport) Send(ctx context.Context, b []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	//log.Printf("read %v bytes: %v", n, hex.EncodeToString(t.recvBuf[:n]))
 	return t.recvBuf[:n], nil
 }
 
