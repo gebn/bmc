@@ -6,9 +6,9 @@ import (
 	"github.com/gebn/bmc/pkg/ipmi"
 )
 
-// sessionCommands contains high-level wrappers for sending commands within an
+// SessionCommands contains high-level wrappers for sending commands within an
 // established session. These commands are common to all versions of IPMI.
-type sessionCommands interface {
+type SessionCommands interface {
 
 	// All session-less commands can also be sent inside a session; indeed it is
 	// convention for Get Channel Authentication Capabilities to be used as a

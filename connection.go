@@ -74,7 +74,7 @@ type Sessionless interface {
 // the negotiated integrity and confidentiality algorithms.
 type Session interface {
 	Connection
-	sessionCommands
+	SessionCommands
 
 	// ID returns our identifier for this session. Note the managed system and
 	// remote console share the same identifier in IPMI v1.5, however each
