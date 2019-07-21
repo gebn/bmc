@@ -18,7 +18,6 @@ go_library(
         "session_commands.go",
         "sessionless_commands.go",
         "sessionless_transport.go",
-        "transport.go",
         "v1session_new.go",
         "v1sessionless.go",
         "v2session.go",

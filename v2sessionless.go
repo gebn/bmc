@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gebn/bmc/internal/pkg/transport"
 	"github.com/gebn/bmc/pkg/ipmi"
 	"github.com/gebn/bmc/pkg/layerexts"
 
@@ -42,7 +43,7 @@ type v2SessionEstablishmentRspLayers struct {
 type v2ConnectionShared struct {
 	v2SessionlessRspLayers
 
-	transport transport
+	transport transport.Transport
 
 	// buffer is used to build all packets to send during this connection.
 	// Reusing this drastically reduces the number of allocations we have to do
@@ -60,7 +61,7 @@ type V2Sessionless struct {
 	parser *gopacket.DecodingLayerParser
 }
 
-func newV2Sessionless(t transport) *V2Sessionless {
+func newV2Sessionless(t transport.Transport) *V2Sessionless {
 	s := &V2Sessionless{
 		v2ConnectionShared: v2ConnectionShared{
 			transport: t,

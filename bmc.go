@@ -3,7 +3,9 @@ package bmc
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"github.com/gebn/bmc/internal/pkg/transport"
 	"github.com/gebn/bmc/pkg/ipmi"
 
 	"github.com/google/gopacket"
@@ -60,9 +62,9 @@ func DialV1(addr string) (*V1SessionlessTransport, error) {
 	return newV1SessionlessTransport(t), nil
 }
 
-func newV1SessionlessTransport(t transport) *V1SessionlessTransport {
+func newV1SessionlessTransport(t transport.Transport) *V1SessionlessTransport {
 	return &V1SessionlessTransport{
-		transport: t,
+		Transport: t,
 		V1Sessionless: V1Sessionless{
 			transport: t,
 		},
@@ -80,11 +82,19 @@ func DialV2(addr string) (*V2SessionlessTransport, error) {
 	return newV2SessionlessTransport(t), nil
 }
 
-func newV2SessionlessTransport(t transport) *V2SessionlessTransport {
+func newV2SessionlessTransport(t transport.Transport) *V2SessionlessTransport {
 	return &V2SessionlessTransport{
-		transport:     t,
+		Transport:     t,
 		V2Sessionless: newV2Sessionless(t),
 	}
+}
+
+func newTransport(addr string) (transport.Transport, error) {
+	// default to port 623
+	if !strings.Contains(addr, ":") || strings.HasSuffix(addr, "]") {
+		addr = addr + ":623"
+	}
+	return transport.New(addr)
 }
 
 // validateCompletionCode ensures a completion code indicates success. If it
