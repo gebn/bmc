@@ -232,14 +232,12 @@ func (m *Message) SerializeTo(b gopacket.SerializeBuffer, opts gopacket.Serializ
 	case NetworkFunctionGroupReq, NetworkFunctionGroupRsp:
 		// body code
 		header[offset] = uint8(m.Body)
-		offset++
 	case NetworkFunctionOEMReq, NetworkFunctionOEMRsp:
 		// OEM enterprise number
 		enterprise := uint32(m.Enterprise)
 		header[offset] = uint8(enterprise)
 		header[offset+1] = uint8(enterprise >> 8)
 		header[offset+2] = uint8(enterprise >> 16)
-		offset += 3
 	}
 
 	if opts.ComputeChecksums {

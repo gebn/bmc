@@ -86,6 +86,9 @@ func (a *AES128CBC) SerializeTo(b gopacket.SerializeBuffer, opts gopacket.Serial
 	// write confidentiality trailer so it is there to encrypt next
 	padLength := (a.cipher.BlockSize() - 1) - (len(b.Bytes()) % a.cipher.BlockSize())
 	trailer, err := b.AppendBytes(padLength + 1)
+	if err != nil {
+		return err
+	}
 	for i := 0; i < padLength; i++ {
 		trailer[i] = uint8(i + 1) // 0x01, 0x02, 0x03 etc.
 	}
