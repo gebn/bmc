@@ -4,7 +4,7 @@
 [![GoDoc](https://godoc.org/github.com/gebn/bmc?status.svg)](https://godoc.org/github.com/gebn/bmc)
 [![Go Report Card](https://goreportcard.com/badge/github.com/gebn/bmc)](https://goreportcard.com/report/github.com/gebn/bmc)
 
-This project implements an IPMI v1.5/2.0 remote console in pure Go.
+This project implements an IPMI v1.5/2.0 remote console in pure Go, to interact with BMCs.
 
 ## Specifications
 
