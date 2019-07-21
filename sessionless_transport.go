@@ -19,10 +19,10 @@ type SessionlessTransport interface {
 	// does not require closing).
 	transport.Transport
 
-	// sessionless is the IPMI connection to the BMC, allowing the user to send
+	// Sessionless is the IPMI connection to the BMC, allowing the user to send
 	// things at a higher level of abstraction than the transport alone
 	// provides.
-	sessionless
+	Sessionless
 
 	// NewSession opens a new session to the BMC using the underlying wrapper
 	// format. This is generic as is works with both IPMI v1.5 and v2.0; for
