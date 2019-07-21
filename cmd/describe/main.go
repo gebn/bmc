@@ -46,9 +46,15 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	ASFPresencePongCapabilities(ctx, machine)
-	ChannelAuthenticationCapabilities(ctx, machine)
-	SystemGUID(ctx, machine)
+	if err := ASFPresencePongCapabilities(ctx, machine); err != nil {
+		fmt.Printf("failed to get presence pong capabilities: %v\n", err)
+	}
+	if err := ChannelAuthenticationCapabilities(ctx, machine); err != nil {
+		fmt.Printf("failed to get channel auth capabilities: %v\n", err)
+	}
+	if err := SystemGUID(ctx, machine); err != nil {
+		fmt.Printf("failed to get system GUID: %v\n", err)
+	}
 
 	sess, err := machine.NewSession(ctx, *flgUsername, []byte(*flgPassword))
 	if err != nil {
@@ -56,13 +62,15 @@ func main() {
 	}
 	defer sess.Close(ctx)
 
-	DeviceID(ctx, sess)
+	if err := DeviceID(ctx, sess); err != nil {
+		fmt.Printf("failed to get device id: %v\n", err)
+	}
 }
 
-func ASFPresencePongCapabilities(ctx context.Context, t transport.Transport) {
+func ASFPresencePongCapabilities(ctx context.Context, t transport.Transport) error {
 	pong, err := presencePing(ctx, t)
 	if err != nil {
-		return
+		return err
 	}
 
 	fmt.Println("ASF Presence Pong capabilities:")
@@ -71,6 +79,7 @@ func ASFPresencePongCapabilities(ctx context.Context, t transport.Transport) {
 	fmt.Printf("\tASF security exts:  %v\n", pong.SecurityExtensions) // means the BMC uses the secure port in addition to the normal one
 	fmt.Printf("\tDASH:               %v\n", pong.DASH)
 	fmt.Printf("\tDCMI:               %v\n", pong.SupportsDCMI())
+	return nil
 }
 
 func presencePing(ctx context.Context, t transport.Transport) (*layers.ASFPresencePong, error) {
@@ -106,7 +115,7 @@ func presencePing(ctx context.Context, t transport.Transport) (*layers.ASFPresen
 	return pongLayer.(*layers.ASFPresencePong), nil
 }
 
-func ChannelAuthenticationCapabilities(ctx context.Context, s bmc.Sessionless) {
+func ChannelAuthenticationCapabilities(ctx context.Context, s bmc.Sessionless) error {
 	caps, err := s.GetChannelAuthenticationCapabilities(ctx,
 		&ipmi.GetChannelAuthenticationCapabilitiesReq{
 			ExtendedData:      true, // only has effect if v2.0
@@ -114,7 +123,7 @@ func ChannelAuthenticationCapabilities(ctx context.Context, s bmc.Sessionless) {
 			MaxPrivilegeLevel: ipmi.PrivilegeLevelAdministrator,
 		})
 	if err != nil {
-		return
+		return err
 	}
 	fmt.Println("Channel Authentication Capabilities:")
 	fmt.Printf("\tChannel:            %v\n", caps.Channel)
@@ -127,17 +136,19 @@ func ChannelAuthenticationCapabilities(ctx context.Context, s bmc.Sessionless) {
 	fmt.Printf("\tNull usernames:     %v\n", caps.NullUsernamesEnabled)
 	fmt.Printf("\tAnon login:         %v\n", caps.AnonymousLoginEnabled)
 	fmt.Printf("\tOEM:                %v\n", caps.OEM)
+	return nil
 }
 
-func SystemGUID(ctx context.Context, s bmc.Sessionless) {
+func SystemGUID(ctx context.Context, s bmc.Sessionless) error {
 	guid, err := s.GetSystemGUID(ctx)
 	if err != nil {
-		return
+		return err
 	}
 	buf := [36]byte{}
 	encodeHex(buf[:], guid)
 	fmt.Println("System:")
 	fmt.Printf("\tGUID:               %v\n", string(buf[:]))
+	return nil
 }
 
 func encodeHex(dst []byte, guid [16]byte) {
@@ -152,10 +163,10 @@ func encodeHex(dst []byte, guid [16]byte) {
 	hex.Encode(dst[24:], guid[10:])
 }
 
-func DeviceID(ctx context.Context, s bmc.Session) {
+func DeviceID(ctx context.Context, s bmc.Session) error {
 	id, err := s.GetDeviceID(ctx)
 	if err != nil {
-		return
+		return err
 	}
 	fmt.Println("Device:")
 	fmt.Printf("\tID:                 %v\n", id.ID)
@@ -166,4 +177,5 @@ func DeviceID(ctx context.Context, s bmc.Session) {
 	fmt.Printf("\tFirmware (minor):   %v\n", id.MinorFirmwareRevision)
 	fmt.Printf("\tFirmware (aux):     %v\n", hex.EncodeToString(id.AuxiliaryFirmwareRevision[:]))
 	fmt.Printf("\tFirmware:           %v\n", bmc.FirmwareVersion(id))
+	return nil
 }
