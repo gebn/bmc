@@ -120,17 +120,18 @@ func executeHash(h hash.Hash, b []byte) []byte {
 }
 
 // AdditionalKeyMaterialGenerator is satisfied by types that can produce key
-// material derived from the Session Integrity Key in IPMI v2.0. This additional
-// key material is referred to as K_N. In practice, only K_1 is used for
-// authentication, and K_2 is used for confidentiality.
+// material derived from the Session Integrity Key, as defined in section 13.32
+// of IPMI v2.0. This additional key material is referred to as K_N. In
+// practice, only K_1 and K_2 are used, for packet authentication and
+// confidentiality respectively
 type AdditionalKeyMaterialGenerator interface {
 
 	// K computes the value of K_N for a given value of N, using the negotiated
 	// authentication algorithm (used during session establishment) loaded with
-	// the SIK. See 13.32 in the specs. N is only defined for values 1 through
-	// 255. This method is not used by the library itself, and is assumed to be
-	// only for informational/debugging purposes, so we make no attempt to
-	// memoise results. This function is not safe for concurrent use by multiple
+	// the SIK. N is only defined for values 1 through 255. This method is not
+	// used by the library itself, and is assumed to be only for
+	// informational/debugging purposes, so we make no attempt to memoise
+	// results. This function is not safe for concurrent use by multiple
 	// goroutines.
 	K(n int) []byte
 }
