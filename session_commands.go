@@ -13,7 +13,7 @@ type sessionCommands interface {
 	// All session-less commands can also be sent inside a session; indeed it is
 	// convention for Get Channel Authentication Capabilities to be used as a
 	// keepalive.
-	sessionlessCommands
+	SessionlessCommands
 
 	// GetDeviceID send a Get Device ID command to the BMC. This is specified in
 	// 17.1 and 20.1 of IPMI v1.5 and 2.0 respectively.

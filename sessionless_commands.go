@@ -6,11 +6,11 @@ import (
 	"github.com/gebn/bmc/pkg/ipmi"
 )
 
-// sessionlessCommands contains high-level methods to issue commands that do not
+// SessionlessCommands contains high-level methods to issue commands that do not
 // require a session, but can be sent using one. This is IPMI version agnostic,
 // so RMCP+ session setup payload types do not appear, only commands that would
 // come under the IPMI message standard payload type.
-type sessionlessCommands interface {
+type SessionlessCommands interface {
 
 	// GetSystemGUID issues the Get System GUID command to the BMC, specified in
 	// section 18.13 of IPMI v1.5 and 22.14 of v2.0. You may wish to use a

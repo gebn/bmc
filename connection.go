@@ -55,7 +55,7 @@ type Connection interface {
 // transport in order to send bytes.
 type Sessionless interface {
 	Connection
-	sessionlessCommands
+	SessionlessCommands
 
 	// NewSession() does not go here, as the sessionless interface fixes the
 	// session layer, whereas inside a session, this must be manipulated.
