@@ -28,6 +28,8 @@ load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
 
 gazelle_dependencies()
 
+# required dependencies
+
 go_repository(
     name = "com_github_google_gopacket",
     importpath = "github.com/google/gopacket",
@@ -37,16 +39,20 @@ go_repository(
 )
 
 go_repository(
+    name = "com_github_cenkalti_backoff",
+    importpath = "github.com/cenkalti/backoff",
+    tag = "v3.0.0",
+)
+
+# test dependencies
+
+go_repository(
     name = "com_github_google_go_cmp",
     importpath = "github.com/google/go-cmp",
     tag = "v0.3.0",
 )
 
-go_repository(
-    name = "com_github_cenkalti_backoff",
-    importpath = "github.com/cenkalti/backoff",
-    tag = "v3.0.0",
-)
+# command dependencies
 
 go_repository(
     name = "com_github_alecthomas_kingpin",
