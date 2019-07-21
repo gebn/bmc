@@ -128,7 +128,7 @@ func (m *Message) NextLayerType() gopacket.LayerType {
 func (m *Message) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
 	if len(data) < 7 {
 		df.SetTruncated()
-		return fmt.Errorf("must be at least 7 bytes, got %v", 7, len(data))
+		return fmt.Errorf("must be at least 7 bytes, got %v", len(data))
 	}
 
 	m.RemoteAddress = Address(data[0])
