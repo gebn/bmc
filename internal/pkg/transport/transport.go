@@ -1,3 +1,5 @@
+// Package transport provides a context wrapper and error handling around a UDP
+// connection.
 package transport
 
 import (
@@ -6,7 +8,9 @@ import (
 	"net"
 )
 
-type transport struct {
+// Transport encapsulates a UDP connection and a receive buffer. Unless
+// specified otherwise, access must be serialised.
+type Transport struct {
 	fd *net.UDPConn
 
 	// recvBuf is used for reading bytes off the wire. This means we do not
@@ -15,7 +19,9 @@ type transport struct {
 	recvBuf [512]byte
 }
 
-func New(addr string) (*transport, error) {
+// New establishes a connection to a UDP endpoint. It is recommended to defer a
+// call to Close() immediately after the error check.
+func New(addr string) (*Transport, error) {
 	raddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
 		return nil, err
@@ -25,16 +31,20 @@ func New(addr string) (*transport, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &transport{
+	return &Transport{
 		fd: c,
 	}, nil
 }
 
-func (t *transport) Address() net.Addr {
+// Address returns the remote IP:port of the endpoint.
+func (t *Transport) Address() net.Addr {
 	return t.fd.RemoteAddr()
 }
 
-func (t *transport) Send(ctx context.Context, b []byte) ([]byte, error) {
+// Send sends the supplied data to the remote host, blocking until it receives a
+// reply packet, which is then returned. An error is returned if a transport
+// error occurs or the context expires.
+func (t *Transport) Send(ctx context.Context, b []byte) ([]byte, error) {
 	if deadline, ok := ctx.Deadline(); ok {
 		if err := t.fd.SetWriteDeadline(deadline); err != nil {
 			return nil, err
@@ -63,6 +73,7 @@ func (t *transport) Send(ctx context.Context, b []byte) ([]byte, error) {
 	return t.recvBuf[:n], nil
 }
 
-func (t *transport) Close() error {
+// Close cleanly shuts down the transport, rendering it unusable.
+func (t *Transport) Close() error {
 	return t.fd.Close()
 }
