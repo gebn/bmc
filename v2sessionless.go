@@ -168,7 +168,7 @@ func (s *V2Sessionless) GetSystemGUID(ctx context.Context) ([16]byte, error) {
 	return getSystemGUID(ctx, s, &s.getSystemGUIDRspLayer)
 }
 
-func getSystemGUID(ctx context.Context, c connection, l *ipmi.GetSystemGUIDRsp) ([16]byte, error) {
+func getSystemGUID(ctx context.Context, c Connection, l *ipmi.GetSystemGUIDRsp) ([16]byte, error) {
 	layers, code, err := c.SendMessage(ctx, &ipmi.OperationGetSystemGUIDReq, nil)
 	if err != nil {
 		return [16]byte{}, err
@@ -197,7 +197,7 @@ func (s *V2Sessionless) GetChannelAuthenticationCapabilities(
 
 func getChannelAuthenticationCapabilities(
 	ctx context.Context,
-	c connection,
+	c Connection,
 	req *ipmi.GetChannelAuthenticationCapabilitiesReq,
 	rsp *ipmi.GetChannelAuthenticationCapabilitiesRsp,
 ) (*ipmi.GetChannelAuthenticationCapabilitiesRsp, error) {

@@ -9,7 +9,7 @@ import (
 	"github.com/google/gopacket"
 )
 
-// connection is an IPMI v1.5 or v2.0 session-less, single-session or
+// Connection is an IPMI v1.5 or v2.0 session-less, single-session or
 // multi-session connection. The IPMI version and nature of the connection is
 // fixed upon creation - if sending two messages, it will never be the case that
 // one uses one wrapper format and the second another. It defines logical things
@@ -18,7 +18,7 @@ import (
 // abstracts over a transport to provide its functionality. This interface is
 // always wrapped in something else that has a Close() to cleanly terminate the
 // underlying connection.
-type connection interface {
+type Connection interface {
 
 	// SendMessage sends a command to the BMC, blocking until it receives a
 	// response. If there is no command layer, this should be set to nil. This
@@ -54,7 +54,7 @@ type connection interface {
 // keepalive). Creating a concrete session-less connection will require a
 // transport in order to send bytes.
 type Sessionless interface {
-	connection
+	Connection
 	sessionlessCommands
 
 	// NewSession() does not go here, as the sessionless interface fixes the
@@ -73,7 +73,7 @@ type Sessionless interface {
 // the LAN interface. Commands are sent in the context of the session, using
 // the negotiated integrity and confidentiality algorithms.
 type Session interface {
-	connection
+	Connection
 	sessionCommands
 
 	// ID returns our identifier for this session. Note the managed system and
