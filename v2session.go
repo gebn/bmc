@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"hash"
-	"log"
 	"time"
 
 	"github.com/gebn/bmc/pkg/ipmi"
@@ -232,7 +231,6 @@ func (s *V2Session) closeSession(ctx context.Context) error {
 	if err := validateCompletionCode(code); err != nil {
 		return err
 	}
-	log.Println("session closed")
 	return nil
 }
 
