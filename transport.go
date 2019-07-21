@@ -10,7 +10,7 @@ import (
 
 // transport defines an interface capable of sending and receiving data to and
 // from a device. It logically represents a UDP socket, and is independent of
-// IPMI. This is satisfied by *conn.Conn.
+// IPMI. This is satisfied by *transport.Transport.
 type transport interface {
 
 	// Address returns the IP:port of the remote device. This will always have
