@@ -5,7 +5,7 @@ import (
 )
 
 // CompletionCode indicates whether a command executed successfully. It is
-// analagous to a command status code. It is a 1 byte uint on the wire. Values
+// analogous to a command status code. It is a 1 byte uint on the wire. Values
 // are specified in Table 5-2 of the IPMI v2.0 spec.
 //
 // N.B. if the completion code is not 0, the rest of the response may be

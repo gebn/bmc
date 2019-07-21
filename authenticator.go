@@ -60,7 +60,7 @@ func (g *authenticationAlgorithmParams) SIK(kg []byte) hash.Hash {
 }
 
 // K returns a hash.Hash implementation for creating additional key material,
-// also refered to as K_N.
+// also referred to as K_N.
 func (g *authenticationAlgorithmParams) K(sik []byte) hash.Hash {
 	return hmac.New(g.hashGen, sik)
 }

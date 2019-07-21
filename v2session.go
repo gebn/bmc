@@ -71,10 +71,9 @@ type V2Session struct {
 
 	// AdditionalKeyMaterialGenerator is the instance of the authentication
 	// algorithm used during session establishment, loaded with the session
-	// integrity key. It has no futher use as far as the BMC is concerned by the
-	// time we have this struct, however we keep it around to allow providing
-	// K_n for information
-	// purposes.
+	// integrity key. It has no further use as far as the BMC is concerned by
+	// the time we have this struct, however we keep it around to allow
+	// providing K_n for information purposes.
 	AdditionalKeyMaterialGenerator
 
 	integrityAlgorithm hash.Hash
