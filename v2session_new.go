@@ -185,7 +185,7 @@ func (s *V2SessionlessTransport) NewV2Session(ctx context.Context, opts *V2Sessi
 	rakpMessage2AuthCode := calculateRAKPMessage2AuthCode(authCodeHash,
 		rakpMessage1, rakpMessage2)
 	if !hmac.Equal(rakpMessage2.AuthCode, rakpMessage2AuthCode) {
-		return nil, fmt.Errorf("RAKP2 HMAC fail: got %v, want %v",
+		return nil, fmt.Errorf("RAKP2 HMAC fail: got %v, want %v (this indicates the BMC is using a different password)",
 			hex.EncodeToString(rakpMessage2.AuthCode),
 			hex.EncodeToString(rakpMessage2AuthCode))
 	}
