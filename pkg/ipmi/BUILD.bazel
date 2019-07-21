@@ -55,6 +55,7 @@ go_library(
 
 go_test(
     name = "go_default_test",
+    size = "small",
     srcs = [
         "aes_128_cbc_test.go",
         "authentication_payload_test.go",
