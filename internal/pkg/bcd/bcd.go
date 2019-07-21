@@ -7,7 +7,7 @@ package bcd
 
 // Decode converts a single BCD byte into its native representation. It accepts
 // both packed and unpacked input. For valid input, the output can be 0 through
-// 99.
+// 99; the output is unspecified for nibbles > 0x9.
 func Decode(b byte) uint8 {
 	return ((b&0xf0)>>4)*10 + (b & 0x0f)
 }
