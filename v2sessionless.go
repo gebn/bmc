@@ -21,13 +21,8 @@ import (
 // created. Because we only allow a single command to be sent on a socket at a
 // time, this is safe, and saves some memory.
 type v2SessionlessRspLayers struct {
-	rmcpLayer            layers.RMCP
-	sessionSelectorLayer ipmi.SessionSelector
-	v2SessionLayer       ipmi.V2Session
-
-	messageLayer                                 ipmi.Message
-	getSystemGUIDRspLayer                        ipmi.GetSystemGUIDRsp
-	getChannelAuthenticationCapabilitiesRspLayer ipmi.GetChannelAuthenticationCapabilitiesRsp
+	sessionlessRspLayers
+	v2SessionLayer ipmi.V2Session
 }
 
 // this separates these layers from being used in a V2 session - they will never

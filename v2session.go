@@ -15,15 +15,10 @@ import (
 	"github.com/google/gopacket/layers"
 )
 
-type v2SessionRspLayers struct {
-	getDeviceIDRspLayer      ipmi.GetDeviceIDRsp
-	getChassisStatusRspLayer ipmi.GetChassisStatusRsp
-}
-
 // V2Session represents an established IPMI v2.0/RMCP+ session with a BMC.
 type V2Session struct {
 	v2ConnectionShared
-	v2SessionRspLayers
+	sessionRspLayers
 
 	// LocalID is the remote console's session ID, used by the BMC to send us
 	// packets.
