@@ -28,8 +28,6 @@ type v2SessionlessRspLayers struct {
 	messageLayer                                 ipmi.Message
 	getSystemGUIDRspLayer                        ipmi.GetSystemGUIDRsp
 	getChannelAuthenticationCapabilitiesRspLayer ipmi.GetChannelAuthenticationCapabilitiesRsp
-
-	payloadLayer gopacket.Payload // always the final layer, usually empty
 }
 
 // this separates these layers from being used in a V2 session - they will never
@@ -76,7 +74,6 @@ func newV2Sessionless(t transport.Transport) *V2Sessionless {
 		&s.messageLayer,
 		&s.getSystemGUIDRspLayer,
 		&s.getChannelAuthenticationCapabilitiesRspLayer,
-		&s.payloadLayer,
 		&s.openSessionRspLayer,
 		&s.rakpMessage2Layer,
 		&s.rakpMessage4Layer)
