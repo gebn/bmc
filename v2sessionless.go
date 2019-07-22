@@ -115,7 +115,12 @@ func (s *V2Sessionless) sendPayload(
 	}
 
 	bytes := []byte(nil)
+	ctxErr := error(nil)
 	retryable := func() error {
+		if err := ctx.Err(); err != nil {
+			ctxErr = err
+			return nil
+		}
 		requestCtx, cancel := context.WithTimeout(ctx, time.Second*2) // TODO make configurable
 		defer cancel()
 		resp, err := s.transport.Send(requestCtx, s.buffer.Bytes())
@@ -124,6 +129,9 @@ func (s *V2Sessionless) sendPayload(
 	}
 	if err := backoff.Retry(retryable, backoff.NewExponentialBackOff()); err != nil {
 		return nil, err
+	}
+	if ctxErr != nil {
+		return nil, ctxErr
 	}
 
 	if err := s.parser.DecodeLayers(bytes, &s.layers); err != nil {
