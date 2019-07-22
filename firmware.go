@@ -35,8 +35,11 @@ func FirmwareVersion(r *ipmi.GetDeviceIDRsp) string {
 		return fmt.Sprintf("%d.%d.%02d",
 			r.MajorFirmwareRevision, r.MinorFirmwareRevision,
 			r.AuxiliaryFirmwareRevision[0])
+	case iana.EnterpriseSuperMicro:
+		// does not use the aux revision bytes, but formats to two digits
+		return fmt.Sprintf("%02d.%02d",
+			r.MajorFirmwareRevision, r.MinorFirmwareRevision)
 	default:
-		// includes Super Micro, which does not use the aux revision bytes
 		return fmt.Sprintf("%d.%d",
 			r.MajorFirmwareRevision, r.MinorFirmwareRevision)
 	}

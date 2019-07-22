@@ -82,7 +82,7 @@ func TestFirmwareVersion(t *testing.T) {
 				Product:                   2052,
 				AuxiliaryFirmwareRevision: [4]byte{},
 			},
-			"3.72",
+			"03.72",
 		},
 	}
 	for _, test := range tests {
