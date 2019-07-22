@@ -38,6 +38,10 @@ var (
 		Function: NetworkFunctionChassisRsp,
 		Command:  0x01,
 	}
+	OperationChassisControlReq = Operation{
+		Function: NetworkFunctionChassisReq,
+		Command:  0x02,
+	}
 	OperationGetDeviceIDReq = Operation{
 		Function: NetworkFunctionAppReq,
 		Command:  0x01,

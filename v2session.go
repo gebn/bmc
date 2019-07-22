@@ -235,6 +235,17 @@ func (s *V2Session) GetChassisStatus(ctx context.Context) (*ipmi.GetChassisStatu
 	return &s.getChassisStatusRspLayer, nil
 }
 
+func (s *V2Session) ChassisControl(ctx context.Context, c ipmi.ChassisControl) error {
+	_, code, err := s.SendMessage(ctx, &ipmi.OperationChassisControlReq, nil)
+	if err != nil {
+		return err
+	}
+	if err := validateCompletionCode(code); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *V2Session) closeSession(ctx context.Context) error {
 	_, code, err := s.SendMessage(ctx, &ipmi.OperationCloseSessionReq,
 		&ipmi.CloseSessionReq{

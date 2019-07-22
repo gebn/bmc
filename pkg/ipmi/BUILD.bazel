@@ -10,6 +10,7 @@ go_library(
         "authentication_type.go",
         "body_code.go",
         "channel.go",
+        "chassis_control.go",
         "close_session.go",
         "command.go",
         "completion_code.go",

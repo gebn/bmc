@@ -124,4 +124,10 @@ var (
 			Decoder: layerexts.BuildDecoder(&GetChassisStatusRsp{}),
 		},
 	)
+	LayerTypeChassisControlReq = gopacket.RegisterLayerType(
+		1017,
+		gopacket.LayerTypeMetadata{
+			Name: "Chassis Control Request",
+		},
+	)
 )

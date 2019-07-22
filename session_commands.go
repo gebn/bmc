@@ -23,6 +23,10 @@ type SessionCommands interface {
 	// specified in 22.2 and 28.2 of IPMI v1.5 and 2.0 respectively.
 	GetChassisStatus(context.Context) (*ipmi.GetChassisStatusRsp, error)
 
+	// ChassisControl provides power up, power down and reset control. It is
+	// specified in 22.3 and 28.3 of IPMI v1.5 and 2.0 respectively.
+	ChassisControl(context.Context, ipmi.ChassisControl) error
+
 	// closeSession sends a Close Session command to the BMC. It is unexported
 	// as calling it randomly would leave the session in an invalid state. Call
 	// Close() on the session itself to invoke this.
