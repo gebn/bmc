@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	flgBMCAddr = kingpin.Flag("addr", "IP[:port] of the BMC to describe.").
+	argBMCAddr = kingpin.Arg("addr", "IP[:port] of the BMC to describe.").
 			Required().
 			String()
 	flgUsername = kingpin.Flag("username", "The username to connect as.").
@@ -35,7 +35,7 @@ var (
 func main() {
 	kingpin.Parse()
 
-	machine, err := bmc.DialV2(*flgBMCAddr) // TODO change to Dial (need to implement v1.5 sessionless communication...)
+	machine, err := bmc.DialV2(*argBMCAddr) // TODO change to Dial (need to implement v1.5 sessionless communication...)
 	if err != nil {
 		log.Fatal(err)
 	}
