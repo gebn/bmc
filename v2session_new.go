@@ -253,6 +253,7 @@ func (s *V2SessionlessTransport) NewV2Session(ctx context.Context, opts *V2Sessi
 		&sess.getChannelAuthenticationCapabilitiesRspLayer,
 		&sess.payloadLayer,
 		cipherLayer,
-		&sess.getDeviceIDRspLayer)
+		&sess.getDeviceIDRspLayer,
+		&sess.getChassisStatusRspLayer)
 	return sess, nil
 }

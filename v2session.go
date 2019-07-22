@@ -16,7 +16,8 @@ import (
 )
 
 type v2SessionRspLayers struct {
-	getDeviceIDRspLayer ipmi.GetDeviceIDRsp
+	getDeviceIDRspLayer      ipmi.GetDeviceIDRsp
+	getChassisStatusRspLayer ipmi.GetChassisStatusRsp
 }
 
 // V2Session represents an established IPMI v2.0/RMCP+ session with a BMC.
@@ -218,6 +219,20 @@ func (s *V2Session) GetDeviceID(ctx context.Context) (*ipmi.GetDeviceIDRsp, erro
 		return nil, err
 	}
 	return &s.getDeviceIDRspLayer, nil
+}
+
+func (s *V2Session) GetChassisStatus(ctx context.Context) (*ipmi.GetChassisStatusRsp, error) {
+	layers, code, err := s.SendMessage(ctx, &ipmi.OperationGetChassisStatusReq, nil)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateCompletionCode(code); err != nil {
+		return nil, err
+	}
+	if err := layers.InnermostEquals(ipmi.LayerTypeGetChassisStatusRsp); err != nil {
+		return nil, err
+	}
+	return &s.getChassisStatusRspLayer, nil
 }
 
 func (s *V2Session) closeSession(ctx context.Context) error {

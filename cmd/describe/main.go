@@ -65,6 +65,9 @@ func main() {
 	if err := DeviceID(ctx, sess); err != nil {
 		fmt.Printf("failed to get device id: %v\n", err)
 	}
+	if err := ChassisStatus(ctx, sess); err != nil {
+		fmt.Printf("failed to get chassis status: %v\n", err)
+	}
 }
 
 func ASFPresencePongCapabilities(ctx context.Context, t transport.Transport) error {
@@ -177,5 +180,21 @@ func DeviceID(ctx context.Context, s bmc.Session) error {
 	fmt.Printf("\tFirmware (minor):   %v\n", id.MinorFirmwareRevision)
 	fmt.Printf("\tFirmware (aux):     %v\n", hex.EncodeToString(id.AuxiliaryFirmwareRevision[:]))
 	fmt.Printf("\tFirmware:           %v\n", bmc.FirmwareVersion(id))
+	return nil
+}
+
+func ChassisStatus(ctx context.Context, s bmc.Session) error {
+	status, err := s.GetChassisStatus(ctx)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Chassis:")
+	fmt.Printf("\tPowered on:         %v\n", status.PoweredOn)
+	fmt.Printf("\tOn power restore:   %v\n", status.PowerRestorePolicy)
+	fmt.Printf("\tIdentification:     %v\n", status.ChassisIdentifyState)
+	fmt.Printf("\tIntrusion:          %v\n", status.Intrusion)
+	fmt.Printf("\tPower fault:        %v\n", status.PowerFault)
+	fmt.Printf("\tCooling fault:      %v\n", status.CoolingFault)
+	fmt.Printf("\tDrive fault:        %v\n", status.DriveFault)
 	return nil
 }

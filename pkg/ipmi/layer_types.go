@@ -117,4 +117,11 @@ var (
 			Decoder: layerexts.BuildDecoder(&GetDeviceIDRsp{}),
 		},
 	)
+	LayerTypeGetChassisStatusRsp = gopacket.RegisterLayerType(
+		1016,
+		gopacket.LayerTypeMetadata{
+			Name:    "Get Chassis Status Response",
+			Decoder: layerexts.BuildDecoder(&GetChassisStatusRsp{}),
+		},
+	)
 )

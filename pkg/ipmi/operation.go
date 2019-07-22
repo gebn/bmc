@@ -30,6 +30,14 @@ type Operation struct {
 }
 
 var (
+	OperationGetChassisStatusReq = Operation{
+		Function: NetworkFunctionChassisReq,
+		Command:  0x01,
+	}
+	OperationGetChassisStatusRsp = Operation{
+		Function: NetworkFunctionChassisRsp,
+		Command:  0x01,
+	}
 	OperationGetDeviceIDReq = Operation{
 		Function: NetworkFunctionAppReq,
 		Command:  0x01,
@@ -63,8 +71,9 @@ var (
 	// function and command. It should never be modified during runtime, as
 	// there is no way to guarantee exclusive access.
 	operationLayerTypes = map[Operation]gopacket.LayerType{
-		OperationGetDeviceIDRsp:   LayerTypeGetDeviceIDRsp,
-		OperationGetSystemGUIDRsp: LayerTypeGetSystemGUIDRsp,
+		OperationGetDeviceIDRsp:      LayerTypeGetDeviceIDRsp,
+		OperationGetChassisStatusRsp: LayerTypeGetChassisStatusRsp,
+		OperationGetSystemGUIDRsp:    LayerTypeGetSystemGUIDRsp,
 		//OperationGetChannelAuthenticationCapabilitiesReq: LayerTypeGetChannelAuthenticationCapabilitiesReq,
 		OperationGetChannelAuthenticationCapabilitiesRsp: LayerTypeGetChannelAuthenticationCapabilitiesRsp,
 	}
