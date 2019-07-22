@@ -127,8 +127,12 @@ func (s *V2Session) sendPayload(ctx context.Context, ls ...gopacket.Serializable
 	}, ls...)
 
 	response := []byte(nil)
-	serialiseError := error(nil)
+	terminalErr := error(nil)
 	retryable := func() error {
+		if err := ctx.Err(); err != nil {
+			terminalErr = err
+			return nil
+		}
 		// TODO handle AuthenticationAlgorithmNone properly
 		s.AuthenticatedSequenceNumbers.Inbound++
 		s.v2SessionLayer.Sequence = s.AuthenticatedSequenceNumbers.Inbound
@@ -139,7 +143,7 @@ func (s *V2Session) sendPayload(ctx context.Context, ls ...gopacket.Serializable
 			//&s.messageLayer,
 			//cmd); err != nil {
 			// this is not a retryable error
-			serialiseError = err
+			terminalErr = err
 			return nil
 		}
 		requestCtx, cancel := context.WithTimeout(ctx, time.Second*2) // TODO make configurable
@@ -151,11 +155,12 @@ func (s *V2Session) sendPayload(ctx context.Context, ls ...gopacket.Serializable
 	if err := backoff.Retry(retryable, backoff.NewExponentialBackOff()); err != nil {
 		return nil, err
 	}
-
+	if terminalErr != nil {
+		return nil, terminalErr
+	}
 	if err := s.parser.DecodeLayers(response, &s.layers); err != nil {
 		return nil, err
 	}
-
 	return layerexts.DecodedTypes(s.layers), nil
 }
 
