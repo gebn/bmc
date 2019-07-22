@@ -236,7 +236,10 @@ func (s *V2Session) GetChassisStatus(ctx context.Context) (*ipmi.GetChassisStatu
 }
 
 func (s *V2Session) ChassisControl(ctx context.Context, c ipmi.ChassisControl) error {
-	_, code, err := s.SendMessage(ctx, &ipmi.OperationChassisControlReq, nil)
+	_, code, err := s.SendMessage(ctx, &ipmi.OperationChassisControlReq,
+		&ipmi.ChassisControlReq{
+			ChassisControl: c,
+		})
 	if err != nil {
 		return err
 	}
