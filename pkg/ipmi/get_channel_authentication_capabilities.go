@@ -123,7 +123,13 @@ type GetChannelAuthenticationCapabilitiesRsp struct {
 	// response.
 	SupportsV1 bool
 
-	OEM     iana.Enterprise
+	// OEM is the enterprise number of the organisation that specified the OEM
+	// authentication type. This will be null if no such type is available,
+	// displayed as "0(Unknown)".
+	OEM iana.Enterprise
+
+	// OEMData contains additional OEM-defined information for the OEM
+	// authentication type. This will be null if no such type is available.
 	OEMData byte
 }
 
