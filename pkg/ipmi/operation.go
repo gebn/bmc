@@ -17,9 +17,6 @@ type Operation struct {
 	// indicates the specific functionality desired within this function class.
 	Function NetworkFunction
 
-	// Command is the BMC function being requested, or the response.
-	Command Command
-
 	// Body is the defining body code. It is only relevant if the function is
 	// Group, and is ignored otherwise.
 	Body BodyCode
@@ -27,6 +24,9 @@ type Operation struct {
 	// Enterprise is the enterprise number when the function is OEM/Group. It is
 	// ignored otherwise.
 	Enterprise iana.Enterprise
+
+	// Command is the BMC function being requested, or the response.
+	Command CommandNumber
 }
 
 var (

@@ -13,6 +13,7 @@ go_library(
         "chassis_control.go",
         "close_session.go",
         "command.go",
+        "command_number.go",
         "completion_code.go",
         "confidentiality_algorithm.go",
         "confidentiality_payload.go",

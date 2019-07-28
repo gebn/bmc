@@ -48,3 +48,25 @@ func (c *CloseSessionReq) SerializeTo(b gopacket.SerializeBuffer, _ gopacket.Ser
 	}
 	return nil
 }
+
+type CloseSessionCmd struct {
+	Req CloseSessionReq
+}
+
+// Name returns "Close Session".
+func (*CloseSessionCmd) Name() string {
+	return "Close Session"
+}
+
+// Operation returns OperationCloseSessionReq.
+func (*CloseSessionCmd) Operation() *Operation {
+	return &OperationCloseSessionReq
+}
+
+func (c *CloseSessionCmd) Request() gopacket.SerializableLayer {
+	return &c.Req
+}
+
+func (c *CloseSessionCmd) Response() gopacket.DecodingLayer {
+	return nil
+}

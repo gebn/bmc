@@ -110,3 +110,25 @@ func (g *GetDeviceIDRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback
 	}
 	return nil
 }
+
+type GetDeviceIDCmd struct {
+	Rsp GetDeviceIDRsp
+}
+
+// Name returns "Get Device ID".
+func (*GetDeviceIDCmd) Name() string {
+	return "Get Device ID"
+}
+
+// Operation returns OperationGetDeviceIDReq.
+func (*GetDeviceIDCmd) Operation() *Operation {
+	return &OperationGetDeviceIDReq
+}
+
+func (c *GetDeviceIDCmd) Request() gopacket.SerializableLayer {
+	return nil
+}
+
+func (c *GetDeviceIDCmd) Response() gopacket.DecodingLayer {
+	return &c.Rsp
+}

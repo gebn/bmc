@@ -143,7 +143,7 @@ func (m *Message) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error
 	m.LocalAddress = Address(data[3])
 	m.Sequence = uint8(data[4] >> 2)
 	m.LocalLUN = LUN(data[4] & 0x3)
-	m.Command = Command(data[5])
+	m.Command = CommandNumber(data[5])
 
 	// last checksum is always last byte
 	m.Checksum2 = uint8(data[len(data)-1])

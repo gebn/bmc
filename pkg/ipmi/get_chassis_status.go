@@ -267,3 +267,25 @@ func (s *GetChassisStatusRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFee
 	}
 	return nil
 }
+
+type GetChassisStatusCmd struct {
+	Rsp GetChassisStatusRsp
+}
+
+// Name returns "Get Chassis Status".
+func (*GetChassisStatusCmd) Name() string {
+	return "Get Chassis Status"
+}
+
+// Operation returns OperationGetChassisStatusReq.
+func (*GetChassisStatusCmd) Operation() *Operation {
+	return &OperationGetChassisStatusReq
+}
+
+func (*GetChassisStatusCmd) Request() gopacket.SerializableLayer {
+	return nil
+}
+
+func (c *GetChassisStatusCmd) Response() gopacket.DecodingLayer {
+	return &c.Rsp
+}

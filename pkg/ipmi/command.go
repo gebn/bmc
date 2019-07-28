@@ -1,17 +1,44 @@
 package ipmi
 
 import (
-	"fmt"
+	"github.com/google/gopacket"
 )
 
-// Command represents a particular operation that can be requested. Command
-// identifiers are only unique within a given network function. See Appendix G
-// in the v1.5 and v2.0 specs for assignments. This is a 1 byte uint on the
-// wire.
-type Command uint8
+// Command represents the request and response parts (if any) of executing a
+// function against a managed system. Implementations of this interface have the
+// -Cmd suffix.
+//
+// Allocating the command should allocate both its request and response layers -
+// if we allocate a request, the chances are we will be sending it and so will
+// need the response, so this reduces load on GC. It is recommended to implement
+// this interface using a struct with up to two value layers.
+//
+// Note that this interface only applies to activity below the message layer,
+// i.e. with a NetFn and command number. RMCP+ session setup payloads
+// (RAKP1/2/3/4, RMCP+ Open Session Req/Rsp), while they could be considered
+// commands, do not fall into this category. This turns out not to be so bad, as
+// they are not on the hot path, so it is nice to be able to treat them
+// differently.
+type Command interface {
 
-func (c Command) String() string {
-	// cannot do much better than this without the context of the NetFn; we use
-	// hex as this is what can be found in the spec
-	return fmt.Sprintf("%#x", uint8(c))
+	// Name returns the name of the command, without request/response suffix
+	// e.g. "Get Device ID". This is used for metrics.
+	Name() string
+
+	// Operation returns the operation parameters for the request. This should
+	// avoid allocation, referencing a value in static memory. Technically, this
+	// should be a member of a Request interface that embeds
+	// gopacket.SerializableLayer, however it is here to allow Request() to
+	// return nil for commands not requiring a request payload, which would
+	// otherwise need to have a no-op layer created.
+	Operation() *Operation
+
+	// Request returns the possibly nil request layer that we send to the
+	// managed system. This should not allocate any additional memory.
+	Request() gopacket.SerializableLayer
+
+	// Response returns the possibly nil response layer that we expect back from
+	// the managed system following our request. This should not allocate any
+	// additional memory.
+	Response() gopacket.DecodingLayer
 }

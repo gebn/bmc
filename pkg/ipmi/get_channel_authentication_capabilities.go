@@ -180,3 +180,26 @@ func (g *GetChannelAuthenticationCapabilitiesRsp) DecodeFromBytes(data []byte, d
 
 	return nil
 }
+
+type GetChannelAuthenticationCapabilitiesCmd struct {
+	Req GetChannelAuthenticationCapabilitiesReq
+	Rsp GetChannelAuthenticationCapabilitiesRsp
+}
+
+// Name returns "Get Channel Authentication Capabilities".
+func (*GetChannelAuthenticationCapabilitiesCmd) Name() string {
+	return "Get Channel Authentication Capabilities"
+}
+
+// Operation returns OperationGetChannelAuthenticationCapabilitiesReq.
+func (*GetChannelAuthenticationCapabilitiesCmd) Operation() *Operation {
+	return &OperationGetChannelAuthenticationCapabilitiesReq
+}
+
+func (c *GetChannelAuthenticationCapabilitiesCmd) Request() gopacket.SerializableLayer {
+	return &c.Req
+}
+
+func (c *GetChannelAuthenticationCapabilitiesCmd) Response() gopacket.DecodingLayer {
+	return &c.Rsp
+}

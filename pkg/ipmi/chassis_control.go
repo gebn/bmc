@@ -88,3 +88,25 @@ func (c *ChassisControlReq) SerializeTo(b gopacket.SerializeBuffer, _ gopacket.S
 	bytes[0] = uint8(c.ChassisControl)
 	return nil
 }
+
+type ChassisControlCmd struct {
+	Req ChassisControlReq
+}
+
+// Name returns "Chassis Control".
+func (*ChassisControlCmd) Name() string {
+	return "Chassis Control"
+}
+
+// Operation returns OperationChassisControlReq.
+func (*ChassisControlCmd) Operation() *Operation {
+	return &OperationChassisControlReq
+}
+
+func (c *ChassisControlCmd) Request() gopacket.SerializableLayer {
+	return &c.Req
+}
+
+func (c *ChassisControlCmd) Response() gopacket.DecodingLayer {
+	return nil
+}

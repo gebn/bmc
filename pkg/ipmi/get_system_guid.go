@@ -43,3 +43,25 @@ func (g *GetSystemGUIDRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFeedba
 	copy(g.GUID[:], data[:16])
 	return nil
 }
+
+type GetSystemGUIDCmd struct {
+	Rsp GetSystemGUIDRsp
+}
+
+// Name returns "Get System GUID".
+func (*GetSystemGUIDCmd) Name() string {
+	return "Get System GUID"
+}
+
+// Operation returns OperationGetSystemGUIDReq.
+func (*GetSystemGUIDCmd) Operation() *Operation {
+	return &OperationGetSystemGUIDReq
+}
+
+func (*GetSystemGUIDCmd) Request() gopacket.SerializableLayer {
+	return nil
+}
+
+func (c *GetSystemGUIDCmd) Response() gopacket.DecodingLayer {
+	return &c.Rsp
+}
