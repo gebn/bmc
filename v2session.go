@@ -17,8 +17,13 @@ import (
 
 // V2Session represents an established IPMI v2.0/RMCP+ session with a BMC.
 type V2Session struct {
-	v2ConnectionShared
-	sessionRspLayers
+	v2ConnectionLayers
+	*v2ConnectionShared
+
+	// parser decodes the layers in v2ConnectionShared, plus a confidentiality
+	// layer. There will always be an additional layer that this is not aware
+	// of, so we set IgnoreUnsupported.
+	parser *gopacket.DecodingLayerParser
 
 	// LocalID is the remote console's session ID, used by the BMC to send us
 	// packets.
@@ -81,13 +86,6 @@ type V2Session struct {
 	// message, this layer's SerializeTo is called before adding the session
 	// wrapper.
 	confidentialityLayer layerexts.SerializableDecodingLayer
-
-	// ARGH fix this duplication between here and v2sessionless!
-	layers []gopacket.LayerType
-
-	// parser is a packet decoder loaded with all relevant layer types, specific
-	// to this session.
-	parser *gopacket.DecodingLayerParser
 }
 
 // String returns a summary of the session's attributes on one line.
@@ -107,19 +105,29 @@ func (s *V2Session) ID() uint32 {
 	return s.LocalID
 }
 
-// first layer must be the session layer
-func (s *V2Session) sendPayload(ctx context.Context, ls ...gopacket.SerializableLayer) (layerexts.DecodedTypes, error) {
+func (s *V2Session) SendCommand(ctx context.Context, c ipmi.Command) (ipmi.CompletionCode, error) {
 	s.rmcpLayer = layers.RMCP{
 		Version:  layers.RMCPVersion1,
 		Sequence: 0xFF, // do not send us an ACK
 		Class:    layers.RMCPClassIPMI,
 	}
+	s.v2SessionLayer = ipmi.V2Session{
+		Encrypted:                true,
+		Authenticated:            true,
+		ID:                       s.RemoteID,
+		PayloadDescriptor:        ipmi.PayloadDescriptorIPMI,
+		IntegrityAlgorithm:       s.integrityAlgorithm,
+		ConfidentialityLayerType: s.confidentialityLayer.LayerType(),
+	}
+	s.messageLayer = ipmi.Message{
+		Operation:     *c.Operation(),
+		RemoteAddress: ipmi.SlaveAddressBMC.Address(),
+		RemoteLUN:     ipmi.LUNBMC,
+		LocalAddress:  ipmi.SoftwareIDRemoteConsole1.Address(),
+		Sequence:      1, // used at the session level
+	}
 
-	// we can't mix direct arguments and slices when passing variadic args:
-	// https://stackoverflow.com/a/18949245
-	ls = append([]gopacket.SerializableLayer{
-		&s.rmcpLayer,
-	}, ls...)
+	// TODO increment metric with c.Name() label here, inside session
 
 	response := []byte(nil)
 	terminalErr := error(nil)
@@ -129,14 +137,16 @@ func (s *V2Session) sendPayload(ctx context.Context, ls ...gopacket.Serializable
 			return nil
 		}
 		// TODO handle AuthenticationAlgorithmNone properly
+		// TODO handle ConfidentialityAlgorithmNone properly
 		s.AuthenticatedSequenceNumbers.Inbound++
 		s.v2SessionLayer.Sequence = s.AuthenticatedSequenceNumbers.Inbound
-		if err := gopacket.SerializeLayers(s.buffer, serializeOptions, ls...); err != nil {
-			//&s.rmcpLayer,
-			//&s.v2SessionLayer,
-			//s.confidentialityLayer, // TODO handle ConfidentialityAlgorithmNone
-			//&s.messageLayer,
-			//cmd); err != nil {
+		if err := gopacket.SerializeLayers(s.buffer, serializeOptions,
+			&s.rmcpLayer,
+			// session selector only used when decoding
+			&s.v2SessionLayer,
+			s.confidentialityLayer,
+			&s.messageLayer,
+			serializableLayerOrEmpty(c.Request())); err != nil {
 			// this is not a retryable error
 			terminalErr = err
 			return nil
@@ -147,120 +157,77 @@ func (s *V2Session) sendPayload(ctx context.Context, ls ...gopacket.Serializable
 		response = resp
 		return err
 	}
-	if err := backoff.Retry(retryable, backoff.NewExponentialBackOff()); err != nil {
-		return nil, err
+	s.backoff.Reset()
+	if err := backoff.Retry(retryable, s.backoff); err != nil {
+		return ipmi.CompletionCodeUnspecified, err
 	}
 	if terminalErr != nil {
-		return nil, terminalErr
+		return ipmi.CompletionCodeUnspecified, terminalErr
 	}
 	if err := s.parser.DecodeLayers(response, &s.layers); err != nil {
-		return nil, err
-	}
-	return layerexts.DecodedTypes(s.layers), nil
-}
-
-func (s *V2Session) SendMessage(ctx context.Context, op *ipmi.Operation, cmd gopacket.SerializableLayer) (layerexts.DecodedTypes, ipmi.CompletionCode, error) {
-
-	// TODO fix duplication between here and V2Sessionless
-
-	s.v2SessionLayer = ipmi.V2Session{
-		Encrypted:                true,
-		Authenticated:            true,
-		ID:                       s.RemoteID,
-		Payload:                  ipmi.PayloadIPMI,
-		IntegrityAlgorithm:       s.integrityAlgorithm,
-		ConfidentialityLayerType: s.confidentialityLayer.LayerType(),
-	}
-	s.messageLayer = ipmi.Message{
-		Operation:     *op,
-		RemoteAddress: ipmi.SlaveAddressBMC.Address(),
-		RemoteLUN:     ipmi.LUNBMC,
-		LocalAddress:  ipmi.SoftwareIDRemoteConsole1.Address(),
-		Sequence:      1, // used at the session level
+		return ipmi.CompletionCodeUnspecified, err
 	}
 
-	// allows passing nil as the final parameter for commands with no payload
-	if cmd == nil {
-		cmd = gopacket.Payload(nil)
+	// makes it easier to work with
+	types := layerexts.DecodedTypes(s.layers)
+	if err := types.InnermostEquals(ipmi.LayerTypeMessage); err != nil {
+		return ipmi.CompletionCodeUnspecified, err
 	}
 
-	layers, err := s.sendPayload(ctx, &s.v2SessionLayer, s.confidentialityLayer,
-		&s.messageLayer, cmd)
-	if err != nil {
-		return layers, ipmi.CompletionCodeUnspecified, err
+	if c.Response() != nil {
+		if err := c.Response().DecodeFromBytes(s.messageLayer.LayerPayload(), gopacket.NilDecodeFeedback); err != nil {
+			return ipmi.CompletionCodeUnspecified, err
+		}
 	}
-
-	// ensure message layer returned so we have a completion code
-	if err := layers.Contains(ipmi.LayerTypeMessage); err != nil {
-		return layers, ipmi.CompletionCodeUnspecified, err
-	}
-
-	return layers, s.messageLayer.CompletionCode, nil
+	return s.messageLayer.CompletionCode, nil
 }
 
 func (s *V2Session) GetSystemGUID(ctx context.Context) ([16]byte, error) {
-	return getSystemGUID(ctx, s, &s.getSystemGUIDRspLayer)
+	return getSystemGUID(ctx, s)
 }
 
-func (s *V2Session) GetChannelAuthenticationCapabilities(ctx context.Context, r *ipmi.GetChannelAuthenticationCapabilitiesReq) (*ipmi.GetChannelAuthenticationCapabilitiesRsp, error) {
-	return getChannelAuthenticationCapabilities(ctx, s, r,
-		&s.getChannelAuthenticationCapabilitiesRspLayer)
+func (s *V2Session) GetChannelAuthenticationCapabilities(
+	ctx context.Context,
+	r *ipmi.GetChannelAuthenticationCapabilitiesReq,
+) (*ipmi.GetChannelAuthenticationCapabilitiesRsp, error) {
+	return getChannelAuthenticationCapabilities(ctx, s, r)
 }
 
 func (s *V2Session) GetDeviceID(ctx context.Context) (*ipmi.GetDeviceIDRsp, error) {
-	layers, code, err := s.SendMessage(ctx, &ipmi.OperationGetDeviceIDReq, nil)
-	if err != nil {
+	cmd := &ipmi.GetDeviceIDCmd{}
+	if err := ValidateResponse(s.SendCommand(ctx, cmd)); err != nil {
 		return nil, err
 	}
-	if err := validateCompletionCode(code); err != nil {
-		return nil, err
-	}
-	if err := layers.InnermostEquals(ipmi.LayerTypeGetDeviceIDRsp); err != nil {
-		return nil, err
-	}
-	return &s.getDeviceIDRspLayer, nil
+	return &cmd.Rsp, nil
 }
 
 func (s *V2Session) GetChassisStatus(ctx context.Context) (*ipmi.GetChassisStatusRsp, error) {
-	layers, code, err := s.SendMessage(ctx, &ipmi.OperationGetChassisStatusReq, nil)
-	if err != nil {
+	cmd := &ipmi.GetChassisStatusCmd{}
+	if err := ValidateResponse(s.SendCommand(ctx, cmd)); err != nil {
 		return nil, err
 	}
-	if err := validateCompletionCode(code); err != nil {
-		return nil, err
-	}
-	if err := layers.InnermostEquals(ipmi.LayerTypeGetChassisStatusRsp); err != nil {
-		return nil, err
-	}
-	return &s.getChassisStatusRspLayer, nil
+	return &cmd.Rsp, nil
 }
 
 func (s *V2Session) ChassisControl(ctx context.Context, c ipmi.ChassisControl) error {
-	_, code, err := s.SendMessage(ctx, &ipmi.OperationChassisControlReq,
-		&ipmi.ChassisControlReq{
+	cmd := &ipmi.ChassisControlCmd{
+		Req: ipmi.ChassisControlReq{
 			ChassisControl: c,
-		})
-	if err != nil {
-		return err
+		},
 	}
-	if err := validateCompletionCode(code); err != nil {
+	if err := ValidateResponse(s.SendCommand(ctx, cmd)); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (s *V2Session) closeSession(ctx context.Context) error {
-	_, code, err := s.SendMessage(ctx, &ipmi.OperationCloseSessionReq,
-		&ipmi.CloseSessionReq{
+	cmd := &ipmi.CloseSessionCmd{
+		Req: ipmi.CloseSessionReq{
 			ID: s.RemoteID,
-		})
-	if err != nil {
-		return err
+		},
 	}
-	if err := validateCompletionCode(code); err != nil {
-		return err
-	}
-	return nil
+	return ValidateResponse(s.SendCommand(ctx, cmd))
 }
 
 func (s *V2Session) Close(ctx context.Context) error {

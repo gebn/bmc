@@ -14,43 +14,56 @@ import (
 	"github.com/google/gopacket/layers"
 )
 
-// v2SessionlessRspLayers contains all layers we expect to receive over a
-// sessionless IPMI v2.0 connection. We build a DecodingLayerParser from this.
-// The idea is this is a single allocation which we can efficiently embed in the
-// sessionless connection struct, and then share with a V2Session if/when one is
-// created. Because we only allow a single command to be sent on a socket at a
-// time, this is safe, and saves some memory.
-type v2SessionlessRspLayers struct {
-	sessionlessRspLayers
-	v2SessionLayer ipmi.V2Session
+// v2ConnectionLayers contains layers common to all v2.0 connections. Although
+// these layers are common, both V2Sessionless and V2Session embed this as a
+// value, so each gets a fresh set of layers. This uses a little more memory,
+// but it means when a session is closed, its session layer doesn't have a
+// dangling confidentiality layer etc. This is why this is not embedded in
+// v2ConnectionShared.
+type v2ConnectionLayers struct {
+	rmcpLayer            layers.RMCP
+	sessionSelectorLayer ipmi.SessionSelector
+	v2SessionLayer       ipmi.V2Session
+	messageLayer         ipmi.Message
 }
 
-// this separates these layers from being used in a V2 session - they will never
-// be received inside a session
-type v2SessionEstablishmentRspLayers struct {
-	openSessionRspLayer ipmi.OpenSessionRsp
-	rakpMessage2Layer   ipmi.RAKPMessage2
-	rakpMessage4Layer   ipmi.RAKPMessage4
-}
-
+// v2ConnectionShared contains fields that a session-less connection passes to
+// sessions created from it. V2Sessionless embeds a value of this type, and
+// V2Session embeds a pointer which is set to the V2Sessionless's value.
+//
+// Note that a given BMC only supports a single command at a time, which is what
+// makes this possible - if a session is sending a command, the session-less
+// connection it was initiated from cannot send concurrently.
 type v2ConnectionShared struct {
-	v2SessionlessRspLayers
 
+	// transport is the underlying UDP socket for the connection.
 	transport transport.Transport
 
 	// buffer is used to build all packets to send during this connection.
-	// Reusing this drastically reduces the number of allocations we have to do
-	// when building packets.
+	// Reusing this between sends drastically reduces the number of allocations
+	// we have to do when building packets, and reusing it between session-less
+	// and session-based connections reduces it a little further.
 	buffer gopacket.SerializeBuffer
+
+	// layers contains layer types decoded by the connection's
+	// gopacket.DecodingLayerParser. Although this slice is shared, each
+	// connection has its own DLP, as each session may have a different
+	// confidentiality layer.
+	layers []gopacket.LayerType
+
+	// backoff saves allocating a backoff each request. We must call .Reset() to
+	// reset this between requests.
+	backoff backoff.BackOff
 }
 
 // V2Sessionless represents a session-less connection to a BMC using a "null"
 // IPMI v2.0 session wrapper.
 type V2Sessionless struct {
+	v2ConnectionLayers
 	v2ConnectionShared
-	v2SessionEstablishmentRspLayers
 
-	layers []gopacket.LayerType
+	// parser decodes the layers in v2ConnectionShared. There will always be an
+	// additional layer that this is not aware of, so we set IgnoreUnsupported.
 	parser *gopacket.DecodingLayerParser
 }
 
@@ -59,6 +72,7 @@ func newV2Sessionless(t transport.Transport) *V2Sessionless {
 		v2ConnectionShared: v2ConnectionShared{
 			transport: t,
 			buffer:    gopacket.NewSerializeBuffer(),
+			backoff:   backoff.NewExponentialBackOff(),
 		},
 	}
 	s.parser = gopacket.NewDecodingLayerParser(
@@ -66,12 +80,9 @@ func newV2Sessionless(t transport.Transport) *V2Sessionless {
 		&s.rmcpLayer,
 		&s.sessionSelectorLayer,
 		&s.v2SessionLayer,
-		&s.messageLayer,
-		&s.getSystemGUIDRspLayer,
-		&s.getChannelAuthenticationCapabilitiesRspLayer,
-		&s.openSessionRspLayer,
-		&s.rakpMessage2Layer,
-		&s.rakpMessage4Layer)
+		&s.messageLayer)
+	s.parser.IgnorePanic = true // we never use this, so may as well save the defer
+	s.parser.IgnoreUnsupported = true
 	return s
 }
 
@@ -79,34 +90,102 @@ func (s *V2Sessionless) Version() string {
 	return "2.0"
 }
 
-func (s *V2Sessionless) sendPayload(
-	ctx context.Context,
-	p *ipmi.Payload,
-	ls ...gopacket.SerializableLayer,
-) (layerexts.DecodedTypes, error) {
+func (s *V2Sessionless) sendPayload(ctx context.Context, p ipmi.Payload) error {
 	s.rmcpLayer = layers.RMCP{
 		Version:  layers.RMCPVersion1,
 		Sequence: 0xFF, // do not send us an ACK
 		Class:    layers.RMCPClassIPMI,
 	}
 	s.v2SessionLayer = ipmi.V2Session{
-		Payload: *p,
+		PayloadDescriptor: *p.Descriptor(),
 	}
-
-	// we can't mix direct arguments and slices when passing variadic args:
-	// https://stackoverflow.com/a/18949245
-	ls = append([]gopacket.SerializableLayer{
-		&s.rmcpLayer,
-		&s.v2SessionLayer,
-	}, ls...)
 
 	// we don't need to increment a sequence number between retries, so can
 	// serialise this just once
-	if err := gopacket.SerializeLayers(s.buffer, serializeOptions, ls...); err != nil {
-		return nil, err
+	// N.B. no message layer as this is only used for RMCP+ session setup (see
+	// ipmi.Payload interface for more details)
+	if err := gopacket.SerializeLayers(s.buffer, serializeOptions,
+		&s.rmcpLayer,
+		// session selector only used when decoding
+		&s.v2SessionLayer,
+		p.Request()); err != nil {
+		return err
 	}
 
-	bytes := []byte(nil)
+	if err := s.send(ctx); err != nil {
+		return err
+	}
+
+	// makes it easier to work with
+	types := layerexts.DecodedTypes(s.layers)
+	if err := types.InnermostEquals(ipmi.LayerTypeV2Session); err != nil {
+		return err
+	}
+
+	if err := p.Response().DecodeFromBytes(s.v2SessionLayer.LayerPayload(), gopacket.NilDecodeFeedback); err != nil {
+		return err
+	}
+	return nil
+}
+
+// saves having to write two SerializeLayers calls in SendCommand
+func serializableLayerOrEmpty(s gopacket.SerializableLayer) gopacket.SerializableLayer {
+	if s == nil {
+		return gopacket.Payload(nil)
+	}
+	return s
+}
+
+func (s *V2Sessionless) SendCommand(ctx context.Context, c ipmi.Command) (ipmi.CompletionCode, error) {
+	s.rmcpLayer = layers.RMCP{
+		Version:  layers.RMCPVersion1,
+		Sequence: 0xFF, // do not send us an ACK
+		Class:    layers.RMCPClassIPMI,
+	}
+	s.v2SessionLayer = ipmi.V2Session{
+		PayloadDescriptor: ipmi.PayloadDescriptorIPMI,
+	}
+	s.messageLayer = ipmi.Message{
+		Operation:     *c.Operation(),
+		RemoteAddress: ipmi.SlaveAddressBMC.Address(),
+		RemoteLUN:     ipmi.LUNBMC,
+		LocalAddress:  ipmi.SoftwareIDRemoteConsole1.Address(),
+		Sequence:      1,
+	}
+
+	// TODO increment metric with c.Name() label here, outside session
+
+	// we don't need to increment a sequence number between retries, so can
+	// serialise this just once
+	if err := gopacket.SerializeLayers(s.buffer, serializeOptions,
+		&s.rmcpLayer,
+		// session selector only used when decoding
+		&s.v2SessionLayer,
+		&s.messageLayer,
+		serializableLayerOrEmpty(c.Request())); err != nil {
+		return ipmi.CompletionCodeUnspecified, err
+	}
+
+	if err := s.send(ctx); err != nil {
+		return ipmi.CompletionCodeUnspecified, err
+	}
+
+	// makes it easier to work with
+	types := layerexts.DecodedTypes(s.layers)
+	if err := types.InnermostEquals(ipmi.LayerTypeMessage); err != nil {
+		return ipmi.CompletionCodeUnspecified, err
+	}
+
+	if c.Response() != nil {
+		if err := c.Response().DecodeFromBytes(s.messageLayer.LayerPayload(), gopacket.NilDecodeFeedback); err != nil {
+			return ipmi.CompletionCodeUnspecified, err
+		}
+	}
+	return s.messageLayer.CompletionCode, nil
+}
+
+func (s *V2Sessionless) send(ctx context.Context) error {
+	response := []byte(nil)
 	ctxErr := error(nil)
 	retryable := func() error {
 		if err := ctx.Err(); err != nil {
@@ -115,68 +194,32 @@ func (s *V2Sessionless) sendPayload(
 		}
 		requestCtx, cancel := context.WithTimeout(ctx, time.Second*2) // TODO make configurable
 		defer cancel()
-		resp, err := s.transport.Send(requestCtx, s.buffer.Bytes())
-		bytes = resp
+		bytes, err := s.transport.Send(requestCtx, s.buffer.Bytes())
+		response = bytes
 		return err
 	}
-	if err := backoff.Retry(retryable, backoff.NewExponentialBackOff()); err != nil {
-		return nil, err
+	s.backoff.Reset()
+	if err := backoff.Retry(retryable, s.backoff); err != nil {
+		return err
 	}
 	if ctxErr != nil {
-		return nil, ctxErr
+		return ctxErr
 	}
 
-	if err := s.parser.DecodeLayers(bytes, &s.layers); err != nil {
-		return nil, err
+	if err := s.parser.DecodeLayers(response, &s.layers); err != nil {
+		return err
 	}
 
-	return layerexts.DecodedTypes(s.layers), nil
-}
-
-func (s *V2Sessionless) SendMessage(
-	ctx context.Context,
-	op *ipmi.Operation,
-	cmd gopacket.SerializableLayer,
-) (layerexts.DecodedTypes, ipmi.CompletionCode, error) {
-	s.messageLayer = ipmi.Message{
-		Operation:     *op,
-		RemoteAddress: ipmi.SlaveAddressBMC.Address(),
-		RemoteLUN:     ipmi.LUNBMC,
-		LocalAddress:  ipmi.SoftwareIDRemoteConsole1.Address(),
-		Sequence:      1,
-	}
-
-	// allows passing nil as the final parameter for commands with no payload
-	if cmd == nil {
-		cmd = gopacket.Payload(nil)
-	}
-
-	layers, err := s.sendPayload(ctx, &ipmi.PayloadIPMI, &s.messageLayer, cmd)
-	if err != nil {
-		return layers, ipmi.CompletionCodeUnspecified, err
-	}
-
-	// ensure message layer returned so we have a completion code
-	if err := layers.Contains(ipmi.LayerTypeMessage); err != nil {
-		return layers, ipmi.CompletionCodeUnspecified, err
-	}
-
-	return layers, s.messageLayer.CompletionCode, nil
+	return nil
 }
 
 func (s *V2Sessionless) GetSystemGUID(ctx context.Context) ([16]byte, error) {
-	return getSystemGUID(ctx, s, &s.getSystemGUIDRspLayer)
+	return getSystemGUID(ctx, s)
 }
 
-func getSystemGUID(ctx context.Context, c Connection, l *ipmi.GetSystemGUIDRsp) ([16]byte, error) {
-	layers, code, err := c.SendMessage(ctx, &ipmi.OperationGetSystemGUIDReq, nil)
-	if err != nil {
-		return [16]byte{}, err
-	}
-	if err := validateCompletionCode(code); err != nil {
-		return [16]byte{}, err
-	}
-	if err := layers.InnermostEquals(l.LayerType()); err != nil {
+func getSystemGUID(ctx context.Context, c Connection) ([16]byte, error) {
+	cmd := &ipmi.GetSystemGUIDCmd{}
+	if err := ValidateResponse(c.SendCommand(ctx, cmd)); err != nil {
 		return [16]byte{}, err
 	}
 
@@ -184,101 +227,87 @@ func getSystemGUID(ctx context.Context, c Connection, l *ipmi.GetSystemGUIDRsp) 
 	// a valid GUID in network byte order, and the spec says it should be
 	// treated as an opaque value. The user can interpret these bytes how they
 	// wish.
-	return l.GUID, nil
+	return cmd.Rsp.GUID, nil
 }
 
 func (s *V2Sessionless) GetChannelAuthenticationCapabilities(
 	ctx context.Context,
 	r *ipmi.GetChannelAuthenticationCapabilitiesReq,
 ) (*ipmi.GetChannelAuthenticationCapabilitiesRsp, error) {
-	return getChannelAuthenticationCapabilities(ctx, s, r,
-		&s.getChannelAuthenticationCapabilitiesRspLayer)
+	return getChannelAuthenticationCapabilities(ctx, s, r)
 }
 
 func getChannelAuthenticationCapabilities(
 	ctx context.Context,
 	c Connection,
 	req *ipmi.GetChannelAuthenticationCapabilitiesReq,
-	rsp *ipmi.GetChannelAuthenticationCapabilitiesRsp,
 ) (*ipmi.GetChannelAuthenticationCapabilitiesRsp, error) {
 	// we could set req.ExtendedData here as we're guaranteed to be IPMI v2.0,
 	// however let the user decide
-	layers, code, err := c.SendMessage(ctx,
-		&ipmi.OperationGetChannelAuthenticationCapabilitiesReq, req)
-	if err != nil {
+	cmd := &ipmi.GetChannelAuthenticationCapabilitiesCmd{
+		Req: *req,
+	}
+	if err := ValidateResponse(c.SendCommand(ctx, cmd)); err != nil {
 		return nil, err
 	}
-	if err := validateCompletionCode(code); err != nil {
+	return &cmd.Rsp, nil
+}
+
+func (s *V2Sessionless) openSession(ctx context.Context, r *ipmi.OpenSessionReq) (*ipmi.OpenSessionRsp, error) {
+	// if we were being *really* aggressive, we could store these payloads in
+	// the sessionless struct for reuse during any future session establishments
+	payload := &ipmi.OpenSessionPayload{
+		Req: *r,
+	}
+	if err := s.sendPayload(ctx, payload); err != nil {
 		return nil, err
 	}
-	if err := layers.InnermostEquals(rsp.LayerType()); err != nil {
-		return nil, err
+	rsp := &payload.Rsp
+	if rsp.Tag != r.Tag {
+		return nil, fmt.Errorf("tag mismatch; expected %v, got %v", r.Tag,
+			rsp.Tag)
+	}
+	if rsp.Status != ipmi.StatusCodeOK {
+		return nil, fmt.Errorf("managed system returned non-OK status: %v",
+			rsp.Status)
 	}
 	return rsp, nil
 }
 
-func (s *V2Sessionless) openSession(
-	ctx context.Context,
-	r *ipmi.OpenSessionReq,
-) (*ipmi.OpenSessionRsp, error) {
-	layers, err := s.sendPayload(ctx, &ipmi.PayloadOpenSessionReq, r)
-	if err != nil {
+func (s *V2Sessionless) rakpMessage1(ctx context.Context, r *ipmi.RAKPMessage1) (*ipmi.RAKPMessage2, error) {
+	payload := &ipmi.RAKPMessage1Payload{
+		Req: *r,
+	}
+	if err := s.sendPayload(ctx, payload); err != nil {
 		return nil, err
 	}
-	if err := layers.InnermostEquals(ipmi.LayerTypeOpenSessionRsp); err != nil {
-		return nil, err
-	}
-	if s.openSessionRspLayer.Tag != r.Tag {
+	rsp := &payload.Rsp
+	if rsp.Tag != r.Tag {
 		return nil, fmt.Errorf("tag mismatch; expected %v, got %v", r.Tag,
-			s.openSessionRspLayer.Tag)
+			rsp.Tag)
 	}
-	if s.openSessionRspLayer.Status != ipmi.StatusCodeOK {
+	if rsp.Status != ipmi.StatusCodeOK {
 		return nil, fmt.Errorf("managed system returned non-OK status: %v",
-			s.openSessionRspLayer.Status)
+			rsp.Status)
 	}
-	return &s.openSessionRspLayer, nil
+	return rsp, nil
 }
 
-func (s *V2Sessionless) rakpMessage1(
-	ctx context.Context,
-	r *ipmi.RAKPMessage1,
-) (*ipmi.RAKPMessage2, error) {
-	layers, err := s.sendPayload(ctx, &ipmi.PayloadRAKPMessage1, r)
-	if err != nil {
+func (s *V2Sessionless) rakpMessage3(ctx context.Context, r *ipmi.RAKPMessage3) (*ipmi.RAKPMessage4, error) {
+	payload := &ipmi.RAKPMessage3Payload{
+		Req: *r,
+	}
+	if err := s.sendPayload(ctx, payload); err != nil {
 		return nil, err
 	}
-	if err := layers.InnermostEquals(ipmi.LayerTypeRAKPMessage2); err != nil {
-		return nil, err
-	}
-	if s.rakpMessage2Layer.Tag != r.Tag {
+	rsp := &payload.Rsp
+	if rsp.Tag != r.Tag {
 		return nil, fmt.Errorf("tag mismatch; expected %v, got %v", r.Tag,
-			s.openSessionRspLayer.Tag)
+			rsp.Tag)
 	}
-	if s.rakpMessage2Layer.Status != ipmi.StatusCodeOK {
+	if rsp.Status != ipmi.StatusCodeOK {
 		return nil, fmt.Errorf("managed system returned non-OK status: %v",
-			s.rakpMessage2Layer.Status)
+			rsp.Status)
 	}
-	return &s.rakpMessage2Layer, nil
-}
-
-func (s *V2Sessionless) rakpMessage3(
-	ctx context.Context,
-	r *ipmi.RAKPMessage3,
-) (*ipmi.RAKPMessage4, error) {
-	layers, err := s.sendPayload(ctx, &ipmi.PayloadRAKPMessage3, r)
-	if err != nil {
-		return nil, err
-	}
-	if err := layers.InnermostEquals(ipmi.LayerTypeRAKPMessage4); err != nil {
-		return nil, err
-	}
-	if s.rakpMessage4Layer.Tag != r.Tag {
-		return nil, fmt.Errorf("tag mismatch; expected %v, got %v", r.Tag,
-			s.openSessionRspLayer.Tag)
-	}
-	if s.rakpMessage4Layer.Status != ipmi.StatusCodeOK {
-		return nil, fmt.Errorf("managed system returned non-OK status: %v",
-			s.rakpMessage4Layer.Status)
-	}
-	return &s.rakpMessage4Layer, nil
+	return rsp, nil
 }

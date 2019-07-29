@@ -231,7 +231,7 @@ func (s *V2SessionlessTransport) NewV2Session(ctx context.Context, opts *V2Sessi
 	}
 
 	sess := &V2Session{
-		v2ConnectionShared:             s.v2ConnectionShared,
+		v2ConnectionShared:             &s.v2ConnectionShared,
 		LocalID:                        openSessionRsp.RemoteConsoleSessionID,
 		RemoteID:                       openSessionRsp.ManagedSystemSessionID,
 		SIK:                            sik,
@@ -249,11 +249,9 @@ func (s *V2SessionlessTransport) NewV2Session(ctx context.Context, opts *V2Sessi
 		&sess.rmcpLayer,
 		&sess.sessionSelectorLayer,
 		&sess.v2SessionLayer,
-		&sess.messageLayer,
-		&sess.getSystemGUIDRspLayer,
-		&sess.getChannelAuthenticationCapabilitiesRspLayer,
 		cipherLayer,
-		&sess.getDeviceIDRspLayer,
-		&sess.getChassisStatusRspLayer)
+		&sess.messageLayer)
+	sess.parser.IgnorePanic = true // we never use this, so may as well save the defer
+	sess.parser.IgnoreUnsupported = true
 	return sess, nil
 }

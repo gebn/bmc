@@ -98,9 +98,14 @@ func newTransport(addr string) (transport.Transport, error) {
 	return transport.New(addr)
 }
 
-// validateCompletionCode ensures a completion code indicates success. If it
-// does not, it returns an error containing the actual value.
-func validateCompletionCode(c ipmi.CompletionCode) error {
+// ValidateResponse is a helper to remove some boilerplate error handling from
+// SendCommand() calls. It ensures a non-nil error and normal completion code.
+// If the error is non-nil, it is returned. If the completion code is
+// non-normal, an error is returned containing the actual value.
+func ValidateResponse(c ipmi.CompletionCode, err error) error {
+	if err != nil {
+		return err
+	}
 	if c != ipmi.CompletionCodeNormal {
 		return fmt.Errorf("received non-normal completion code: %v", c)
 	}
