@@ -6,9 +6,6 @@ import (
 
 	"github.com/gebn/bmc/internal/pkg/transport"
 	"github.com/gebn/bmc/pkg/ipmi"
-	"github.com/gebn/bmc/pkg/layerexts"
-
-	"github.com/google/gopacket"
 )
 
 // V1Sessionless represents a session-less connection to a BMC using a "null"
@@ -22,16 +19,8 @@ func (s *V1Sessionless) Version() string {
 	return "1.5"
 }
 
-func (s *V1Sessionless) SendMessage(ctx context.Context, op *ipmi.Operation, cmd gopacket.SerializableLayer) (layerexts.DecodedTypes, ipmi.CompletionCode, error) {
-	return nil, ipmi.CompletionCodeUnspecified, fmt.Errorf("not implemented")
-}
-
-func (s *V1Sessionless) GetSystemGUID(ctx context.Context) ([16]byte, error) {
-	return [16]byte{}, fmt.Errorf("not implemented")
-}
-
-func (s *V1Sessionless) GetChannelAuthenticationCapabilities(ctx context.Context, r *ipmi.GetChannelAuthenticationCapabilitiesReq) (*ipmi.GetChannelAuthenticationCapabilitiesRsp, error) {
-	return nil, fmt.Errorf("not implemented")
+func (s *V1Sessionless) SendCommand(ctx context.Context, c ipmi.Command) (ipmi.CompletionCode, error) {
+	return ipmi.CompletionCodeUnspecified, fmt.Errorf("not implemented")
 }
 
 // TODO may want to implement getSessionChallenge()

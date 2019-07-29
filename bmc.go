@@ -2,7 +2,6 @@
 package bmc
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -19,37 +18,38 @@ var (
 	}
 )
 
-// Dial queries the BMC at the supplied IP[:port] (IPv6 must be enclosed in
-// square brackets) for IPMI v2.0 capability. If it supports IPMI v2.0, a
-// V2SessionlessTransport will be returned, otherwise a V1SessionlessTransport
-// will be returned. If you know the BMC's capabilities, or need a specific
-// feature (e.g. DCMI), use the DialV*() functions instead, which expose
-// additional information and functionality.
-func Dial(ctx context.Context, addr string) (SessionlessTransport, error) {
-	t, err := newTransport(addr)
-	if err != nil {
-		return nil, err
-	}
-	v1 := newV1SessionlessTransport(t)
-	capabilities, err := v1.GetChannelAuthenticationCapabilities(
-		ctx,
-		&ipmi.GetChannelAuthenticationCapabilitiesReq{
-			ExtendedData:      true,
-			Channel:           ipmi.ChannelPresentInterface,
-			MaxPrivilegeLevel: ipmi.PrivilegeLevelAdministrator,
-		},
-	)
-	if err != nil {
-		v1.Close()
-		return nil, err
-	}
-	if capabilities.SupportsV2 {
-		// prefer IPMI v2.0 if supported; reuse socket
-		return newV2SessionlessTransport(t), nil
-	}
-	// assume capabilities.SupportsV1 == true by virtue of getting here
-	return v1, nil
-}
+// TODO need to implement v1 sending
+//// Dial queries the BMC at the supplied IP[:port] (IPv6 must be enclosed in
+//// square brackets) for IPMI v2.0 capability. If it supports IPMI v2.0, a
+//// V2SessionlessTransport will be returned, otherwise a V1SessionlessTransport
+//// will be returned. If you know the BMC's capabilities, or need a specific
+//// feature (e.g. DCMI), use the DialV*() functions instead, which expose
+//// additional information and functionality.
+//func Dial(ctx context.Context, addr string) (SessionlessTransport, error) {
+//	t, err := newTransport(addr)
+//	if err != nil {
+//		return nil, err
+//	}
+//	v1 := newV1SessionlessTransport(t)
+//	capabilities, err := v1.GetChannelAuthenticationCapabilities(
+//		ctx,
+//		&ipmi.GetChannelAuthenticationCapabilitiesReq{
+//			ExtendedData:      true,
+//			Channel:           ipmi.ChannelPresentInterface,
+//			MaxPrivilegeLevel: ipmi.PrivilegeLevelAdministrator,
+//		},
+//	)
+//	if err != nil {
+//		v1.Close()
+//		return nil, err
+//	}
+//	if capabilities.SupportsV2 {
+//		// prefer IPMI v2.0 if supported; reuse socket
+//		return newV2SessionlessTransport(t), nil
+//	}
+//	// assume capabilities.SupportsV1 == true by virtue of getting here
+//	return v1, nil
+//}
 
 // DialV1 establishes a new IPMI v1.5 connection with the supplied BMC. The
 // address follows the same format as for Dial(). Use this if you know the BMC
