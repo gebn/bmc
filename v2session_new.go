@@ -244,14 +244,12 @@ func (s *V2SessionlessTransport) NewV2Session(ctx context.Context, opts *V2Sessi
 	}
 	// do not set properties of the session layer here, as it is overwritten
 	// each send
-	sess.parser = gopacket.NewDecodingLayerParser(
-		sess.rmcpLayer.LayerType(),
-		&sess.rmcpLayer,
-		&sess.sessionSelectorLayer,
-		&sess.v2SessionLayer,
-		cipherLayer,
-		&sess.messageLayer)
-	sess.parser.IgnorePanic = true // we never use this, so may as well save the defer
-	sess.parser.IgnoreUnsupported = true
+	dlc := gopacket.DecodingLayerContainer(gopacket.DecodingLayerArray(nil))
+	dlc = dlc.Put(&sess.rmcpLayer)
+	dlc = dlc.Put(&sess.sessionSelectorLayer)
+	dlc = dlc.Put(&sess.v2SessionLayer)
+	dlc = dlc.Put(cipherLayer)
+	dlc = dlc.Put(&sess.messageLayer)
+	sess.decode = dlc.LayersDecoder(sess.rmcpLayer.LayerType(), gopacket.NilDecodeFeedback)
 	return sess, nil
 }

@@ -20,10 +20,9 @@ type V2Session struct {
 	v2ConnectionLayers
 	*v2ConnectionShared
 
-	// parser decodes the layers in v2ConnectionShared, plus a confidentiality
-	// layer. There will always be an additional layer that this is not aware
-	// of, so we set IgnoreUnsupported.
-	parser *gopacket.DecodingLayerParser
+	// decode parses the layers in v2ConnectionShared, plus a confidentiality
+	// layer.
+	decode gopacket.DecodingLayerFunc
 
 	// LocalID is the remote console's session ID, used by the BMC to send us
 	// packets.
@@ -164,7 +163,7 @@ func (s *V2Session) SendCommand(ctx context.Context, c ipmi.Command) (ipmi.Compl
 	if terminalErr != nil {
 		return ipmi.CompletionCodeUnspecified, terminalErr
 	}
-	if err := s.parser.DecodeLayers(response, &s.layers); err != nil {
+	if _, err := s.decode(response, &s.layers); err != nil {
 		return ipmi.CompletionCodeUnspecified, err
 	}
 

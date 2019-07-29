@@ -62,9 +62,8 @@ type V2Sessionless struct {
 	v2ConnectionLayers
 	v2ConnectionShared
 
-	// parser decodes the layers in v2ConnectionShared. There will always be an
-	// additional layer that this is not aware of, so we set IgnoreUnsupported.
-	parser *gopacket.DecodingLayerParser
+	// decode parses the layers in v2ConnectionShared.
+	decode gopacket.DecodingLayerFunc
 }
 
 func newV2Sessionless(t transport.Transport) *V2Sessionless {
@@ -75,14 +74,12 @@ func newV2Sessionless(t transport.Transport) *V2Sessionless {
 			backoff:   backoff.NewExponentialBackOff(),
 		},
 	}
-	s.parser = gopacket.NewDecodingLayerParser(
-		s.rmcpLayer.LayerType(),
-		&s.rmcpLayer,
-		&s.sessionSelectorLayer,
-		&s.v2SessionLayer,
-		&s.messageLayer)
-	s.parser.IgnorePanic = true // we never use this, so may as well save the defer
-	s.parser.IgnoreUnsupported = true
+	dlc := gopacket.DecodingLayerContainer(gopacket.DecodingLayerArray(nil))
+	dlc = dlc.Put(&s.rmcpLayer)
+	dlc = dlc.Put(&s.sessionSelectorLayer)
+	dlc = dlc.Put(&s.v2SessionLayer)
+	dlc = dlc.Put(&s.messageLayer)
+	s.decode = dlc.LayersDecoder(s.rmcpLayer.LayerType(), gopacket.NilDecodeFeedback)
 	return s
 }
 
@@ -112,7 +109,7 @@ func (s *V2Sessionless) sendPayload(ctx context.Context, p ipmi.Payload) error {
 		return err
 	}
 
-	if err := s.send(ctx); err != nil {
+	if _, err := s.send(ctx); err != nil {
 		return err
 	}
 
@@ -166,7 +163,7 @@ func (s *V2Sessionless) SendCommand(ctx context.Context, c ipmi.Command) (ipmi.C
 		return ipmi.CompletionCodeUnspecified, err
 	}
 
-	if err := s.send(ctx); err != nil {
+	if _, err := s.send(ctx); err != nil {
 		return ipmi.CompletionCodeUnspecified, err
 	}
 
@@ -184,7 +181,7 @@ func (s *V2Sessionless) SendCommand(ctx context.Context, c ipmi.Command) (ipmi.C
 	return s.messageLayer.CompletionCode, nil
 }
 
-func (s *V2Sessionless) send(ctx context.Context) error {
+func (s *V2Sessionless) send(ctx context.Context) (gopacket.LayerType, error) {
 	response := []byte(nil)
 	ctxErr := error(nil)
 	retryable := func() error {
@@ -200,17 +197,13 @@ func (s *V2Sessionless) send(ctx context.Context) error {
 	}
 	s.backoff.Reset()
 	if err := backoff.Retry(retryable, s.backoff); err != nil {
-		return err
+		return gopacket.LayerTypeZero, err
 	}
 	if ctxErr != nil {
-		return ctxErr
+		return gopacket.LayerTypeZero, ctxErr
 	}
 
-	if err := s.parser.DecodeLayers(response, &s.layers); err != nil {
-		return err
-	}
-
-	return nil
+	return s.decode(response, &s.layers)
 }
 
 func (s *V2Sessionless) GetSystemGUID(ctx context.Context) ([16]byte, error) {
