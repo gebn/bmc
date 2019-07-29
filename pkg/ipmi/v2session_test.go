@@ -66,7 +66,7 @@ func TestV2SessionDecode(t *testing.T) {
 						0x2, 0x1, 0x1, 0x0},
 					Payload: []byte{0x0},
 				},
-				Payload: Payload{
+				PayloadDescriptor: PayloadDescriptor{
 					PayloadType: 0x20, // first OEM reserved
 				},
 				ID:                 0x4030201,
@@ -85,7 +85,7 @@ func TestV2SessionDecode(t *testing.T) {
 						0x1, 0x2, 0x3, 0x4, 0x4, 0x3, 0x2, 0x1, 0x1, 0x0},
 					Payload: []byte{0x0},
 				},
-				Payload: Payload{
+				PayloadDescriptor: PayloadDescriptor{
 					PayloadType: 0x2,
 					Enterprise:  674,
 					PayloadID:   0x201,

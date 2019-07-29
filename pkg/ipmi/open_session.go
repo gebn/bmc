@@ -176,3 +176,21 @@ func (o *OpenSessionRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback
 	}
 	return nil
 }
+
+type OpenSessionPayload struct {
+	Req OpenSessionReq
+	Rsp OpenSessionRsp
+}
+
+// Type returns PayloadDescriptorOpenSessionReq.
+func (*OpenSessionPayload) Descriptor() *PayloadDescriptor {
+	return &PayloadDescriptorOpenSessionReq
+}
+
+func (p *OpenSessionPayload) Request() gopacket.SerializableLayer {
+	return &p.Req
+}
+
+func (p *OpenSessionPayload) Response() gopacket.DecodingLayer {
+	return &p.Rsp
+}

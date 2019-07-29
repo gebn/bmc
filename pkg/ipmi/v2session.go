@@ -18,7 +18,7 @@ import (
 // attribute must be set to deal with all packets.
 type V2Session struct {
 	layers.BaseLayer
-	Payload
+	PayloadDescriptor
 
 	// Encrypted is true if the payload is encrypted, false if it is not.
 	Encrypted bool
@@ -85,7 +85,7 @@ func (s *V2Session) CanDecode() gopacket.LayerClass {
 }
 
 func (s *V2Session) NextLayerType() gopacket.LayerType {
-	layerType := s.Payload.NextLayerType()
+	layerType := s.PayloadDescriptor.NextLayerType()
 	if layerType == LayerTypeMessage && s.Encrypted {
 		// special case - this must be handled here, because lower layers don't
 		// know whether it's encrypted. I imagine the spec authors left the

@@ -72,3 +72,21 @@ func (r *RAKPMessage1) SerializeTo(b gopacket.SerializeBuffer, opts gopacket.Ser
 	}
 	return nil
 }
+
+type RAKPMessage1Payload struct {
+	Req RAKPMessage1
+	Rsp RAKPMessage2
+}
+
+// Descriptor returns PayloadDescriptorRAKPMessage1.
+func (*RAKPMessage1Payload) Descriptor() *PayloadDescriptor {
+	return &PayloadDescriptorRAKPMessage1
+}
+
+func (p *RAKPMessage1Payload) Request() gopacket.SerializableLayer {
+	return &p.Req
+}
+
+func (p *RAKPMessage1Payload) Response() gopacket.DecodingLayer {
+	return &p.Rsp
+}

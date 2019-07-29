@@ -31,6 +31,7 @@ go_library(
         "open_session.go",
         "operation.go",
         "payload.go",
+        "payload_descriptor.go",
         "payload_type.go",
         "privilege_level.go",
         "rakp_message_1.go",
