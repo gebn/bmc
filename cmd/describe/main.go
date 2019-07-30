@@ -47,17 +47,33 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	if err := ASFPresencePongCapabilities(ctx, machine); err != nil {
-		fmt.Printf("failed to get presence pong capabilities: %v\n", err)
+	if pong, err := presencePing(ctx, machine); err != nil {
+		log.Printf("failed to get presence pong capabilities: %v", err)
+	} else {
+		printPong(pong)
 	}
-	if err := ChannelAuthenticationCapabilities(ctx, machine); err != nil {
-		fmt.Printf("failed to get channel auth capabilities: %v\n", err)
+
+	if caps, err := machine.GetChannelAuthenticationCapabilities(ctx,
+		&ipmi.GetChannelAuthenticationCapabilitiesReq{
+			ExtendedData:      true, // only has effect if v2.0
+			Channel:           ipmi.ChannelPresentInterface,
+			MaxPrivilegeLevel: ipmi.PrivilegeLevelAdministrator,
+		}); err != nil {
+		log.Printf("failed to get channel auth capabilities: %v", err)
+	} else {
+		printChannelAuthCaps(caps)
 	}
-	if err := SystemGUID(ctx, machine); err != nil {
-		fmt.Printf("failed to get system GUID: %v\n", err)
+
+	if guid, err := machine.GetSystemGUID(ctx); err != nil {
+		log.Printf("failed to get system GUID: %v", err)
+	} else {
+		printSystemGUID(guid)
 	}
-	if err := DCMICapabilities(ctx, machine); err != nil {
-		fmt.Printf("failed to get DCMI capabilities: %v\n", err)
+
+	if caps, err := dcmi.SessionlessCommander(machine).GetDCMICapabilitiesInfo(ctx); err != nil {
+		log.Printf("failed to get DCMI capabilities: %v", err)
+	} else {
+		printDCMICaps(caps)
 	}
 
 	sess, err := machine.NewSession(ctx, *flgUsername, []byte(*flgPassword))
@@ -66,27 +82,17 @@ func main() {
 	}
 	defer sess.Close(ctx)
 
-	if err := DeviceID(ctx, sess); err != nil {
-		fmt.Printf("failed to get device id: %v\n", err)
-	}
-	if err := ChassisStatus(ctx, sess); err != nil {
-		fmt.Printf("failed to get chassis status: %v\n", err)
-	}
-}
-
-func ASFPresencePongCapabilities(ctx context.Context, t transport.Transport) error {
-	pong, err := presencePing(ctx, t)
-	if err != nil {
-		return err
+	if id, err := sess.GetDeviceID(ctx); err != nil {
+		log.Printf("failed to get device id: %v", err)
+	} else {
+		printDeviceID(id)
 	}
 
-	fmt.Println("ASF Presence Pong capabilities:")
-	fmt.Printf("\tIPMI:               %v\n", pong.IPMI)
-	fmt.Printf("\tASF v1.0:           %v\n", pong.ASFv1)
-	fmt.Printf("\tASF security exts:  %v\n", pong.SecurityExtensions) // means the BMC uses the secure port in addition to the normal one
-	fmt.Printf("\tDASH:               %v\n", pong.DASH)
-	fmt.Printf("\tDCMI:               %v\n", pong.SupportsDCMI())
-	return nil
+	if status, err := sess.GetChassisStatus(ctx); err != nil {
+		log.Printf("failed to get chassis status: %v", err)
+	} else {
+		printChassisStatus(status)
+	}
 }
 
 func presencePing(ctx context.Context, t transport.Transport) (*layers.ASFPresencePong, error) {
@@ -122,40 +128,34 @@ func presencePing(ctx context.Context, t transport.Transport) (*layers.ASFPresen
 	return pongLayer.(*layers.ASFPresencePong), nil
 }
 
-func ChannelAuthenticationCapabilities(ctx context.Context, s bmc.Sessionless) error {
-	caps, err := s.GetChannelAuthenticationCapabilities(ctx,
-		&ipmi.GetChannelAuthenticationCapabilitiesReq{
-			ExtendedData:      true, // only has effect if v2.0
-			Channel:           ipmi.ChannelPresentInterface,
-			MaxPrivilegeLevel: ipmi.PrivilegeLevelAdministrator,
-		})
-	if err != nil {
-		return err
-	}
-	fmt.Println("Channel Authentication Capabilities:")
-	fmt.Printf("\tChannel:            %v\n", caps.Channel)
-	fmt.Printf("\tExtended:           %v\n", caps.ExtendedCapabilities)
-	fmt.Printf("\tSupportsV2:         %v\n", caps.SupportsV2)
-	fmt.Printf("\tK_G configured:     %v\n", caps.TwoKeyLogin)
-	fmt.Printf("\tPer-message auth:   %v\n", caps.PerMessageAuthentication)
-	fmt.Printf("\tUser-level auth:    %v\n", caps.UserLevelAuthentication)
-	fmt.Printf("\tNon-null usernames: %v\n", caps.NonNullUsernamesEnabled)
-	fmt.Printf("\tNull usernames:     %v\n", caps.NullUsernamesEnabled)
-	fmt.Printf("\tAnon login:         %v\n", caps.AnonymousLoginEnabled)
-	fmt.Printf("\tOEM:                %v\n", caps.OEM)
-	return nil
+func printPong(p *layers.ASFPresencePong) {
+	fmt.Println("ASF Presence Pong capabilities:")
+	fmt.Printf("\tIPMI:               %v\n", p.IPMI)
+	fmt.Printf("\tASF v1.0:           %v\n", p.ASFv1)
+	fmt.Printf("\tASF security exts:  %v\n", p.SecurityExtensions) // means the BMC uses the secure port in addition to the normal one
+	fmt.Printf("\tDASH:               %v\n", p.DASH)
+	fmt.Printf("\tDCMI:               %v\n", p.SupportsDCMI())
 }
 
-func SystemGUID(ctx context.Context, s bmc.Sessionless) error {
-	guid, err := s.GetSystemGUID(ctx)
-	if err != nil {
-		return err
-	}
+func printChannelAuthCaps(c *ipmi.GetChannelAuthenticationCapabilitiesRsp) {
+	fmt.Println("Channel Authentication Capabilities:")
+	fmt.Printf("\tChannel:            %v\n", c.Channel)
+	fmt.Printf("\tExtended:           %v\n", c.ExtendedCapabilities)
+	fmt.Printf("\tSupportsV2:         %v\n", c.SupportsV2)
+	fmt.Printf("\tK_G configured:     %v\n", c.TwoKeyLogin)
+	fmt.Printf("\tPer-message auth:   %v\n", c.PerMessageAuthentication)
+	fmt.Printf("\tUser-level auth:    %v\n", c.UserLevelAuthentication)
+	fmt.Printf("\tNon-null usernames: %v\n", c.NonNullUsernamesEnabled)
+	fmt.Printf("\tNull usernames:     %v\n", c.NullUsernamesEnabled)
+	fmt.Printf("\tAnon login:         %v\n", c.AnonymousLoginEnabled)
+	fmt.Printf("\tOEM:                %v\n", c.OEM)
+}
+
+func printSystemGUID(guid [16]byte) {
 	buf := [36]byte{}
 	encodeHex(buf[:], guid)
 	fmt.Println("System:")
 	fmt.Printf("\tGUID:               %v\n", string(buf[:]))
-	return nil
 }
 
 func encodeHex(dst []byte, guid [16]byte) {
@@ -170,31 +170,20 @@ func encodeHex(dst []byte, guid [16]byte) {
 	hex.Encode(dst[24:], guid[10:])
 }
 
-func DCMICapabilities(ctx context.Context, s bmc.Sessionless) error {
-	commander := dcmi.SessionlessCommander(s)
-	caps, err := commander.GetDCMICapabilitiesInfo(ctx)
-	if err != nil {
-		return err
-	}
-
+func printDCMICaps(c *dcmi.GetDCMICapabilitiesInfoRsp) {
 	fmt.Println("DCMI:")
-	fmt.Printf("\tMajor version:      %v\n", caps.MajorVersion)
-	fmt.Printf("\tMinor version:      %v\n", caps.MinorVersion)
-	fmt.Printf("\tSupports pwr mgmt:  %v\n", caps.PowerManagement)
-	fmt.Printf("\tMax SEL entries:    %v\n", caps.SELMaxEntries)
-	fmt.Printf("\tTemp sampling freq: %v\n", caps.TemperatureSamplingFrequency)
+	fmt.Printf("\tMajor version:      %v\n", c.MajorVersion)
+	fmt.Printf("\tMinor version:      %v\n", c.MinorVersion)
+	fmt.Printf("\tSupports pwr mgmt:  %v\n", c.PowerManagement)
+	fmt.Printf("\tMax SEL entries:    %v\n", c.SELMaxEntries)
+	fmt.Printf("\tTemp sampling freq: %v\n", c.TemperatureSamplingFrequency)
 	fmt.Println("\tPower time periods:")
-	for _, duration := range caps.PowerRollingAvgTimePeriods {
+	for _, duration := range c.PowerRollingAvgTimePeriods {
 		fmt.Printf("\t\t%v\n", duration)
 	}
-	return nil
 }
 
-func DeviceID(ctx context.Context, s bmc.Session) error {
-	id, err := s.GetDeviceID(ctx)
-	if err != nil {
-		return err
-	}
+func printDeviceID(id *ipmi.GetDeviceIDRsp) {
 	fmt.Println("Device:")
 	fmt.Printf("\tID:                 %v\n", id.ID)
 	fmt.Printf("\tRevision:           %v\n", id.Revision)
@@ -204,14 +193,9 @@ func DeviceID(ctx context.Context, s bmc.Session) error {
 	fmt.Printf("\tFirmware (minor):   %v\n", id.MinorFirmwareRevision)
 	fmt.Printf("\tFirmware (aux):     %v\n", hex.EncodeToString(id.AuxiliaryFirmwareRevision[:]))
 	fmt.Printf("\tFirmware:           %v\n", bmc.FirmwareVersion(id))
-	return nil
 }
 
-func ChassisStatus(ctx context.Context, s bmc.Session) error {
-	status, err := s.GetChassisStatus(ctx)
-	if err != nil {
-		return err
-	}
+func printChassisStatus(status *ipmi.GetChassisStatusRsp) {
 	fmt.Println("Chassis:")
 	fmt.Printf("\tPowered on:         %v\n", status.PoweredOn)
 	fmt.Printf("\tOn power restore:   %v\n", status.PowerRestorePolicy)
@@ -220,5 +204,4 @@ func ChassisStatus(ctx context.Context, s bmc.Session) error {
 	fmt.Printf("\tPower fault:        %v\n", status.PowerFault)
 	fmt.Printf("\tCooling fault:      %v\n", status.CoolingFault)
 	fmt.Printf("\tDrive fault:        %v\n", status.DriveFault)
-	return nil
 }
