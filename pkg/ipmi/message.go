@@ -71,8 +71,8 @@ type Message struct {
 	// this checksum is incorrect, the BMC drops the packet.
 	Checksum1 uint8
 
-	// LocalAddress is the slave address or software ID of the requester if this
-	// is a response, or responder if this is a request.
+	// LocalAddress is the slave address or software ID of the responder if this
+	// is a response, or requester if this is a request.
 	LocalAddress Address
 
 	// LocalLUN is the logical unit number of the requester if this is a
