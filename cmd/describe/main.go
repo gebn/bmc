@@ -13,6 +13,7 @@ import (
 
 	"github.com/gebn/bmc"
 	"github.com/gebn/bmc/internal/pkg/transport"
+	"github.com/gebn/bmc/pkg/dcmi"
 	"github.com/gebn/bmc/pkg/ipmi"
 
 	"github.com/alecthomas/kingpin"
@@ -54,6 +55,9 @@ func main() {
 	}
 	if err := SystemGUID(ctx, machine); err != nil {
 		fmt.Printf("failed to get system GUID: %v\n", err)
+	}
+	if err := DCMICapabilities(ctx, machine); err != nil {
+		fmt.Printf("failed to get DCMI capabilities: %v\n", err)
 	}
 
 	sess, err := machine.NewSession(ctx, *flgUsername, []byte(*flgPassword))
@@ -164,6 +168,26 @@ func encodeHex(dst []byte, guid [16]byte) {
 	hex.Encode(dst[19:23], guid[8:10])
 	dst[23] = '-'
 	hex.Encode(dst[24:], guid[10:])
+}
+
+func DCMICapabilities(ctx context.Context, s bmc.Sessionless) error {
+	commander := dcmi.SessionlessCommander(s)
+	caps, err := commander.GetDCMICapabilitiesInfo(ctx)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("DCMI:")
+	fmt.Printf("\tMajor version:      %v\n", caps.MajorVersion)
+	fmt.Printf("\tMinor version:      %v\n", caps.MinorVersion)
+	fmt.Printf("\tSupports pwr mgmt:  %v\n", caps.PowerManagement)
+	fmt.Printf("\tMax SEL entries:    %v\n", caps.SELMaxEntries)
+	fmt.Printf("\tTemp sampling freq: %v\n", caps.TemperatureSamplingFrequency)
+	fmt.Println("\tPower time periods:")
+	for _, duration := range caps.PowerRollingAvgTimePeriods {
+		fmt.Printf("\t\t%v\n", duration)
+	}
+	return nil
 }
 
 func DeviceID(ctx context.Context, s bmc.Session) error {
