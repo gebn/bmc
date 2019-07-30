@@ -13,6 +13,13 @@ import (
 // (session-based) channel.
 type Channel uint8
 
+// Valid returns whether a given channel number is valid, which is in the range
+// 0 through 0xf. Values outside of this range should be regarded as an
+// indication of lack of support.
+func (c Channel) Valid() bool {
+	return c <= 0xf
+}
+
 func (c Channel) String() string {
 	return fmt.Sprintf("%#x(%v)", uint8(c), c.name())
 }
