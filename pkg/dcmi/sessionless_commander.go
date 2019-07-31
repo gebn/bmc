@@ -10,14 +10,31 @@ type sessionlessCommander struct {
 	bmc.Sessionless
 }
 
-func (s sessionlessCommander) GetDCMICapabilitiesInfo(ctx context.Context) (*GetDCMICapabilitiesInfoRsp, error) {
-	cmd := &GetDCMICapabilitiesInfoCmd{}
-	// technically, DCMI uses a different set of codes, but the overlap is
-	// great enough that this does not need to be accounted for
-	if err := bmc.ValidateResponse(s.Sessionless.SendCommand(ctx, cmd)); err != nil {
-		return nil, err
-	}
-	return &cmd.Rsp, nil
+func (s sessionlessCommander) GetDCMICapabilitiesInfoSupportedCapabilities(ctx context.Context) (*GetDCMICapabilitiesInfoSupportedCapabilitiesRsp, error) {
+	cmd := NewGetDCMICapabilitiesInfoSupportedCapabilitiesCmd()
+	// technically, DCMI uses a different set of codes, but all we're doing here
+	// is checking for CompletionCodeNormal
+	return &cmd.Rsp, bmc.ValidateResponse(s.Sessionless.SendCommand(ctx, cmd))
+}
+
+func (s sessionlessCommander) GetDCMICapabilitiesInfoMandatoryPlatformAttrs(ctx context.Context) (*GetDCMICapabilitiesInfoMandatoryPlatformAttrsRsp, error) {
+	cmd := NewGetDCMICapabilitiesInfoMandatoryPlatformAttrsCmd()
+	return &cmd.Rsp, bmc.ValidateResponse(s.Sessionless.SendCommand(ctx, cmd))
+}
+
+func (s sessionlessCommander) GetDCMICapabilitiesInfoOptionalPlatformAttrs(ctx context.Context) (*GetDCMICapabilitiesInfoOptionalPlatformAttrsRsp, error) {
+	cmd := NewGetDCMICapabilitiesInfoOptionalPlatformAttrsCmd()
+	return &cmd.Rsp, bmc.ValidateResponse(s.Sessionless.SendCommand(ctx, cmd))
+}
+
+func (s sessionlessCommander) GetDCMICapabilitiesInfoManageabilityAccessAttrs(ctx context.Context) (*GetDCMICapabilitiesInfoManageabilityAccessAttrsRsp, error) {
+	cmd := NewGetDCMICapabilitiesInfoManageabilityAccessAttrsCmd()
+	return &cmd.Rsp, bmc.ValidateResponse(s.Sessionless.SendCommand(ctx, cmd))
+}
+
+func (s sessionlessCommander) GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrs(ctx context.Context) (*GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsRsp, error) {
+	cmd := NewGetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsCmd()
+	return &cmd.Rsp, bmc.ValidateResponse(s.Sessionless.SendCommand(ctx, cmd))
 }
 
 // SessionlessCommander wraps a session-less connection in a context that

@@ -70,10 +70,15 @@ func main() {
 		printSystemGUID(guid)
 	}
 
-	if caps, err := dcmi.SessionlessCommander(machine).GetDCMICapabilitiesInfo(ctx); err != nil {
-		log.Printf("failed to get DCMI capabilities: %v", err)
-	} else {
-		printDCMICaps(caps)
+	c, m, p := getDCMICaps(ctx, machine)
+	if c != nil {
+		printDCMICaps(c)
+	}
+	if m != nil {
+		printDCMIPlatformAttrs(m)
+	}
+	if p != nil {
+		printDCMIPowerPeriods(p)
 	}
 
 	sess, err := machine.NewSession(ctx, *flgUsername, []byte(*flgPassword))
@@ -170,16 +175,44 @@ func encodeHex(dst []byte, guid [16]byte) {
 	hex.Encode(dst[24:], guid[10:])
 }
 
-func printDCMICaps(c *dcmi.GetDCMICapabilitiesInfoRsp) {
-	fmt.Println("DCMI:")
+func getDCMICaps(ctx context.Context, s bmc.Sessionless) (
+	*dcmi.GetDCMICapabilitiesInfoSupportedCapabilitiesRsp,
+	*dcmi.GetDCMICapabilitiesInfoMandatoryPlatformAttrsRsp,
+	*dcmi.GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsRsp,
+) {
+	commander := dcmi.SessionlessCommander(s)
+	c, err := commander.GetDCMICapabilitiesInfoSupportedCapabilities(ctx)
+	if err != nil {
+		log.Printf("failed to fetch DCMI supported capabilities: %v", err)
+	}
+	m, err := commander.GetDCMICapabilitiesInfoMandatoryPlatformAttrs(ctx)
+	if err != nil {
+		log.Printf("failed to fetch DCMI mandatory platform attrs: %v", err)
+	}
+	p, err := commander.GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrs(ctx)
+	if err != nil {
+		log.Printf("failed to fetch DCMI enhanced power stats attrs: %v", err)
+	}
+	return c, m, p
+}
+
+func printDCMICaps(c *dcmi.GetDCMICapabilitiesInfoSupportedCapabilitiesRsp) {
+	fmt.Println("DCMI Capabilities:")
 	fmt.Printf("\tMajor version:      %v\n", c.MajorVersion)
 	fmt.Printf("\tMinor version:      %v\n", c.MinorVersion)
 	fmt.Printf("\tSupports pwr mgmt:  %v\n", c.PowerManagement)
-	fmt.Printf("\tMax SEL entries:    %v\n", c.SELMaxEntries)
-	fmt.Printf("\tTemp sampling freq: %v\n", c.TemperatureSamplingFrequency)
-	fmt.Println("\tPower time periods:")
-	for _, duration := range c.PowerRollingAvgTimePeriods {
-		fmt.Printf("\t\t%v\n", duration)
+}
+
+func printDCMIPlatformAttrs(m *dcmi.GetDCMICapabilitiesInfoMandatoryPlatformAttrsRsp) {
+	fmt.Println("DCMI Mandatory Platform Attributes:")
+	fmt.Printf("\tMax SEL entries:    %v\n", m.SELMaxEntries)
+	fmt.Printf("\tTemp sampling freq: %v\n", m.TemperatureSamplingFrequency)
+}
+
+func printDCMIPowerPeriods(p *dcmi.GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsRsp) {
+	fmt.Println("DCMI Power Average Time Periods:")
+	for _, duration := range p.PowerRollingAvgTimePeriods {
+		fmt.Printf("\t%v\n", duration)
 	}
 }
 

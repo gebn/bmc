@@ -6,6 +6,7 @@ go_library(
         "get_dcmi_capabilities_info.go",
         "layer_types.go",
         "operations.go",
+        "rolling_average.go",
         "session_commander.go",
         "session_commands.go",
         "sessionless_commander.go",
@@ -24,7 +25,10 @@ go_library(
 
 go_test(
     name = "go_default_test",
-    srcs = ["get_dcmi_capabilities_info_test.go"],
+    srcs = [
+        "get_dcmi_capabilities_info_test.go",
+        "rolling_average_test.go",
+    ],
     embed = [":go_default_library"],
     deps = [
         "//pkg/ipmi:go_default_library",

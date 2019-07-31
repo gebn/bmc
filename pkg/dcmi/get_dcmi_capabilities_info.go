@@ -11,6 +11,37 @@ import (
 	"github.com/google/gopacket/layers"
 )
 
+// CapabilitiesParameter is a kind of sub-command number within the Get DCMI
+// Capabilities request. This seems to be an effort by the spec to keep packets
+// as small as possible, but is a pain as we effectively have to send up to 5
+// packets to discover all capabilities. To address this madness, this library
+// does something equally mad and implements each parameter as its own command,
+// as there is no way to know from a response packet alone which parameter was
+// requested.
+type CapabilitiesParameter uint8
+
+// description returns the human-readable name of each parameter.
+func (s CapabilitiesParameter) description() string {
+	switch s {
+	case 1:
+		return "Supported DCMI Capabilities"
+	case 2:
+		return "Mandatory Platform Attributes"
+	case 3:
+		return "Optional Platform Attributes"
+	case 4:
+		return "Manageability Access Attributes"
+	case 5:
+		return "Enhanced System Power Statistics Attributes"
+	default:
+		return "Unknown"
+	}
+}
+
+func (s CapabilitiesParameter) String() string {
+	return fmt.Sprintf("%v(%v)", uint8(s), s.description())
+}
+
 // GetDCMICapabilitiesInfoReq represents the Get DCMI Capabilities Info request,
 // specified in 6.1. This is a session-less command, but the spec explicitly
 // says it can be executed inside a session at any privilege level.
@@ -24,9 +55,12 @@ import (
 type GetDCMICapabilitiesInfoReq struct {
 	layers.BaseLayer
 
-	// can't actually parse what this is from the spec; leaving as the default
-	// seems fine
-	ParameterSelector uint8
+	// Parameter specifies the type of attributes or capabilities desired. This
+	// command returns one of several different possible pieces of information
+	// depending on this value, e.g. supported DCMI capabilities, platform
+	// attributes and access attributes. The response layer formats for the
+	// different selector values are specified in Table 6-3.
+	Parameter CapabilitiesParameter
 }
 
 func (*GetDCMICapabilitiesInfoReq) LayerType() gopacket.LayerType {
@@ -38,16 +72,14 @@ func (g *GetDCMICapabilitiesInfoReq) SerializeTo(b gopacket.SerializeBuffer, _ g
 	if err != nil {
 		return err
 	}
-	bytes[0] = g.ParameterSelector
+	bytes[0] = uint8(g.Parameter)
 	return nil
 }
 
-// GetDCMICapabilitiesInfoRsp represents the response to a Get DCMI Capabilities
-// Info request, specified in 6.1.
-type GetDCMICapabilitiesInfoRsp struct {
-	layers.BaseLayer
-
-	// Supported DCMI Capabilities
+// getDCMICapabilitiesInfoRsp represents the header of the response to a Get
+// DCMI Capabilities Info request, specified in 6.1. The rest of the header is
+// dictated by the parameter specified in the request. Note this is not a layer.
+type getDCMICapabilitiesInfoRspHeader struct {
 
 	// MajorVersion gives the major version of DCMI spec conformance. This will
 	// be 0x01 in all known implementations.
@@ -59,6 +91,27 @@ type GetDCMICapabilitiesInfoRsp struct {
 
 	// Revision is the parameter revision. This is always 0x02.
 	Revision uint8
+}
+
+// Decode decodes the header and returns the remaining bytes (which could be
+// empty), or nil if an error occurs.
+func (g *getDCMICapabilitiesInfoRspHeader) Decode(data []byte, df gopacket.DecodeFeedback) ([]byte, error) {
+	if len(data) < 3 {
+		df.SetTruncated()
+		return nil, fmt.Errorf("invalid response header, got length %v, need 3", len(data))
+	}
+
+	g.MajorVersion = uint8(data[0])
+	g.MinorVersion = uint8(data[1])
+	g.Revision = uint8(data[2])
+	return data[3:], nil
+}
+
+// GetDCMICapabilitiesInfoSupportedCapabilitiesRsp is returned when a Get DCMI
+// Capabilities Info request is sent with parameter 1.
+type GetDCMICapabilitiesInfoSupportedCapabilitiesRsp struct {
+	layers.BaseLayer
+	getDCMICapabilitiesInfoRspHeader
 
 	// PowerManagement indicates whether the server supports the power
 	// management platform capability.
@@ -75,8 +128,49 @@ type GetDCMICapabilitiesInfoRsp struct {
 	// IBSystemInterfaceChannelAvailable indicates whether an in-band system
 	// interface channel is available.
 	IBSystemInterfaceChannelAvailable bool
+}
 
-	// Mandatory Platform Attributes
+func (*GetDCMICapabilitiesInfoSupportedCapabilitiesRsp) LayerType() gopacket.LayerType {
+	return layerTypeGetDCMICapabilitiesInfoSupportedCapabilitiesRsp
+}
+
+func (g *GetDCMICapabilitiesInfoSupportedCapabilitiesRsp) CanDecode() gopacket.LayerClass {
+	return g.LayerType()
+}
+
+func (*GetDCMICapabilitiesInfoSupportedCapabilitiesRsp) NextLayerType() gopacket.LayerType {
+	return gopacket.LayerTypePayload
+}
+
+func (g *GetDCMICapabilitiesInfoSupportedCapabilitiesRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
+	body, err := g.Decode(data, df)
+	if err != nil {
+		return err
+	}
+
+	minBodyLength := 3
+	if len(body) < minBodyLength {
+		df.SetTruncated()
+		return fmt.Errorf("invalid capabilities response: need at least %v bytes, got %v",
+			minBodyLength, len(body))
+	}
+
+	g.PowerManagement = body[1]&1 != 0
+	g.OOBSecondaryLANChannelAvailable = body[2]&(1<<2) != 0
+	g.SerialTMODEAvailable = body[2]&(1<<1) != 0
+	g.IBSystemInterfaceChannelAvailable = body[2]&1 != 0
+
+	g.Contents = data[:len(data)-len(body)+minBodyLength]
+	g.Payload = body[minBodyLength:]
+
+	return nil
+}
+
+// GetDCMICapabilitiesInfoMandatoryPlatformAttrsRsp is returned when a Get DCMI
+// Capabilities Info request is sent with parameter 2.
+type GetDCMICapabilitiesInfoMandatoryPlatformAttrsRsp struct {
+	layers.BaseLayer
+	getDCMICapabilitiesInfoRspHeader
 
 	// SELAutoRollover indicates whether SEL automatic rollover is enabled, also
 	// known as SEL overwrite.
@@ -102,8 +196,50 @@ type GetDCMICapabilitiesInfoRsp struct {
 	// temperature samples. This will be a whole number of seconds between 0 and
 	// 255.
 	TemperatureSamplingFrequency time.Duration
+}
 
-	// Optional Platform Attributes
+func (*GetDCMICapabilitiesInfoMandatoryPlatformAttrsRsp) LayerType() gopacket.LayerType {
+	return layerTypeGetDCMICapabilitiesInfoMandatoryPlatformAttrsRsp
+}
+
+func (g *GetDCMICapabilitiesInfoMandatoryPlatformAttrsRsp) CanDecode() gopacket.LayerClass {
+	return g.LayerType()
+}
+
+func (*GetDCMICapabilitiesInfoMandatoryPlatformAttrsRsp) NextLayerType() gopacket.LayerType {
+	return gopacket.LayerTypePayload
+}
+
+func (g *GetDCMICapabilitiesInfoMandatoryPlatformAttrsRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
+	body, err := g.Decode(data, df)
+	if err != nil {
+		return err
+	}
+
+	minBodyLength := 5
+	if len(body) < minBodyLength {
+		df.SetTruncated()
+		return fmt.Errorf("invalid capabilities response: need at least %v bytes, got %v",
+			minBodyLength, len(body))
+	}
+
+	g.SELAutoRollover = body[0]&(1<<7) != 0
+	g.SELFlushOnRollover = body[0]&(1<<6) != 0
+	g.SELRecordLevelFlushOnRollover = body[0]&(1<<5) != 0
+	g.SELMaxEntries = binary.LittleEndian.Uint16([]byte{body[0] & 0xf, body[1]})
+	g.TemperatureSamplingFrequency = time.Second * time.Duration(body[4])
+
+	g.Contents = data[:len(data)-len(body)+minBodyLength]
+	g.Payload = body[minBodyLength:]
+
+	return nil
+}
+
+// GetDCMICapabilitiesInfoOptionalPlatformAttrsRsp is returned when a Get DCMI
+// Capabilities Info request is sent with parameter 3.
+type GetDCMICapabilitiesInfoOptionalPlatformAttrsRsp struct {
+	layers.BaseLayer
+	getDCMICapabilitiesInfoRspHeader
 
 	// PowerManagementSlaveAddress gives the 7-bit I2C slave address of the
 	// power management device on the IPMB.
@@ -116,8 +252,48 @@ type GetDCMICapabilitiesInfoRsp struct {
 	// PowerManagementRevision is the power management controller device
 	// revision.
 	PowerManagementRevision uint8
+}
 
-	// Manageability Access Attributes
+func (*GetDCMICapabilitiesInfoOptionalPlatformAttrsRsp) LayerType() gopacket.LayerType {
+	return layerTypeGetDCMICapabilitiesInfoOptionalPlatformAttrsRsp
+}
+
+func (g *GetDCMICapabilitiesInfoOptionalPlatformAttrsRsp) CanDecode() gopacket.LayerClass {
+	return g.LayerType()
+}
+
+func (*GetDCMICapabilitiesInfoOptionalPlatformAttrsRsp) NextLayerType() gopacket.LayerType {
+	return gopacket.LayerTypePayload
+}
+
+func (g *GetDCMICapabilitiesInfoOptionalPlatformAttrsRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
+	body, err := g.Decode(data, df)
+	if err != nil {
+		return err
+	}
+
+	minBodyLength := 2
+	if len(body) < minBodyLength {
+		df.SetTruncated()
+		return fmt.Errorf("invalid capabilities response: need at least %v bytes, got %v",
+			minBodyLength, len(body))
+	}
+
+	g.PowerManagementSlaveAddress = ipmi.SlaveAddress(body[0] >> 1)
+	g.PowerManagementChannel = ipmi.Channel(body[1] >> 4)
+	g.PowerManagementRevision = uint8(body[1] & 0xf)
+
+	g.Contents = data[:len(data)-len(body)+minBodyLength]
+	g.Payload = body[minBodyLength:]
+
+	return nil
+}
+
+// GetDCMICapabilitiesInfoManageabilityAccessAttrsRsp is returned when a Get
+// DCMI Capabilities Info request is sent with parameter 4.
+type GetDCMICapabilitiesInfoManageabilityAccessAttrsRsp struct {
+	layers.BaseLayer
+	getDCMICapabilitiesInfoRspHeader
 
 	// PrimaryLANOOBChannel is the primary LAN OOB channel number. This will
 	// only be a valid channel number for systems supporting RMCP+. 0xff
@@ -133,8 +309,48 @@ type GetDCMICapabilitiesInfoRsp struct {
 	// optional, and so may give an invalid channel number on all systems. 0xff
 	// indicates not supported; use Valid() to test.
 	SerialOOBChannel ipmi.Channel
+}
 
-	// Enhanced System Power Statistics (optional)
+func (*GetDCMICapabilitiesInfoManageabilityAccessAttrsRsp) LayerType() gopacket.LayerType {
+	return layerTypeGetDCMICapabilitiesInfoManageabilityAccessAttrsRsp
+}
+
+func (g *GetDCMICapabilitiesInfoManageabilityAccessAttrsRsp) CanDecode() gopacket.LayerClass {
+	return g.LayerType()
+}
+
+func (*GetDCMICapabilitiesInfoManageabilityAccessAttrsRsp) NextLayerType() gopacket.LayerType {
+	return gopacket.LayerTypePayload
+}
+
+func (g *GetDCMICapabilitiesInfoManageabilityAccessAttrsRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
+	body, err := g.Decode(data, df)
+	if err != nil {
+		return err
+	}
+
+	minBodyLength := 3
+	if len(body) < minBodyLength {
+		df.SetTruncated()
+		return fmt.Errorf("invalid capabilities response: need at least %v bytes, got %v",
+			minBodyLength, len(body))
+	}
+
+	g.PrimaryLANOOBChannel = ipmi.Channel(body[0])
+	g.SecondaryLANOOBChannel = ipmi.Channel(body[1])
+	g.SerialOOBChannel = ipmi.Channel(body[2])
+
+	g.Contents = data[:len(data)-len(body)+minBodyLength]
+	g.Payload = body[minBodyLength:]
+
+	return nil
+}
+
+// GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsRsp is returned when
+// a Get DCMI Capabilities Info request is sent with parameter 5.
+type GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsRsp struct {
+	layers.BaseLayer
+	getDCMICapabilitiesInfoRspHeader
 
 	// PowerRollingAvgTimePeriods returns the supported rolling average time
 	// periods that can be requested with the Get Power Reading command. This
@@ -145,112 +361,170 @@ type GetDCMICapabilitiesInfoRsp struct {
 	PowerRollingAvgTimePeriods []time.Duration
 }
 
-func (*GetDCMICapabilitiesInfoRsp) LayerType() gopacket.LayerType {
-	return layerTypeGetDCMICapabilitiesInfoRsp
+func (*GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsRsp) LayerType() gopacket.LayerType {
+	return layerTypeGetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsRsp
 }
 
-func (g *GetDCMICapabilitiesInfoRsp) CanDecode() gopacket.LayerClass {
+func (g *GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsRsp) CanDecode() gopacket.LayerClass {
 	return g.LayerType()
 }
 
-func (*GetDCMICapabilitiesInfoRsp) NextLayerType() gopacket.LayerType {
+func (*GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsRsp) NextLayerType() gopacket.LayerType {
 	return gopacket.LayerTypePayload
 }
 
-func (g *GetDCMICapabilitiesInfoRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
-	// field lengths: 3 + 3 + 5 + 2 + 3 + (1+)
-	if len(data) < 16 {
-		df.SetTruncated()
-		return fmt.Errorf("invalid command response, got length %v, need at least 16", len(data))
+func (g *GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
+	body, err := g.Decode(data, df)
+	if err != nil {
+		return err
 	}
 
-	g.MajorVersion = uint8(data[0])
-	g.MinorVersion = uint8(data[1])
-	g.Revision = uint8(data[2])
+	minBodyLength := 1
+	if len(body) < minBodyLength {
+		df.SetTruncated()
+		return fmt.Errorf("invalid capabilities response: need at least %v bytes, got %v",
+			minBodyLength, len(body))
+	}
 
-	g.PowerManagement = data[4]&1 != 0
-	g.OOBSecondaryLANChannelAvailable = data[5]&(1<<2) != 0
-	g.SerialTMODEAvailable = data[5]&(1<<1) != 0
-	g.IBSystemInterfaceChannelAvailable = data[5]&1 != 0
-
-	g.SELAutoRollover = data[6]&(1<<7) != 0
-	g.SELFlushOnRollover = data[6]&(1<<6) != 0
-	g.SELRecordLevelFlushOnRollover = data[6]&(1<<5) != 0
-	g.SELMaxEntries = binary.LittleEndian.Uint16([]byte{data[6] & 0xf, data[7]})
-	g.TemperatureSamplingFrequency = time.Second * time.Duration(data[10])
-
-	g.PowerManagementSlaveAddress = ipmi.SlaveAddress(data[11] >> 1)
-	g.PowerManagementChannel = ipmi.Channel(data[12] >> 4)
-	g.PowerManagementRevision = uint8(data[12] & 0xf)
-
-	g.PrimaryLANOOBChannel = ipmi.Channel(data[13])
-	g.SecondaryLANOOBChannel = ipmi.Channel(data[14])
-	g.SerialOOBChannel = ipmi.Channel(data[15])
-
-	if len(data) > 16 {
-		// supports enhanced system power stats
-		periods := int(data[16])
-		if len(data) < 17+periods {
-			df.SetTruncated()
-			return fmt.Errorf("managed system indicated %v supported rolling "+
-				"average time periods, but only room for %v in payload of "+
-				"length %v", periods, len(data)-17, len(data))
-		}
+	periods := int(body[0])
+	switch {
+	case periods == 0:
+		g.PowerRollingAvgTimePeriods = g.PowerRollingAvgTimePeriods[:0]
+	case len(body) < 1+periods:
+		df.SetTruncated()
+		return fmt.Errorf("managed system indicated %v supported rolling "+
+			"average time periods, but only room for %v in payload of length "+
+			"%v", periods, len(body)-1, len(body))
+	default:
 		g.PowerRollingAvgTimePeriods = make([]time.Duration, periods)
 		for i := 0; i < periods; i++ {
-			unit := uint8(data[17+i] >> 6)  // top 2 bits
-			value := int(data[17+i] & 0x3f) // bottom 6 bits
-			seconds := value * secondsMultiplier(unit)
-			g.PowerRollingAvgTimePeriods[i] = time.Second * time.Duration(seconds)
+			g.PowerRollingAvgTimePeriods[i] = rollingAvgPeriodDuration(body[1+i])
 		}
-		g.BaseLayer.Contents = data[:17+periods]
-		g.BaseLayer.Payload = data[17+periods:]
-	} else {
-		g.PowerRollingAvgTimePeriods = g.PowerRollingAvgTimePeriods[:0]
-		g.BaseLayer.Contents = data
-		g.BaseLayer.Payload = nil
 	}
+
+	g.Contents = data[:len(data)-len(body)+minBodyLength+periods]
+	g.Payload = body[minBodyLength+periods:]
+
 	return nil
 }
 
-// secondsMultiplier parses the 2-bit time duration unit, returning a number to
-// multiply the time duration with in order to provide the duration in seconds.
-// Only the two LSBs of the input are interpreted.
-func secondsMultiplier(unit uint8) int {
-	switch unit {
-	case 0:
-		// 0b00: seconds
-		return 1
-	case 1:
-		// 0b01: minutes
-		return 60
-	case 2:
-		// 0b10: hours
-		return 60 * 60
-	default: // inc. 3
-		// 0b11: days
-		return 60 * 60 * 24
-	}
-}
+type getDCMICapabilitiesInfoCmd GetDCMICapabilitiesInfoReq
 
-type GetDCMICapabilitiesInfoCmd struct {
-	Req GetDCMICapabilitiesInfoReq
-	Rsp GetDCMICapabilitiesInfoRsp
-}
-
-// Name returns "Get DCMI Capabilities Info".
-func (*GetDCMICapabilitiesInfoCmd) Name() string {
-	return "Get DCMI Capabilities Info"
-}
-
-func (*GetDCMICapabilitiesInfoCmd) Operation() *ipmi.Operation {
+func (*getDCMICapabilitiesInfoCmd) Operation() *ipmi.Operation {
 	return &operationGetDCMICapabilitiesInfoReq
 }
 
-func (c *GetDCMICapabilitiesInfoCmd) Request() gopacket.SerializableLayer {
-	return &c.Req
+func (c *getDCMICapabilitiesInfoCmd) Request() gopacket.SerializableLayer {
+	return (*GetDCMICapabilitiesInfoReq)(c)
 }
 
-func (c *GetDCMICapabilitiesInfoCmd) Response() gopacket.DecodingLayer {
+type GetDCMICapabilitiesInfoSupportedCapabilitiesCmd struct {
+	getDCMICapabilitiesInfoCmd
+	Rsp GetDCMICapabilitiesInfoSupportedCapabilitiesRsp
+}
+
+func NewGetDCMICapabilitiesInfoSupportedCapabilitiesCmd() *GetDCMICapabilitiesInfoSupportedCapabilitiesCmd {
+	return &GetDCMICapabilitiesInfoSupportedCapabilitiesCmd{
+		getDCMICapabilitiesInfoCmd: getDCMICapabilitiesInfoCmd{
+			Parameter: 1,
+		},
+	}
+}
+
+// Name returns "Get DCMI Capabilities Info (Supported Capabilities)".
+func (*GetDCMICapabilitiesInfoSupportedCapabilitiesCmd) Name() string {
+	return "Get DCMI Capabilities Info (Supported Capabilities)"
+}
+
+func (c *GetDCMICapabilitiesInfoSupportedCapabilitiesCmd) Response() gopacket.DecodingLayer {
+	return &c.Rsp
+}
+
+type GetDCMICapabilitiesInfoMandatoryPlatformAttrsCmd struct {
+	getDCMICapabilitiesInfoCmd
+	Rsp GetDCMICapabilitiesInfoMandatoryPlatformAttrsRsp
+}
+
+func NewGetDCMICapabilitiesInfoMandatoryPlatformAttrsCmd() *GetDCMICapabilitiesInfoMandatoryPlatformAttrsCmd {
+	return &GetDCMICapabilitiesInfoMandatoryPlatformAttrsCmd{
+		getDCMICapabilitiesInfoCmd: getDCMICapabilitiesInfoCmd{
+			Parameter: 2,
+		},
+	}
+}
+
+// Name returns "Get DCMI Capabilities Info (Mandatory Platform Attributes)".
+func (*GetDCMICapabilitiesInfoMandatoryPlatformAttrsCmd) Name() string {
+	return "Get DCMI Capabilities Info (Mandatory Platform Attributes)"
+}
+
+func (c *GetDCMICapabilitiesInfoMandatoryPlatformAttrsCmd) Response() gopacket.DecodingLayer {
+	return &c.Rsp
+}
+
+type GetDCMICapabilitiesInfoOptionalPlatformAttrsCmd struct {
+	getDCMICapabilitiesInfoCmd
+	Rsp GetDCMICapabilitiesInfoOptionalPlatformAttrsRsp
+}
+
+func NewGetDCMICapabilitiesInfoOptionalPlatformAttrsCmd() *GetDCMICapabilitiesInfoOptionalPlatformAttrsCmd {
+	return &GetDCMICapabilitiesInfoOptionalPlatformAttrsCmd{
+		getDCMICapabilitiesInfoCmd: getDCMICapabilitiesInfoCmd{
+			Parameter: 3,
+		},
+	}
+}
+
+// Name returns "Get DCMI Capabilities Info (Optional Platform Attributes)".
+func (*GetDCMICapabilitiesInfoOptionalPlatformAttrsCmd) Name() string {
+	return "Get DCMI Capabilities Info (Optional Platform Attributes)"
+}
+
+func (c *GetDCMICapabilitiesInfoOptionalPlatformAttrsCmd) Response() gopacket.DecodingLayer {
+	return &c.Rsp
+}
+
+type GetDCMICapabilitiesInfoManageabilityAccessAttrsCmd struct {
+	getDCMICapabilitiesInfoCmd
+	Rsp GetDCMICapabilitiesInfoManageabilityAccessAttrsRsp
+}
+
+func NewGetDCMICapabilitiesInfoManageabilityAccessAttrsCmd() *GetDCMICapabilitiesInfoManageabilityAccessAttrsCmd {
+	return &GetDCMICapabilitiesInfoManageabilityAccessAttrsCmd{
+		getDCMICapabilitiesInfoCmd: getDCMICapabilitiesInfoCmd{
+			Parameter: 4,
+		},
+	}
+}
+
+// Name returns "Get DCMI Capabilities Info (Manageability Access Attributes)".
+func (*GetDCMICapabilitiesInfoManageabilityAccessAttrsCmd) Name() string {
+	return "Get DCMI Capabilities Info (Manageability Access Attributes)"
+}
+
+func (c *GetDCMICapabilitiesInfoManageabilityAccessAttrsCmd) Response() gopacket.DecodingLayer {
+	return &c.Rsp
+}
+
+type GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsCmd struct {
+	getDCMICapabilitiesInfoCmd
+	Rsp GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsRsp
+}
+
+func NewGetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsCmd() *GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsCmd {
+	return &GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsCmd{
+		getDCMICapabilitiesInfoCmd: getDCMICapabilitiesInfoCmd{
+			Parameter: 5,
+		},
+	}
+}
+
+// Name returns "Get DCMI Capabilities Info (Enhanced System Power Statistics
+// Attributes)".
+func (*GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsCmd) Name() string {
+	return "Get DCMI Capabilities Info (Enhanced System Power Statistics Attributes)"
+}
+
+func (c *GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsCmd) Response() gopacket.DecodingLayer {
 	return &c.Rsp
 }
