@@ -86,10 +86,12 @@ type getDCMICapabilitiesInfoRspHeader struct {
 	MajorVersion uint8
 
 	// MinorVersion gives the minor version of DCMI spec conformance. This will
-	// be either 0x01 or 0x05 in all known implementations.
+	// be either 0x00, 0x01 or 0x05 in known implementations.
 	MinorVersion uint8
 
-	// Revision is the parameter revision. This is always 0x02.
+	// Revision is the revision of the parameter data. This will be 0x01 for
+	// DCMI v1.0, or 0x02 for DCMI v1.1 and v1.5. Note this does not correspond
+	// to the revision of the overall spec implemented.
 	Revision uint8
 }
 
@@ -108,14 +110,59 @@ func (g *getDCMICapabilitiesInfoRspHeader) Decode(data []byte, df gopacket.Decod
 }
 
 // GetDCMICapabilitiesInfoSupportedCapabilitiesRsp is returned when a Get DCMI
-// Capabilities Info request is sent with parameter 1.
+// Capabilities Info request is sent with parameter 1. The returned capabilities
+// detail conformance to the spec for platform and manageability access.
 type GetDCMICapabilitiesInfoSupportedCapabilitiesRsp struct {
 	layers.BaseLayer
 	getDCMICapabilitiesInfoRspHeader
 
+	// Mandatory Platform Capabilities (v1.0). These fields were likely
+	// removed as they allow implementations to treat mandatory commands as
+	// optional.
+
+	// TemperatureMonitor indicates whether the system supports the temperature
+	// monitoring commands in Table 3-1 of v1.0. This is a v1.0-only field, but
+	// will be forced to true for v1.1 and v1.5 systems for backwards
+	// compatibility.
+	TemperatureMonitor bool
+
+	// ChassisPower indicates whether the system supports the chassis power
+	// commands in Table 3-1 of v1.0. This is a v1.0-only field, but will be
+	// forced to true for v1.1 and v1.5 systems for backwards compatibility.
+	ChassisPower bool
+
+	// SELLogging indicates whether the system supports the event logging
+	// commands in Table 3-1 of v1.0. This is a v1.0-only field, but will be
+	// forced to true for v1.1 and v1.5 systems for backwards compatibility.
+	SELLogging bool
+
+	// Identification indicates whether the system supports the identification
+	// commands in Table 3-1 of v1.0. This is a v1.0-only field, but will be
+	// forced to true for v1.1 and v1.5 systems for backwards compatibility.
+	Identification bool
+
+	// Optional Platform Capabilities
+
 	// PowerManagement indicates whether the server supports the power
 	// management platform capability.
 	PowerManagement bool
+
+	// Manageability Access Capabilities
+
+	// VLANCapable indicates whether the system supports VLANs. This is a
+	// v1.0-only field, and will be forced to true for v1.1 and v1.5 systems for
+	// backwards compatibility.
+	VLANCapable bool
+
+	// SOLSupportes indicates whether the system supports serial-over-LAN. This
+	// is a v1.0-only field, and will be forced to true for v1.1 and v1.5
+	// systems for backwards compatibility.
+	SOLSupported bool
+
+	// OOBPrimaryLANChannelAvailable indicates whether an Out-of-Band Primary
+	// LAN Channel is available. This is a v1.0-only field, and will be forced
+	// to true for v1.1 and v1.5 systems for backwards compatibility.
+	OOBPrimaryLANChannelAvailable bool
 
 	// OOBSecondaryLANChannelAvailable indicates whether an Out-of-Band
 	// Secondary (second) LAN Channel is available.
@@ -125,8 +172,14 @@ type GetDCMICapabilitiesInfoSupportedCapabilitiesRsp struct {
 	// port to the management controller.
 	SerialTMODEAvailable bool
 
+	// IBKCSChannelAvailable indicates whether an in-band KCS channel is
+	// available. This is a v1.0 field, forced to true for v1.1 and v1.5 for
+	// backwards compatibility.
+	IBKCSChannelAvailable bool
+
 	// IBSystemInterfaceChannelAvailable indicates whether an in-band system
-	// interface channel is available.
+	// interface channel is available. This will always be false for v1.0, which
+	// uses this bit for the KCS channel instead.
 	IBSystemInterfaceChannelAvailable bool
 }
 
@@ -155,10 +208,38 @@ func (g *GetDCMICapabilitiesInfoSupportedCapabilitiesRsp) DecodeFromBytes(data [
 			minBodyLength, len(body))
 	}
 
+	if g.MajorVersion == 1 && g.MinorVersion == 0 {
+		g.TemperatureMonitor = body[0]&(1<<3) != 0
+		g.ChassisPower = body[0]&(1<<2) != 0
+		g.SELLogging = body[0]&(1<<1) != 0
+		g.Identification = body[0]&1 != 0
+	} else {
+		g.TemperatureMonitor = true
+		g.ChassisPower = true
+		g.SELLogging = true
+		g.Identification = true
+	}
+
 	g.PowerManagement = body[1]&1 != 0
+
+	if g.MajorVersion == 1 && g.MinorVersion == 0 {
+		g.VLANCapable = body[2]&(1<<5) != 0
+		g.SOLSupported = body[2]&(1<<4) != 0
+		g.OOBPrimaryLANChannelAvailable = body[2]&(1<<3) != 0
+	} else {
+		g.VLANCapable = true
+		g.SOLSupported = true
+		g.OOBPrimaryLANChannelAvailable = true
+	}
 	g.OOBSecondaryLANChannelAvailable = body[2]&(1<<2) != 0
 	g.SerialTMODEAvailable = body[2]&(1<<1) != 0
-	g.IBSystemInterfaceChannelAvailable = body[2]&1 != 0
+	if g.MajorVersion == 1 && g.MinorVersion == 0 {
+		g.IBKCSChannelAvailable = body[2]&1 != 0
+		g.IBSystemInterfaceChannelAvailable = false
+	} else {
+		g.IBKCSChannelAvailable = true
+		g.IBSystemInterfaceChannelAvailable = body[2]&1 != 0
+	}
 
 	g.Contents = data[:len(data)-len(body)+minBodyLength]
 	g.Payload = body[minBodyLength:]
@@ -177,24 +258,58 @@ type GetDCMICapabilitiesInfoMandatoryPlatformAttrsRsp struct {
 	SELAutoRollover bool
 
 	// SELFlushOnRollover indicates whether, on rollover, the entire SEL is
-	// flushed. This should be ignored in SELAutoRollover is false.
+	// flushed. This should be ignored if SELAutoRollover is false, or if the
+	// response is v1.0, where this is unspecified.
 	SELFlushOnRollover bool
 
 	// SELRecordLevelFlushOnRollover indicates whether individual SEL records
 	// are flished upon rollover, as opposed to the entire SEL. This should be
-	// ignored in SELAutoRollover is false.
+	// ignored in SELAutoRollover is false, or if the response is v1.0, where
+	// this is unspecified.
 	SELRecordLevelFlushOnRollover bool
 
 	// SELMaxEntries contains the maximum number of SEL entries supported by the
-	// system. The spec requires this value to be between 64 and 4096 inclusive.
-	// It is a 12-bit uint on the wire, however as DCMI (like IPMI) uses
-	// little-endian, the max representable value is 0xff0f, or 65295, rather
-	// than 0x0fff, which would be 4095.
+	// system. v1.0 gives no lower bound, v1.1 and v1.5 say 64. The max is 4096
+	// for all implementations. It is a 12-bit uint on the wire, however as DCMI
+	// (like IPMI) uses little-endian, the max representable value is 0xff0f, or
+	// 65295, rather than 0x0fff, which would be 4095.
 	SELMaxEntries uint16
+
+	// AssetTagSupport indicates whether the system supports the asset tag
+	// functions for a v1.0 system. This is mandatory in one place, recommended
+	// in another, and removed from v1.1. It is set to true from v1.1 for
+	// backwards compatibility.
+	AssetTagSupport bool
+
+	// DHCPHostNameSupport indicates whether the system publishes itself as a
+	// DCMI controller when using DISCOVER mechanisms by setting option 12 (Host
+	// Name) to equal "DCMI". This is recommended in v1.0, and mandatory from
+	// v1.1, where it is forced to true.
+	DHCPHostNameSupport bool
+
+	// GUIDSupport indicates whether the system supports the system GUID
+	// identification function. This is mandatory in the v1.0 spec, and the
+	// field is removed from v1.1, where it is forced to true.
+	GUIDSupport bool
+
+	// BaseboardTemperature indicates whether at least one baseboard temperature
+	// sensor is present. This is mandatory in v1.0, and the field is removed
+	// from v1.1, where it is forced to true.
+	BaseboardTemperature bool
+
+	// ProcessorsTemperature indicates whether at least one processor
+	// temperature sensor is present. This is mandatory in v1.0, and the field
+	// is removed from v1.1, where it is forced to true.
+	ProcessorsTemperature bool
+
+	// InletTemperature indicates whether at least one baseboard temperature
+	// sensor is present. This is mandatory in v1.0, and the field is removed
+	// from v1.1, where it is forced to true.
+	InletTemperature bool
 
 	// TemperatureSamplingFrequency is the interval between successive
 	// temperature samples. This will be a whole number of seconds between 0 and
-	// 255.
+	// 255. It will always be 0 for v1.0, where the field is not present.
 	TemperatureSamplingFrequency time.Duration
 }
 
@@ -217,6 +332,10 @@ func (g *GetDCMICapabilitiesInfoMandatoryPlatformAttrsRsp) DecodeFromBytes(data 
 	}
 
 	minBodyLength := 5
+	if g.MajorVersion == 1 && g.MinorVersion == 0 {
+		// lacks the temperature sampling frequency field
+		minBodyLength = 4
+	}
 	if len(body) < minBodyLength {
 		df.SetTruncated()
 		return fmt.Errorf("invalid capabilities response: need at least %v bytes, got %v",
@@ -224,10 +343,38 @@ func (g *GetDCMICapabilitiesInfoMandatoryPlatformAttrsRsp) DecodeFromBytes(data 
 	}
 
 	g.SELAutoRollover = body[0]&(1<<7) != 0
-	g.SELFlushOnRollover = body[0]&(1<<6) != 0
-	g.SELRecordLevelFlushOnRollover = body[0]&(1<<5) != 0
+	if g.MajorVersion == 1 && g.MinorVersion == 0 {
+		g.SELFlushOnRollover = false
+		g.SELRecordLevelFlushOnRollover = false
+	} else {
+		g.SELFlushOnRollover = body[0]&(1<<6) != 0
+		g.SELRecordLevelFlushOnRollover = body[0]&(1<<5) != 0
+	}
 	g.SELMaxEntries = binary.LittleEndian.Uint16([]byte{body[0] & 0xf, body[1]})
-	g.TemperatureSamplingFrequency = time.Second * time.Duration(body[4])
+
+	if g.MajorVersion == 1 && g.MinorVersion == 0 {
+		g.AssetTagSupport = body[2]&(1<<2) != 0
+		g.DHCPHostNameSupport = body[2]&(1<<1) != 0
+		g.GUIDSupport = body[2]&1 != 0
+
+		g.BaseboardTemperature = body[3]&(1<<2) != 0
+		g.ProcessorsTemperature = body[3]&(1<<1) != 0
+		g.InletTemperature = body[3]&1 != 0
+	} else {
+		g.AssetTagSupport = true
+		g.DHCPHostNameSupport = true
+		g.GUIDSupport = true
+
+		g.BaseboardTemperature = true
+		g.ProcessorsTemperature = true
+		g.InletTemperature = true
+	}
+
+	if g.MajorVersion == 1 && g.MinorVersion == 0 {
+		g.TemperatureSamplingFrequency = 0
+	} else {
+		g.TemperatureSamplingFrequency = time.Second * time.Duration(body[4])
+	}
 
 	g.Contents = data[:len(data)-len(body)+minBodyLength]
 	g.Payload = body[minBodyLength:]
@@ -347,7 +494,8 @@ func (g *GetDCMICapabilitiesInfoManageabilityAccessAttrsRsp) DecodeFromBytes(dat
 }
 
 // GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsRsp is returned when
-// a Get DCMI Capabilities Info request is sent with parameter 5.
+// a Get DCMI Capabilities Info request is sent with parameter 5. This is not
+// supported by v1.0.
 type GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsRsp struct {
 	layers.BaseLayer
 	getDCMICapabilitiesInfoRspHeader
