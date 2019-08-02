@@ -64,7 +64,7 @@ func (c ChassisControl) Description() string {
 }
 
 func (c ChassisControl) String() string {
-	return fmt.Sprintf("%v(%v)", uint8(c), c.Description)
+	return fmt.Sprintf("%v(%v)", uint8(c), c.Description())
 }
 
 // ChassisControlReq represents a Chassis Control command, specified in section
