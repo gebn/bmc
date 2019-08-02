@@ -1,4 +1,4 @@
-# Baseboard Management Controller
+# Baseboard Management Controller Remote Console
 
 [![Build Status](https://travis-ci.org/gebn/bmc.svg?branch=master)](https://travis-ci.org/gebn/bmc)
 [![GoDoc](https://godoc.org/github.com/gebn/bmc?status.svg)](https://godoc.org/github.com/gebn/bmc)
