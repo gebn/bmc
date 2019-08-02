@@ -308,19 +308,23 @@ func TestGetDCMICapabilitiesInfoMandatoryPlatformAttrsRspDecodeToString(t *testi
 			},
 			nil,
 		},
-		// too short for v1.1
+		// too short for v1.1; this is 3 rather than 4 bytes as v1.1 responses
+		// have been known to actually be v1.0 responses (SuperMicro) so we
+		// interpret them as such
 		{
 			[]byte{
-				0x01, 0x01, 0x02,
-				0x00, 0x00, 0x00, 0x00,
+				0x01, 0x01, 0x01,
+				0x00, 0x00, 0x00,
 			},
 			nil,
 		},
-		// too short for v1.5
+		// too short for v1.5; this is 3 rather than 4 bytes as v1.1 responses
+		// have been known to actually be v1.0 responses (SuperMicro) so we
+		// interpret v1.5 assuming the same behaviour
 		{
 			[]byte{
-				0x01, 0x05, 0x02,
-				0x00, 0x00, 0x00, 0x00,
+				0x01, 0x05, 0x01,
+				0x00, 0x00, 0x00,
 			},
 			nil,
 		},
@@ -328,7 +332,6 @@ func TestGetDCMICapabilitiesInfoMandatoryPlatformAttrsRspDecodeToString(t *testi
 			[]byte{
 				0x01, 0x00, 0x01,
 				0xf5, 0xaa, 0x05, 0x02,
-				0x0f,
 			},
 			&GetDCMICapabilitiesInfoMandatoryPlatformAttrsRsp{
 				BaseLayer: layers.BaseLayer{
@@ -336,7 +339,7 @@ func TestGetDCMICapabilitiesInfoMandatoryPlatformAttrsRspDecodeToString(t *testi
 						0x01, 0x00, 0x01,
 						0xf5, 0xaa, 0x05, 0x02,
 					},
-					Payload: []byte{0x0f},
+					Payload: []byte{},
 				},
 				getDCMICapabilitiesInfoRspHeader: v10Header,
 				SELAutoRollover:                  true,
@@ -356,7 +359,6 @@ func TestGetDCMICapabilitiesInfoMandatoryPlatformAttrsRspDecodeToString(t *testi
 			[]byte{
 				0x01, 0x00, 0x01,
 				0x7a, 0x5a, 0x02, 0x05,
-				0x0f,
 			},
 			&GetDCMICapabilitiesInfoMandatoryPlatformAttrsRsp{
 				BaseLayer: layers.BaseLayer{
@@ -364,9 +366,40 @@ func TestGetDCMICapabilitiesInfoMandatoryPlatformAttrsRspDecodeToString(t *testi
 						0x01, 0x00, 0x01,
 						0x7a, 0x5a, 0x02, 0x05,
 					},
-					Payload: []byte{0x0f},
+					Payload: []byte{},
 				},
 				getDCMICapabilitiesInfoRspHeader: v10Header,
+				SELAutoRollover:                  false,
+				SELFlushOnRollover:               false,
+				SELRecordLevelFlushOnRollover:    false,
+				SELMaxEntries:                    23050,
+				AssetTagSupport:                  false,
+				DHCPHostNameSupport:              true,
+				GUIDSupport:                      false,
+				BaseboardTemperature:             true,
+				ProcessorsTemperature:            false,
+				InletTemperature:                 true,
+				TemperatureSamplingFrequency:     time.Duration(0),
+			},
+		},
+		// v1.0 response purporting to be v1.1
+		{
+			[]byte{
+				0x01, 0x01, 0x02,
+				0x7a, 0x5a, 0x02, 0x05,
+				// we cannot handle trailing bytes, as the length is how we
+				// identify v1.0; we could possibly look at whether bytes 3 and
+				// 4 are null, however that's a level of heuristic too far
+			},
+			&GetDCMICapabilitiesInfoMandatoryPlatformAttrsRsp{
+				BaseLayer: layers.BaseLayer{
+					Contents: []byte{
+						0x01, 0x01, 0x02,
+						0x7a, 0x5a, 0x02, 0x05,
+					},
+					Payload: []byte{},
+				},
+				getDCMICapabilitiesInfoRspHeader: v11Header,
 				SELAutoRollover:                  false,
 				SELFlushOnRollover:               false,
 				SELRecordLevelFlushOnRollover:    false,

@@ -331,19 +331,22 @@ func (g *GetDCMICapabilitiesInfoMandatoryPlatformAttrsRsp) DecodeFromBytes(data 
 		return err
 	}
 
-	minBodyLength := 5
-	if g.MajorVersion == 1 && g.MinorVersion == 0 {
-		// lacks the temperature sampling frequency field
-		minBodyLength = 4
-	}
+	minBodyLength := 4
 	if len(body) < minBodyLength {
 		df.SetTruncated()
 		return fmt.Errorf("invalid capabilities response: need at least %v bytes, got %v",
 			minBodyLength, len(body))
 	}
 
+	// This should be 5 for v1.1 and v1.5, however there are implementations
+	// (SuperMicro) known to say v1.1 in the header but give a v1.0 format body,
+	// so we treat all 4 byte bodies as v1.0, and all other lengths as what the
+	// BMC told us. Note this means trailing bytes are *not* handled correctly
+	// for v1.0 (they are assumed to be v1.1/v1.5 responses).
+	isVersion10 := len(body) == 4 || g.MajorVersion == 1 && g.MinorVersion == 0
+
 	g.SELAutoRollover = body[0]&(1<<7) != 0
-	if g.MajorVersion == 1 && g.MinorVersion == 0 {
+	if isVersion10 {
 		g.SELFlushOnRollover = false
 		g.SELRecordLevelFlushOnRollover = false
 	} else {
@@ -352,7 +355,7 @@ func (g *GetDCMICapabilitiesInfoMandatoryPlatformAttrsRsp) DecodeFromBytes(data 
 	}
 	g.SELMaxEntries = binary.LittleEndian.Uint16([]byte{body[0] & 0xf, body[1]})
 
-	if g.MajorVersion == 1 && g.MinorVersion == 0 {
+	if isVersion10 {
 		g.AssetTagSupport = body[2]&(1<<2) != 0
 		g.DHCPHostNameSupport = body[2]&(1<<1) != 0
 		g.GUIDSupport = body[2]&1 != 0
@@ -370,14 +373,18 @@ func (g *GetDCMICapabilitiesInfoMandatoryPlatformAttrsRsp) DecodeFromBytes(data 
 		g.InletTemperature = true
 	}
 
-	if g.MajorVersion == 1 && g.MinorVersion == 0 {
+	if isVersion10 {
 		g.TemperatureSamplingFrequency = 0
 	} else {
 		g.TemperatureSamplingFrequency = time.Second * time.Duration(body[4])
 	}
 
-	g.Contents = data[:len(data)-len(body)+minBodyLength]
-	g.Payload = body[minBodyLength:]
+	bodySectionLength := 5
+	if isVersion10 {
+		bodySectionLength = 4
+	}
+	g.Contents = data[:len(data)-len(body)+bodySectionLength]
+	g.Payload = body[bodySectionLength:]
 
 	return nil
 }
