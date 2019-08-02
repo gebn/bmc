@@ -77,7 +77,7 @@ func (g *GetDCMICapabilitiesInfoReq) SerializeTo(b gopacket.SerializeBuffer, _ g
 }
 
 // getDCMICapabilitiesInfoRsp represents the header of the response to a Get
-// DCMI Capabilities Info request, specified in 6.1. The rest of the header is
+// DCMI Capabilities Info request, specified in 6.1. The rest of the packet is
 // dictated by the parameter specified in the request. Note this is not a layer.
 type getDCMICapabilitiesInfoRspHeader struct {
 
@@ -544,19 +544,16 @@ func (g *GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsRsp) DecodeFro
 	}
 
 	periods := int(body[0])
-	switch {
-	case periods == 0:
-		g.PowerRollingAvgTimePeriods = g.PowerRollingAvgTimePeriods[:0]
-	case len(body) < 1+periods:
+	if len(body) < 1+periods {
 		df.SetTruncated()
 		return fmt.Errorf("managed system indicated %v supported rolling "+
 			"average time periods, but only room for %v in payload of length "+
 			"%v", periods, len(body)-1, len(body))
-	default:
-		g.PowerRollingAvgTimePeriods = make([]time.Duration, periods)
-		for i := 0; i < periods; i++ {
-			g.PowerRollingAvgTimePeriods[i] = rollingAvgPeriodDuration(body[1+i])
-		}
+	}
+
+	g.PowerRollingAvgTimePeriods = make([]time.Duration, periods)
+	for i := 0; i < periods; i++ {
+		g.PowerRollingAvgTimePeriods[i] = rollingAvgPeriodDuration(body[1+i])
 	}
 
 	g.Contents = data[:len(data)-len(body)+minBodyLength+periods]
