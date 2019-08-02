@@ -20,8 +20,8 @@ import (
 // requested.
 type CapabilitiesParameter uint8
 
-// description returns the human-readable name of each parameter.
-func (s CapabilitiesParameter) description() string {
+// Description returns the human-readable name of each parameter.
+func (s CapabilitiesParameter) Description() string {
 	switch s {
 	case 1:
 		return "Supported DCMI Capabilities"
@@ -39,7 +39,7 @@ func (s CapabilitiesParameter) description() string {
 }
 
 func (s CapabilitiesParameter) String() string {
-	return fmt.Sprintf("%v(%v)", uint8(s), s.description())
+	return fmt.Sprintf("%v(%v)", uint8(s), s.Description())
 }
 
 // GetDCMICapabilitiesInfoReq represents the Get DCMI Capabilities Info request,

@@ -21,8 +21,8 @@ const (
 	SystemPowerStatisticsModeEnhanced SystemPowerStatisticsMode = 0x02
 )
 
-// describe returns a human-friendly name for the mode.
-func (s SystemPowerStatisticsMode) describe() string {
+// Description returns a human-friendly name for the mode.
+func (s SystemPowerStatisticsMode) Description() string {
 	switch s {
 	case SystemPowerStatisticsModeNormal:
 		return "Normal"
@@ -34,5 +34,5 @@ func (s SystemPowerStatisticsMode) describe() string {
 }
 
 func (s SystemPowerStatisticsMode) String() string {
-	return fmt.Sprintf("%v(%v)", uint8(s), s.describe())
+	return fmt.Sprintf("%v(%v)", uint8(s), s.Description())
 }

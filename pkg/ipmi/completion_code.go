@@ -13,11 +13,7 @@ import (
 // practice the rest of the message should be uninterpreted.
 type CompletionCode uint8
 
-func (c CompletionCode) String() string {
-	return fmt.Sprintf("%#x(%v)", uint8(c), c.description())
-}
-
-func (c CompletionCode) description() string {
+func (c CompletionCode) Description() string {
 	switch c {
 	case CompletionCodeNormal:
 		return "Normal"
@@ -34,6 +30,10 @@ func (c CompletionCode) description() string {
 	default:
 		return "Unknown"
 	}
+}
+
+func (c CompletionCode) String() string {
+	return fmt.Sprintf("%#x(%v)", uint8(c), c.Description())
 }
 
 const (
