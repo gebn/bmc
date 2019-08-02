@@ -37,6 +37,7 @@ func TestRollingAvgPeriod(t *testing.T) {
 		{0x2a, time.Second * 42},
 		{0x41, time.Minute},
 		{0x43, time.Minute * 3},
+		{0x45, time.Minute * 5},
 		{0x47, time.Minute * 7},
 		{0x4f, time.Minute * 15},
 		{0x5e, time.Minute * 30},
