@@ -646,7 +646,7 @@ func TestGetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsRspDecodeToStr
 					Payload: []byte{0x09, 0x0a},
 				},
 				getDCMICapabilitiesInfoRspHeader: v15Header,
-				PowerRollingAvgTimePeriods:       nil,
+				PowerRollingAvgTimePeriods:       []time.Duration{},
 			},
 		},
 		// too short for indicated number of avg time periods (indicated: 1,
