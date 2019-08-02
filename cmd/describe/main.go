@@ -180,7 +180,7 @@ func getDCMICaps(ctx context.Context, s bmc.Sessionless) (
 	*dcmi.GetDCMICapabilitiesInfoMandatoryPlatformAttrsRsp,
 	*dcmi.GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsRsp,
 ) {
-	commander := dcmi.SessionlessCommander(s)
+	commander := dcmi.NewSessionlessCommander(s)
 	c, err := commander.GetDCMICapabilitiesInfoSupportedCapabilities(ctx)
 	if err != nil {
 		log.Printf("failed to fetch DCMI supported capabilities: %v", err)

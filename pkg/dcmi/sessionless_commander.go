@@ -37,13 +37,13 @@ func (s sessionlessCommander) GetDCMICapabilitiesInfoEnhancedSystemPowerStatisti
 	return &cmd.Rsp, bmc.ValidateResponse(s.Sessionless.SendCommand(ctx, cmd))
 }
 
-// SessionlessCommander wraps a session-less connection in a context that
+// NewSessionlessCommander wraps a session-less connection in a context that
 // provides high-level access to DCMI commands. For convenience, this function
 // accepts the Sessionless interface, however DCMI is unlikely to work over IPMI
 // v1.5. When sending repeated commands, it is recommended to use the
 // SendCommand() method on the connection directly to reduce the number of
 // allocations.
-func SessionlessCommander(s bmc.Sessionless) SessionlessCommands {
+func NewSessionlessCommander(s bmc.Sessionless) SessionlessCommands {
 	return &sessionlessCommander{
 		Sessionless: s,
 	}
