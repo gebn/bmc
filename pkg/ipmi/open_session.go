@@ -182,7 +182,7 @@ type OpenSessionPayload struct {
 	Rsp OpenSessionRsp
 }
 
-// Type returns PayloadDescriptorOpenSessionReq.
+// Descriptor returns PayloadDescriptorOpenSessionReq.
 func (*OpenSessionPayload) Descriptor() *PayloadDescriptor {
 	return &PayloadDescriptorOpenSessionReq
 }
