@@ -1,12 +1,24 @@
 package dcmi
 
 import (
+	"context"
+
 	"github.com/gebn/bmc"
 )
 
 type sessionCommander struct {
 	SessionlessCommands
 	bmc.Session
+}
+
+func (s sessionCommander) GetPowerReading(ctx context.Context, r *GetPowerReadingReq) (*GetPowerReadingRsp, error) {
+	cmd := &GetPowerReadingCmd{
+		Req: *r,
+	}
+	if err := bmc.ValidateResponse(s.SendCommand(ctx, cmd)); err != nil {
+		return nil, err
+	}
+	return &cmd.Rsp, nil
 }
 
 // NewSessionCommander wraps a session-based connection in a context that

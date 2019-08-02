@@ -4,6 +4,7 @@ go_library(
     name = "go_default_library",
     srcs = [
         "get_dcmi_capabilities_info.go",
+        "get_power_reading.go",
         "layer_types.go",
         "operations.go",
         "rolling_average.go",
@@ -11,6 +12,7 @@ go_library(
         "session_commands.go",
         "sessionless_commander.go",
         "sessionless_commands.go",
+        "system_power_statistics_mode.go",
     ],
     importpath = "github.com/gebn/bmc/pkg/dcmi",
     visibility = ["//visibility:public"],
@@ -27,6 +29,7 @@ go_test(
     name = "go_default_test",
     srcs = [
         "get_dcmi_capabilities_info_test.go",
+        "get_power_reading_test.go",
         "rolling_average_test.go",
     ],
     embed = [":go_default_library"],

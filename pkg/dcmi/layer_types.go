@@ -48,4 +48,17 @@ var (
 			Decoder: layerexts.BuildDecoder(&GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrsRsp{}),
 		},
 	)
+	layerTypeGetPowerReadingReq = gopacket.RegisterLayerType(
+		2006,
+		gopacket.LayerTypeMetadata{
+			Name: "Get Power Reading Request",
+		},
+	)
+	layerTypeGetPowerReadingRsp = gopacket.RegisterLayerType(
+		2007,
+		gopacket.LayerTypeMetadata{
+			Name:    "Get Power Reading Response",
+			Decoder: layerexts.BuildDecoder(&GetPowerReadingRsp{}),
+		},
+	)
 )
