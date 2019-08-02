@@ -144,7 +144,9 @@ type GetDCMICapabilitiesInfoSupportedCapabilitiesRsp struct {
 	// Optional Platform Capabilities
 
 	// PowerManagement indicates whether the server supports the power
-	// management platform capability.
+	// management platform functions, e.g. Get Power Reading. Note, at least
+	// SuperMicro BMCs are known to report true here but give a 0-byte response
+	// (with normal completion code) to the Get Power Reading command.
 	PowerManagement bool
 
 	// Manageability Access Capabilities
