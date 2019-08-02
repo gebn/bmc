@@ -198,6 +198,7 @@ func getDCMICaps(ctx context.Context, s bmc.Sessionless) (
 
 func printDCMICaps(c *dcmi.GetDCMICapabilitiesInfoSupportedCapabilitiesRsp) {
 	fmt.Println("DCMI Capabilities:")
+	// N.B. different capabilities responses may return different versions
 	fmt.Printf("\tMajor version:      %v\n", c.MajorVersion)
 	fmt.Printf("\tMinor version:      %v\n", c.MinorVersion)
 	fmt.Printf("\tSupports pwr mgmt:  %v\n", c.PowerManagement)
