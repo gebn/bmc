@@ -98,6 +98,18 @@ func main() {
 	} else {
 		printChassisStatus(status)
 	}
+
+    if c != nil && c.PowerManagement {
+        commander := dcmi.NewSessionCommander(sess)
+        req := &dcmi.GetPowerReadingReq{
+            Mode: dcmi.SystemPowerStatisticsModeNormal,
+        }
+        if power, err := commander.GetPowerReading(ctx, req); err != nil {
+            log.Printf("failed to get power reading: %v", err)
+        } else {
+            printPowerReading(power)
+        }
+    }
 }
 
 func presencePing(ctx context.Context, t transport.Transport) (*layers.ASFPresencePong, error) {
@@ -238,4 +250,14 @@ func printChassisStatus(status *ipmi.GetChassisStatusRsp) {
 	fmt.Printf("\tPower fault:        %v\n", status.PowerFault)
 	fmt.Printf("\tCooling fault:      %v\n", status.CoolingFault)
 	fmt.Printf("\tDrive fault:        %v\n", status.DriveFault)
+}
+
+func printPowerReading(r *dcmi.GetPowerReadingRsp) {
+    fmt.Printf("Power Reading [%v]:\n", r.Period)
+    fmt.Printf("\tInstantaneous:      %v\n", r.Instantaneous)
+    fmt.Printf("\tMin: %v\n", r.Min)
+    fmt.Printf("\tAvg: %v\n", r.Avg)
+    fmt.Printf("\tMax: %v\n", r.Max)
+    fmt.Printf("\tAs of: %v\n", r.Timestamp)
+    fmt.Printf("\tActive: %v\n", r.Active)
 }
