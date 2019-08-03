@@ -6,7 +6,73 @@ import (
 	"context"
 	"fmt"
 	"net"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
+
+var (
+	namespace = "bmc" // still an internal pkg
+	subsystem = "network"
+
+	// recording of failure is handled at higher-levels - we have no visibility
+	// into retries here
+
+	socketOpen = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: namespace,
+		Subsystem: subsystem,
+		Name:      "socket_open_total",
+		Help:      "The number of successfully opened UDP sockets.",
+	})
+	socketClose = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: namespace,
+		Subsystem: subsystem,
+		Name:      "socket_close_total",
+		Help:      "The number of successfully closed UDP sockets.",
+	})
+	transmitPackets = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: namespace,
+		Subsystem: subsystem,
+		Name:      "transmit_packets_total",
+		Help:      "The number of UDP packets successfully sent.",
+	})
+	receivePackets = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: namespace,
+		Subsystem: subsystem,
+		Name:      "receive_packets_total",
+		Help:      "The number of UDP packets successfully received.",
+	})
+	transmitBytes = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: namespace,
+		Subsystem: subsystem,
+		Name:      "transmit_bytes_total",
+		Help:      "The number of UDP payload bytes successfully sent.",
+	})
+	receiveBytes = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: namespace,
+		Subsystem: subsystem,
+		Name:      "receive_bytes_total",
+		Help:      "The number of UDP payload bytes successfully received.",
+	})
+)
+
+// New establishes a connection to a UDP endpoint. It is recommended to defer a
+// call to Close() immediately after the error check.
+func New(addr string) (Transport, error) {
+	raddr, err := net.ResolveUDPAddr("udp", addr)
+	if err != nil {
+		return nil, err
+	}
+
+	c, err := net.DialUDP("udp", nil, raddr)
+	if err != nil {
+		return nil, err
+	}
+	socketOpen.Inc()
+	return &transport{
+		fd: c,
+	}, nil
+}
 
 type transport struct {
 	fd *net.UDPConn
@@ -26,6 +92,7 @@ func (t *transport) Address() net.Addr {
 // reply packet, which is then returned. An error is returned if a transport
 // error occurs or the context expires.
 func (t *transport) Send(ctx context.Context, b []byte) ([]byte, error) {
+	// write
 	if deadline, ok := ctx.Deadline(); ok {
 		if err := t.fd.SetWriteDeadline(deadline); err != nil {
 			return nil, err
@@ -39,6 +106,8 @@ func (t *transport) Send(ctx context.Context, b []byte) ([]byte, error) {
 		return nil, fmt.Errorf("wrote incomplete message (%v/%v bytes)", n,
 			len(b))
 	}
+	transmitPackets.Inc()
+	transmitBytes.Add(float64(len(b)))
 
 	// read
 	if deadline, ok := ctx.Deadline(); ok {
@@ -50,12 +119,15 @@ func (t *transport) Send(ctx context.Context, b []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	receivePackets.Inc()
+	receiveBytes.Add(float64(n))
 
 	return t.recvBuf[:n], nil
 }
 
 // Close cleanly shuts down the transport, rendering it unusable.
 func (t *transport) Close() error {
+	socketClose.Inc() // even if fails cannot do any more; misleading otherwise
 	return t.fd.Close()
 }
 
@@ -80,21 +152,4 @@ type Transport interface {
 	// that occurs. It is envisaged that this call is deferred as soon as the
 	// transport is successfully created.
 	Close() error
-}
-
-// New establishes a connection to a UDP endpoint. It is recommended to defer a
-// call to Close() immediately after the error check.
-func New(addr string) (Transport, error) {
-	raddr, err := net.ResolveUDPAddr("udp", addr)
-	if err != nil {
-		return nil, err
-	}
-
-	c, err := net.DialUDP("udp", nil, raddr)
-	if err != nil {
-		return nil, err
-	}
-	return &transport{
-		fd: c,
-	}, nil
 }

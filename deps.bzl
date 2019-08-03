@@ -26,6 +26,49 @@ def _kingpin():
         importpath = "github.com/alecthomas/template",
     )
 
+def _prometheus():
+    _maybe(
+        go_repository,
+        name = "com_github_prometheus_client_golang",
+        importpath = "github.com/prometheus/client_golang",
+        tag = "v1.1.0",
+    )
+
+    _maybe(
+        go_repository,
+        name = "com_github_prometheus_common",
+        importpath = "github.com/prometheus/common",
+        tag = "v0.6.0",
+    )
+
+    _maybe(
+        go_repository,
+        name = "com_github_beorn7_perks",
+        importpath = "github.com/beorn7/perks",
+        tag = "v1.0.1",
+    )
+
+    _maybe(
+        go_repository,
+        name = "com_github_prometheus_client_model",
+        importpath = "github.com/prometheus/client_model",
+        commit = "fd36f4220a901265f90734c3183c5f0c91daa0b8",
+    )
+
+    _maybe(
+        go_repository,
+        name = "com_github_prometheus_procfs",
+        importpath = "github.com/prometheus/procfs",
+        tag = "v0.0.3",
+    )
+
+    _maybe(
+        go_repository,
+        name = "com_github_matttproud_golang_protobuf_extensions",
+        importpath = "github.com/matttproud/golang_protobuf_extensions",
+        commit = "c182affec369e30f25d3eb8cd8a478dee585ae7d",
+    )
+
 def deps():
     _maybe(
         go_repository,
@@ -42,6 +85,7 @@ def deps():
     )
 
     _kingpin()
+    _prometheus()
 
 def test():
     _maybe(
