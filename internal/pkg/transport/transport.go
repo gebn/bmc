@@ -42,17 +42,21 @@ var (
 		Name:      "receive_packets_total",
 		Help:      "The number of UDP packets successfully received.",
 	})
-	transmitBytes = promauto.NewCounter(prometheus.CounterOpts{
+	transmitBytes = promauto.NewHistogram(prometheus.HistogramOpts{
 		Namespace: namespace,
 		Subsystem: subsystem,
-		Name:      "transmit_bytes_total",
-		Help:      "The number of UDP payload bytes successfully sent.",
+		Name:      "transmit_bytes",
+		Help:      "Observes the payload length of successfully sent UDP packets.",
+		// RMCP (4) + IPMI v1.5 session (10+) + Message (7) = 21
+		Buckets: prometheus.ExponentialBuckets(21, 1.1, 10), // 21 -> 49.52
 	})
-	receiveBytes = promauto.NewCounter(prometheus.CounterOpts{
+	receiveBytes = promauto.NewHistogram(prometheus.HistogramOpts{
 		Namespace: namespace,
 		Subsystem: subsystem,
 		Name:      "receive_bytes_total",
-		Help:      "The number of UDP payload bytes successfully received.",
+		Help:      "Observes the payload length of successfully received UDP packets.",
+		// RMCP (4) + IPMI v1.5 session (10+) + Message (8) = 22
+		Buckets: prometheus.ExponentialBuckets(22, 1.1, 10), // 22 -> 51.87
 	})
 )
 
@@ -107,7 +111,7 @@ func (t *transport) Send(ctx context.Context, b []byte) ([]byte, error) {
 			len(b))
 	}
 	transmitPackets.Inc()
-	transmitBytes.Add(float64(len(b)))
+	transmitBytes.Observe(float64(len(b)))
 
 	// read
 	if deadline, ok := ctx.Deadline(); ok {
@@ -120,7 +124,7 @@ func (t *transport) Send(ctx context.Context, b []byte) ([]byte, error) {
 		return nil, err
 	}
 	receivePackets.Inc()
-	receiveBytes.Add(float64(n))
+	receiveBytes.Observe(float64(n))
 
 	return t.recvBuf[:n], nil
 }
