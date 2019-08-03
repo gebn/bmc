@@ -9,6 +9,8 @@ import (
 	"github.com/gebn/bmc/pkg/ipmi"
 
 	"github.com/google/gopacket"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 var (
@@ -16,6 +18,22 @@ var (
 		FixLengths:       true,
 		ComputeChecksums: true,
 	}
+
+	namespace = "bmc"
+
+	sessionlessOpen = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: "sessionless",
+			Name:      "open_total",
+			Help:      "The number of sessionless IPMI connections created, by version.",
+		},
+		[]string{"version"},
+	)
+
+	// these not only save a map lookup each open, but also register the labels
+	v1SessionlessOpen = sessionlessOpen.WithLabelValues("1.5")
+	v2SessionlessOpen = sessionlessOpen.WithLabelValues("2.0")
 )
 
 // TODO need to implement v1 sending
@@ -64,6 +82,7 @@ func DialV1(addr string) (*V1SessionlessTransport, error) {
 }
 
 func newV1SessionlessTransport(t transport.Transport) *V1SessionlessTransport {
+	v1SessionlessOpen.Inc()
 	return &V1SessionlessTransport{
 		Transport: t,
 		V1Sessionless: V1Sessionless{
@@ -84,6 +103,7 @@ func DialV2(addr string) (*V2SessionlessTransport, error) {
 }
 
 func newV2SessionlessTransport(t transport.Transport) *V2SessionlessTransport {
+	v2SessionlessOpen.Inc()
 	return &V2SessionlessTransport{
 		Transport:     t,
 		V2Sessionless: newV2Sessionless(t),
