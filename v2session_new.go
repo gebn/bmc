@@ -118,34 +118,28 @@ func (s *V2SessionlessTransport) NewV2Session(ctx context.Context, opts *V2Sessi
 	// we don't send Get Channel Authentication Capabilities; we just blindly
 	// assume IPMI v2.0 is supported
 
-	authenticationPayloads := []ipmi.AuthenticationPayload{}
-	for _, algo := range opts.AuthenticationAlgorithms {
-		authenticationPayloads = append(
-			authenticationPayloads,
-			ipmi.AuthenticationPayload{
-				Algorithm: algo,
-			},
-		)
+	authenticationPayloads := make([]ipmi.AuthenticationPayload,
+		len(opts.AuthenticationAlgorithms))
+	for i, algo := range opts.AuthenticationAlgorithms {
+		authenticationPayloads[i] = ipmi.AuthenticationPayload{
+			Algorithm: algo,
+		}
 	}
 
-	integrityPayloads := []ipmi.IntegrityPayload{}
-	for _, algo := range opts.IntegrityAlgorithms {
-		integrityPayloads = append(
-			integrityPayloads,
-			ipmi.IntegrityPayload{
-				Algorithm: algo,
-			},
-		)
+	integrityPayloads := make([]ipmi.IntegrityPayload,
+		len(opts.IntegrityAlgorithms))
+	for i, algo := range opts.IntegrityAlgorithms {
+		integrityPayloads[i] = ipmi.IntegrityPayload{
+			Algorithm: algo,
+		}
 	}
 
-	confidentialityPayloads := []ipmi.ConfidentialityPayload{}
-	for _, algo := range opts.ConfidentialityAlgorithms {
-		confidentialityPayloads = append(
-			confidentialityPayloads,
-			ipmi.ConfidentialityPayload{
-				Algorithm: algo,
-			},
-		)
+	confidentialityPayloads := make([]ipmi.ConfidentialityPayload,
+		len(opts.ConfidentialityAlgorithms))
+	for i, algo := range opts.ConfidentialityAlgorithms {
+		confidentialityPayloads[i] = ipmi.ConfidentialityPayload{
+			Algorithm: algo,
+		}
 	}
 
 	openSessionRsp, err := s.openSession(ctx, &ipmi.OpenSessionReq{
