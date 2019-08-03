@@ -103,7 +103,8 @@ func (s *V2SessionlessTransport) NewSession(
 }
 
 // NewV2Session establishes a new RMCP+ session with fine-grained parameters.
-// This function does not modify the input options.
+// This function does not modify the input options. The caller is responsible
+// for knowing that v2.0 is supported.
 func (s *V2SessionlessTransport) NewV2Session(ctx context.Context, opts *V2SessionOpts) (*V2Session, error) {
 	if opts.AuthenticationAlgorithms == nil {
 		opts.AuthenticationAlgorithms = defaultAuthenticationAlgorithms
@@ -114,9 +115,6 @@ func (s *V2SessionlessTransport) NewV2Session(ctx context.Context, opts *V2Sessi
 	if opts.ConfidentialityAlgorithms == nil {
 		opts.ConfidentialityAlgorithms = defaultConfidentialityAlgorithms
 	}
-
-	// we don't send Get Channel Authentication Capabilities; we just blindly
-	// assume IPMI v2.0 is supported
 
 	authenticationPayloads := make([]ipmi.AuthenticationPayload,
 		len(opts.AuthenticationAlgorithms))
