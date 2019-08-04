@@ -50,12 +50,21 @@ var (
 		},
 		[]string{"version"},
 	)
-	sessionClose = promauto.NewCounterVec(
+	sessionCloseAttempts = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: namespace,
 			Subsystem: "session",
-			Name:      "close_total",
+			Name:      "close_attempts_total",
 			Help:      "The number of attempts to close a session-based connection.",
+		},
+		[]string{"version"},
+	)
+	sessionCloseFailures = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: "session",
+			Name:      "close_failures_total",
+			Help:      "The number of times a session-based connection failed to close.",
 		},
 		[]string{"version"},
 	)

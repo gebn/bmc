@@ -16,7 +16,8 @@ import (
 )
 
 var (
-	v2SessionClose = sessionClose.WithLabelValues("2.0")
+	v2SessionCloseAttempts = sessionCloseAttempts.WithLabelValues("2.0")
+	v2SessionCloseFailures = sessionCloseFailures.WithLabelValues("2.0")
 )
 
 // V2Session represents an established IPMI v2.0/RMCP+ session with a BMC.
@@ -225,13 +226,17 @@ func (s *V2Session) ChassisControl(ctx context.Context, c ipmi.ChassisControl) e
 }
 
 func (s *V2Session) closeSession(ctx context.Context) error {
-	v2SessionClose.Inc()
+	v2SessionCloseAttempts.Inc()
 	cmd := &ipmi.CloseSessionCmd{
 		Req: ipmi.CloseSessionReq{
 			ID: s.RemoteID,
 		},
 	}
-	return ValidateResponse(s.SendCommand(ctx, cmd))
+	if err := ValidateResponse(s.SendCommand(ctx, cmd)); err != nil {
+		v2SessionCloseFailures.Inc()
+		return err
+	}
+	return nil
 }
 
 func (s *V2Session) Close(ctx context.Context) error {
