@@ -2,6 +2,63 @@ package bmc
 
 import (
 	"context"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+)
+
+var (
+	sessionEstablishAttempts = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: "session",
+			Name:      "establish_attempts_total",
+			Help:      "The number of times session establishment has begun.",
+		},
+		[]string{"version"},
+	)
+	sessionEstablishFailures = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: "session",
+			Name:      "establish_failures_total",
+			Help:      "The number of times session establishment did not produce a usable session-based connection.",
+		},
+		[]string{"version"},
+	)
+	sessionEstablishSuccesses = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: "session",
+			Name:      "establish_successes_total",
+			Help:      "The number of times session establishment resulted in a usable session-based connection.",
+		},
+		// we can derive this metric from attempts - failures, so its purpose is
+		// to provide the algorithms used. "integrity" and "confidentiality" are
+		// always "none" for v1.5.
+		[]string{"version", "authentication", "integrity", "confidentiality"},
+	)
+	sessionEstablishDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: namespace,
+			Subsystem: "session",
+			Name:      "establish_duration_seconds",
+			Help: "The end-to-end time taken by the NewSession() method, both " +
+				"when it succeeds and fails. Note, this does not include a " +
+				"Get Channel Authentication Capabilities call, as that is not " +
+				"mandatory.",
+		},
+		[]string{"version"},
+	)
+	sessionClose = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: "session",
+			Name:      "close_total",
+			Help:      "The number of attempts to close a session-based connection.",
+		},
+		[]string{"version"},
+	)
 )
 
 // Session is an established session-based IPMI v1.5 or 2.0 connection. More

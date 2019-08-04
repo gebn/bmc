@@ -10,6 +10,7 @@ import (
 	"github.com/gebn/bmc/pkg/ipmi"
 
 	"github.com/google/gopacket"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var (
@@ -30,6 +31,15 @@ var (
 		//ipmi.ConfidentialityAlgorithmNone,
 		ipmi.ConfidentialityAlgorithmAESCBC128,
 	}
+
+	v2SessionEstablishAttempts  = sessionEstablishAttempts.WithLabelValues("2.0")
+	v2SessionEstablishFailures  = sessionEstablishFailures.WithLabelValues("2.0")
+	v2SessionEstablishSuccesses = sessionEstablishSuccesses.MustCurryWith(
+		prometheus.Labels{
+			"version": "2.0",
+		},
+	)
+	v2SessionEstablishDuration = sessionEstablishDuration.WithLabelValues("2.0")
 )
 
 // V2SessionOpts contains configurable parameters for RMCP+ session
@@ -106,6 +116,23 @@ func (s *V2SessionlessTransport) NewSession(
 // This function does not modify the input options. The caller is responsible
 // for knowing that v2.0 is supported.
 func (s *V2SessionlessTransport) NewV2Session(ctx context.Context, opts *V2SessionOpts) (*V2Session, error) {
+	// all the effort is in establish(); this method exists to provide a single
+	// point for incrementing the failure count and timing the process
+	timer := prometheus.NewTimer(v2SessionEstablishDuration)
+	defer timer.ObserveDuration()
+
+	v2SessionEstablishAttempts.Inc()
+	sess, err := s.newV2Session(ctx, opts)
+	if err != nil {
+		v2SessionEstablishFailures.Inc()
+		return nil, err
+	}
+	// v2SessionEstablishSuccesses has already been incremented with the correct
+	// algorithm label values
+	return sess, nil
+}
+
+func (s *V2SessionlessTransport) newV2Session(ctx context.Context, opts *V2SessionOpts) (*V2Session, error) {
 	if opts.AuthenticationAlgorithms == nil {
 		opts.AuthenticationAlgorithms = defaultAuthenticationAlgorithms
 	}
@@ -243,5 +270,10 @@ func (s *V2SessionlessTransport) NewV2Session(ctx context.Context, opts *V2Sessi
 	dlc = dlc.Put(cipherLayer)
 	dlc = dlc.Put(&sess.messageLayer)
 	sess.decode = dlc.LayersDecoder(sess.rmcpLayer.LayerType(), gopacket.NilDecodeFeedback)
+
+	v2SessionEstablishSuccesses.WithLabelValues(
+		openSessionRsp.AuthenticationPayload.Algorithm.String(),
+		openSessionRsp.IntegrityPayload.Algorithm.String(),
+		openSessionRsp.ConfidentialityPayload.Algorithm.String())
 	return sess, nil
 }

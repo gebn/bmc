@@ -15,6 +15,10 @@ import (
 	"github.com/google/gopacket/layers"
 )
 
+var (
+	v2SessionClose = sessionClose.WithLabelValues("2.0")
+)
+
 // V2Session represents an established IPMI v2.0/RMCP+ session with a BMC.
 type V2Session struct {
 	v2ConnectionLayers
@@ -221,6 +225,7 @@ func (s *V2Session) ChassisControl(ctx context.Context, c ipmi.ChassisControl) e
 }
 
 func (s *V2Session) closeSession(ctx context.Context) error {
+	v2SessionClose.Inc()
 	cmd := &ipmi.CloseSessionCmd{
 		Req: ipmi.CloseSessionReq{
 			ID: s.RemoteID,
