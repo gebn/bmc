@@ -6,6 +6,18 @@ package ipmi
 // authenticated RMCP+ messages.
 type IntegrityAlgorithm uint8
 
+var (
+	// IntegrityAlgorithms contains all supported integrity algorithms in the
+	// specification. This can be used for registering metric labels.
+	IntegrityAlgorithms = []IntegrityAlgorithm{
+		IntegrityAlgorithmNone,
+		IntegrityAlgorithmHMACSHA196,
+		IntegrityAlgorithmHMACMD5128,
+		IntegrityAlgorithmMD5128,
+		IntegrityAlgorithmHMACSHA256128,
+	}
+)
+
 const (
 	IntegrityAlgorithmNone          IntegrityAlgorithm = 0x00
 	IntegrityAlgorithmHMACSHA196    IntegrityAlgorithm = 0x01 // 12 byte authcode

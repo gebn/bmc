@@ -250,7 +250,15 @@ func (s *V2SessionlessTransport) newV2Session(ctx context.Context, opts *V2Sessi
 	}
 
 	sess := &V2Session{
-		v2ConnectionShared:             &s.v2ConnectionShared,
+		v2ConnectionShared: &s.v2ConnectionShared,
+		transmitAuthenticated: sessionTransmitAuthenticated.WithLabelValues(
+			openSessionRsp.IntegrityPayload.Algorithm.String()),
+		receiveAuthenticated: sessionReceiveAuthenticated.WithLabelValues(
+			openSessionRsp.IntegrityPayload.Algorithm.String()),
+		transmitEncrypted: sessionTransmitEncrypted.WithLabelValues(
+			openSessionRsp.ConfidentialityPayload.Algorithm.String()),
+		receiveEncrypted: sessionReceiveEncrypted.WithLabelValues(
+			openSessionRsp.ConfidentialityPayload.Algorithm.String()),
 		LocalID:                        openSessionRsp.RemoteConsoleSessionID,
 		RemoteID:                       openSessionRsp.ManagedSystemSessionID,
 		SIK:                            sik,

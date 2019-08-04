@@ -6,6 +6,18 @@ package ipmi
 // algorithm.
 type ConfidentialityAlgorithm uint8
 
+var (
+	// ConfidentialityAlgorithms contains all supported confidentiality
+	// algorithms in the specification. This can be used for registering metric
+	// labels.
+	ConfidentialityAlgorithms = []ConfidentialityAlgorithm{
+		ConfidentialityAlgorithmNone,
+		ConfidentialityAlgorithmAESCBC128,
+		ConfidentialityAlgorithmXRC4128,
+		ConfidentialityAlgorithmXRC440,
+	}
+)
+
 const (
 	ConfidentialityAlgorithmNone ConfidentialityAlgorithm = 0x00
 
