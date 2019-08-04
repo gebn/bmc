@@ -74,7 +74,7 @@ def deps():
         go_repository,
         name = "com_github_google_gopacket",
         importpath = "github.com/google/gopacket",
-        commit = "7cc6592eca24b42f05b6d13a5521d9d2558cf53b",
+        commit = "c340012d34adb8462b1e23ad4d7a73944f4224b8",
     )
 
     _maybe(
