@@ -97,6 +97,10 @@ func (*GetPowerReadingRsp) NextLayerType() gopacket.LayerType {
 func (g *GetPowerReadingRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
 	if len(data) < 17 {
 		df.SetTruncated()
+		if len(data) == 0 {
+			return fmt.Errorf("0-byte power reading response; this is known " +
+				"to happen when the BMC is not connected to the power supply")
+		}
 		return fmt.Errorf("power reading response must be 17 bytes, got %v", len(data))
 	}
 
