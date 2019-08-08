@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -57,6 +58,12 @@ var (
 		Help:      "Observes the payload length of successfully received UDP packets.",
 		// RMCP (4) + IPMI v1.5 session (10+) + Message (8) = 22
 		Buckets: prometheus.ExponentialBuckets(22, 1.1, 10), // 22 -> 51.87
+	})
+	responseLatency = promauto.NewHistogram(prometheus.HistogramOpts{
+		Namespace: namespace,
+		Subsystem: subsystem,
+		Name:      "response_latency_seconds",
+		Help:      "Observes the time taken between sending each packet and receiving its response.",
 	})
 )
 
@@ -110,6 +117,7 @@ func (t *transport) Send(ctx context.Context, b []byte) ([]byte, error) {
 		return nil, fmt.Errorf("wrote incomplete message (%v/%v bytes)", n,
 			len(b))
 	}
+	sent := time.Now()
 	transmitPackets.Inc()
 	transmitBytes.Observe(float64(len(b)))
 
@@ -123,6 +131,7 @@ func (t *transport) Send(ctx context.Context, b []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	responseLatency.Observe(time.Since(sent).Seconds())
 	receivePackets.Inc()
 	receiveBytes.Observe(float64(n))
 
