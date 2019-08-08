@@ -107,6 +107,20 @@ func (s *V2Session) ID() uint32 {
 }
 
 func (s *V2Session) SendCommand(ctx context.Context, c ipmi.Command) (ipmi.CompletionCode, error) {
+	timer := prometheus.NewTimer(commandDuration)
+	defer timer.ObserveDuration()
+
+	commandAttempts.WithLabelValues(c.Name()).Inc()
+	code, err := s.sendCommand(ctx, c)
+	if err != nil {
+		commandFailures.WithLabelValues(c.Name()).Inc()
+		return ipmi.CompletionCodeUnspecified, err
+	}
+	commandResponses.WithLabelValues(code.String()).Inc()
+	return code, nil
+}
+
+func (s *V2Session) sendCommand(ctx context.Context, c ipmi.Command) (ipmi.CompletionCode, error) {
 	s.rmcpLayer = layers.RMCP{
 		Version:  layers.RMCPVersion1,
 		Sequence: 0xFF, // do not send us an ACK
@@ -128,15 +142,21 @@ func (s *V2Session) SendCommand(ctx context.Context, c ipmi.Command) (ipmi.Compl
 		Sequence:      1, // used at the session level
 	}
 
-	// TODO increment metric with c.Name() label here, inside session
-
 	response := []byte(nil)
 	terminalErr := error(nil)
+	firstAttempt := true
 	retryable := func() error {
 		if err := ctx.Err(); err != nil {
 			terminalErr = err
 			return nil
 		}
+
+		if firstAttempt {
+			firstAttempt = false
+		} else {
+			commandRetries.Inc()
+		}
+
 		// TODO handle AuthenticationAlgorithmNone properly
 		// TODO handle ConfidentialityAlgorithmNone properly
 		s.AuthenticatedSequenceNumbers.Inbound++

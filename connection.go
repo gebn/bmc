@@ -39,6 +39,78 @@ var (
 		},
 		[]string{"version"},
 	)
+
+	// effectively the number of times SendCommand() has been called. we
+	// could've added several more labels to this, but chose not to:
+	//
+	// Version: we probably don't care about this at the command level - the
+	// distribution will follow the number of connections, so we track it there,
+	// with # open connections per version
+	//
+	// Connection: do we really care? most commands can only be executed in a
+	// session; a given command is likely to always be in a session or outside,
+	// never both
+	//
+	// NetFn: what does this tell us that command name doesn't? Do we really
+	// care? This, body code and enterprise would be useful for deduping the
+	// name, e.g. if two enterprises had the same command name, but we don't
+	// have that problem.
+	commandAttempts = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: "command",
+			Name:      "attempts_total",
+			Help:      "The number of times a user has asked to send a command.",
+		},
+		// N.B. collision condition - if two commands from different enterprises
+		// or NetFns have the same name, they will be counted as one; can add
+		// tie-breaker labels if/when this actually happens; the command name is
+		// more there as an indication than forensics
+		[]string{"name"}, // e.g. "Get Device ID", specified in Cmd struct
+	)
+
+	// serialise and deserialise errors are rolled up into this - to properly
+	// diagnose why, we need a level of info only logging can provide. Futile to
+	// try to pin this down with metrics, so we don't bother
+	commandFailures = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: "command",
+			Name:      "failures_total",
+			Help:      "The number of times a user has received an error having asked to send a command.",
+		},
+		// we track name here as well to make this and attempts easily
+		// subtractable
+		[]string{"name"},
+	)
+
+	commandRetries = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: namespace,
+		Subsystem: "command",
+		Name:      "retries_total",
+		Help:      "The number of times a given command packet has been re-sent to a BMC, because we did not receive a valid response, if any.",
+	})
+
+	// N.B. this is very different from the low-level transport response latency
+	// - includes serialise/deserialise, as well as retries
+	commandDuration = promauto.NewHistogram(prometheus.HistogramOpts{
+		Namespace: namespace,
+		Subsystem: "command",
+		Name:      "duration_seconds",
+		Help:      "The end-to-end time from command send to response return, including retries.",
+	})
+
+	// we don't track the command here, as if commands are failing, we care that
+	// they are failing, not about the command - that's for event based metrics.
+	commandResponses = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: "command",
+			Name:      "responses_total",
+			Help:      "The number of valid command responses received from BMCs.",
+		},
+		[]string{"code"}, // completion code, printed as text, falling back to hex
+	)
 )
 
 // Connection is an IPMI v1.5 or v2.0 session-less, single-session or

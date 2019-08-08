@@ -12,6 +12,7 @@ import (
 	"github.com/cenkalti/backoff"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var (
@@ -150,6 +151,20 @@ func serializableLayerOrEmpty(s gopacket.SerializableLayer) gopacket.Serializabl
 }
 
 func (s *V2Sessionless) SendCommand(ctx context.Context, c ipmi.Command) (ipmi.CompletionCode, error) {
+	timer := prometheus.NewTimer(commandDuration)
+	defer timer.ObserveDuration()
+
+	commandAttempts.WithLabelValues(c.Name()).Inc()
+	code, err := s.sendCommand(ctx, c)
+	if err != nil {
+		commandFailures.WithLabelValues(c.Name()).Inc()
+		return ipmi.CompletionCodeUnspecified, err
+	}
+	commandResponses.WithLabelValues(code.String()).Inc()
+	return code, nil
+}
+
+func (s *V2Sessionless) sendCommand(ctx context.Context, c ipmi.Command) (ipmi.CompletionCode, error) {
 	s.rmcpLayer = layers.RMCP{
 		Version:  layers.RMCPVersion1,
 		Sequence: 0xFF, // do not send us an ACK
@@ -165,8 +180,6 @@ func (s *V2Sessionless) SendCommand(ctx context.Context, c ipmi.Command) (ipmi.C
 		LocalAddress:  ipmi.SoftwareIDRemoteConsole1.Address(),
 		Sequence:      1,
 	}
-
-	// TODO increment metric with c.Name() label here, outside session
 
 	// we don't need to increment a sequence number between retries, so can
 	// serialise this just once
@@ -200,11 +213,19 @@ func (s *V2Sessionless) SendCommand(ctx context.Context, c ipmi.Command) (ipmi.C
 func (s *V2Sessionless) send(ctx context.Context) (gopacket.LayerType, error) {
 	response := []byte(nil)
 	ctxErr := error(nil)
+	firstAttempt := true
 	retryable := func() error {
 		if err := ctx.Err(); err != nil {
 			ctxErr = err
 			return nil
 		}
+
+		if firstAttempt {
+			firstAttempt = false
+		} else {
+			commandRetries.Inc()
+		}
+
 		requestCtx, cancel := context.WithTimeout(ctx, time.Second*2) // TODO make configurable
 		defer cancel()
 		bytes, err := s.transport.Send(requestCtx, s.buffer.Bytes())
