@@ -14,6 +14,13 @@ import (
 	"github.com/google/gopacket/layers"
 )
 
+var (
+	// these not only save a map lookup each open, but also register the labels
+	v2ConnectionOpenAttempts = connectionOpenAttempts.WithLabelValues("2.0")
+	v2ConnectionOpenFailures = connectionOpenFailures.WithLabelValues("2.0")
+	v2ConnectionsOpen        = connectionsOpen.WithLabelValues("2.0")
+)
+
 // v2ConnectionLayers contains layers common to all v2.0 connections. Although
 // these layers are common, both V2Sessionless and V2Session embed this as a
 // value, so each gets a fresh set of layers. This uses a little more memory,
@@ -81,6 +88,15 @@ func newV2Sessionless(t transport.Transport) *V2Sessionless {
 	dlc = dlc.Put(&s.messageLayer)
 	s.decode = dlc.LayersDecoder(s.rmcpLayer.LayerType(), gopacket.NilDecodeFeedback)
 	return s
+}
+
+func (s *V2Sessionless) Close() error {
+	// we intercept this call purely to do the gauge bookkeeping
+	if err := s.transport.Close(); err != nil {
+		return err
+	}
+	v2ConnectionsOpen.Dec()
+	return nil
 }
 
 func (s *V2Sessionless) Version() string {

@@ -4,6 +4,41 @@ import (
 	"context"
 
 	"github.com/gebn/bmc/pkg/ipmi"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+)
+
+var (
+	connectionOpenAttempts = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: "connection",
+			Name:      "open_attempts_total",
+			Help:      "The number of times a BMC has been dialled.",
+		},
+		[]string{"version"},
+	)
+	connectionOpenFailures = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: "connection",
+			Name:      "open_failures_total",
+			Help: "The number of times dialling a BMC resulted in an error " +
+				"being returned to the user.",
+		},
+		[]string{"version"},
+	)
+	connectionsOpen = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: "connections",
+			Name:      "open",
+			Help: "The number of connections currently open, including those " +
+				"that failed to close cleanly.",
+		},
+		[]string{"version"},
+	)
 )
 
 // Connection is an IPMI v1.5 or v2.0 session-less, single-session or

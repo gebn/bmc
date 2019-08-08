@@ -95,10 +95,13 @@ func newV1SessionlessTransport(t transport.Transport) *V1SessionlessTransport {
 // address follows the same format as for Dial(). Use this if you know the BMC
 // supports IPMI v2.0 and/or require DCMI functionality.
 func DialV2(addr string) (*V2SessionlessTransport, error) {
+	v2ConnectionOpenAttempts.Inc()
 	t, err := newTransport(addr)
 	if err != nil {
+		v2ConnectionOpenFailures.Inc()
 		return nil, err
 	}
+	v2ConnectionsOpen.Inc()
 	return newV2SessionlessTransport(t), nil
 }
 
