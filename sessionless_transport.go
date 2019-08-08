@@ -47,3 +47,14 @@ type V2SessionlessTransport struct {
 	transport.Transport
 	*V2Sessionless
 }
+
+func (s *V2SessionlessTransport) Close() error {
+	// we intercept this call purely to do the bookkeeping. Note, it is
+	// essential to realise that Close() has no meaning at the level of an
+	// abstract "connection", nor in the case of the session-less connection.
+	// Close() only exist for a session-based connection. We cannot have the
+	// asymmetry of Close() on a session-less closing the transport, and Close()
+	// on a session leaving it alone.
+	v2ConnectionsOpen.Dec()
+	return s.Transport.Close()
+}

@@ -91,15 +91,6 @@ func newV2Sessionless(t transport.Transport) *V2Sessionless {
 	return s
 }
 
-func (s *V2Sessionless) Close() error {
-	// we intercept this call purely to do the gauge bookkeeping
-	if err := s.transport.Close(); err != nil {
-		return err
-	}
-	v2ConnectionsOpen.Dec()
-	return nil
-}
-
 func (s *V2Sessionless) Version() string {
 	return "2.0"
 }
