@@ -34,7 +34,7 @@ var (
 		Name:      "transmit_bytes",
 		Help:      "Observes the payload length of successfully sent UDP packets.",
 		// RMCP (4) + IPMI v1.5 session (10+) + Message (7) = 21
-		Buckets: prometheus.ExponentialBuckets(21, 1.15, 10), // 21 -> 73.88
+		Buckets: prometheus.ExponentialBuckets(21, 1.15, 10), // 73.88
 	})
 	// _count is the equivalent of receive_packets_total
 	// _sum is the equivalent of receive_bytes_total
@@ -44,7 +44,7 @@ var (
 		Name:      "receive_bytes",
 		Help:      "Observes the payload length of successfully received UDP packets.",
 		// RMCP (4) + IPMI v1.5 session (10+) + Message (8) = 22
-		Buckets: prometheus.ExponentialBuckets(22, 1.15, 10), // 22 -> 77.39
+		Buckets: prometheus.ExponentialBuckets(22, 1.15, 10), // 77.39
 	})
 
 	responseLatency = promauto.NewHistogram(prometheus.HistogramOpts{
@@ -52,6 +52,7 @@ var (
 		Subsystem: subsystem,
 		Name:      "response_latency_seconds",
 		Help:      "Observes the time taken between sending a packet and receiving its response.",
+		Buckets:   prometheus.ExponentialBuckets(0.001, 2.5, 10), // 3.81
 	})
 )
 
