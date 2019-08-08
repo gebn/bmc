@@ -10,7 +10,6 @@ import (
 	"github.com/gebn/bmc/pkg/ipmi"
 
 	"github.com/google/gopacket"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 var (
