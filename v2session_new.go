@@ -31,15 +31,6 @@ var (
 		//ipmi.ConfidentialityAlgorithmNone,
 		ipmi.ConfidentialityAlgorithmAESCBC128,
 	}
-
-	v2SessionEstablishAttempts  = sessionEstablishAttempts.WithLabelValues("2.0")
-	v2SessionEstablishFailures  = sessionEstablishFailures.WithLabelValues("2.0")
-	v2SessionEstablishSuccesses = sessionEstablishSuccesses.MustCurryWith(
-		prometheus.Labels{
-			"version": "2.0",
-		},
-	)
-	v2SessionEstablishDuration = sessionEstablishDuration.WithLabelValues("2.0")
 )
 
 // V2SessionOpts contains configurable parameters for RMCP+ session
@@ -117,18 +108,14 @@ func (s *V2SessionlessTransport) NewSession(
 // for knowing that v2.0 is supported.
 func (s *V2SessionlessTransport) NewV2Session(ctx context.Context, opts *V2SessionOpts) (*V2Session, error) {
 	// all the effort is in establish(); this method exists to provide a single
-	// point for incrementing the failure count and timing the process
-	timer := prometheus.NewTimer(v2SessionEstablishDuration)
-	defer timer.ObserveDuration()
-
-	v2SessionEstablishAttempts.Inc()
+	// point for incrementing the failure count
+	sessionOpenAttempts.Inc()
 	sess, err := s.newV2Session(ctx, opts)
 	if err != nil {
-		v2SessionEstablishFailures.Inc()
+		sessionOpenFailures.Inc()
 		return nil, err
 	}
-	// v2SessionEstablishSuccesses has already been incremented with the correct
-	// algorithm label values
+	sessionsOpen.Inc()
 	return sess, nil
 }
 
@@ -250,15 +237,7 @@ func (s *V2SessionlessTransport) newV2Session(ctx context.Context, opts *V2Sessi
 	}
 
 	sess := &V2Session{
-		v2ConnectionShared: &s.v2ConnectionShared,
-		transmitAuthenticated: sessionTransmitAuthenticated.WithLabelValues(
-			openSessionRsp.IntegrityPayload.Algorithm.String()),
-		receiveAuthenticated: sessionReceiveAuthenticated.WithLabelValues(
-			openSessionRsp.IntegrityPayload.Algorithm.String()),
-		transmitEncrypted: sessionTransmitEncrypted.WithLabelValues(
-			openSessionRsp.ConfidentialityPayload.Algorithm.String()),
-		receiveEncrypted: sessionReceiveEncrypted.WithLabelValues(
-			openSessionRsp.ConfidentialityPayload.Algorithm.String()),
+		v2ConnectionShared:             &s.v2ConnectionShared,
 		LocalID:                        openSessionRsp.RemoteConsoleSessionID,
 		RemoteID:                       openSessionRsp.ManagedSystemSessionID,
 		SIK:                            sik,
@@ -278,10 +257,5 @@ func (s *V2SessionlessTransport) newV2Session(ctx context.Context, opts *V2Sessi
 	dlc = dlc.Put(cipherLayer)
 	dlc = dlc.Put(&sess.messageLayer)
 	sess.decode = dlc.LayersDecoder(sess.rmcpLayer.LayerType(), gopacket.NilDecodeFeedback)
-
-	v2SessionEstablishSuccesses.WithLabelValues(
-		openSessionRsp.AuthenticationPayload.Algorithm.String(),
-		openSessionRsp.IntegrityPayload.Algorithm.String(),
-		openSessionRsp.ConfidentialityPayload.Algorithm.String())
 	return sess, nil
 }

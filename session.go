@@ -8,66 +8,41 @@ import (
 )
 
 var (
-	sessionEstablishAttempts = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: namespace,
-			Subsystem: "session",
-			Name:      "establish_attempts_total",
-			Help:      "The number of times session establishment has begun.",
-		},
-		[]string{"version"},
-	)
-	sessionEstablishFailures = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: namespace,
-			Subsystem: "session",
-			Name:      "establish_failures_total",
-			Help:      "The number of times session establishment did not produce a usable session-based connection.",
-		},
-		[]string{"version"},
-	)
-	sessionEstablishSuccesses = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: namespace,
-			Subsystem: "session",
-			Name:      "establish_successes_total",
-			Help:      "The number of times session establishment resulted in a usable session-based connection.",
-		},
-		// we can derive this metric from attempts - failures, so its purpose is
-		// to provide the algorithms used. "integrity" and "confidentiality" are
-		// always "none" for v1.5.
-		[]string{"version", "authentication", "integrity", "confidentiality"},
-	)
-	sessionEstablishDuration = promauto.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Namespace: namespace,
-			Subsystem: "session",
-			Name:      "establish_duration_seconds",
-			Help: "The end-to-end time taken by the NewSession() method, both " +
-				"when it succeeds and fails. Note, this does not include a " +
-				"Get Channel Authentication Capabilities call, as that is not " +
-				"mandatory.",
-		},
-		[]string{"version"},
-	)
-	sessionCloseAttempts = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: namespace,
-			Subsystem: "session",
-			Name:      "close_attempts_total",
-			Help:      "The number of attempts to close a session-based connection.",
-		},
-		[]string{"version"},
-	)
-	sessionCloseFailures = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: namespace,
-			Subsystem: "session",
-			Name:      "close_failures_total",
-			Help:      "The number of times a session-based connection failed to close.",
-		},
-		[]string{"version"},
-	)
+	// we care less about version here - distribution will follow connections
+	// unless the user is treating different versions differently, in which case
+	// they probably don't care about the break-down
+
+	// we could add authentication, integrity and confidentiality labels to a
+	// new algorithms counter, however that will remain static for a given fleet
+	// - if people are interested in algorithm support, this is better
+	// discovered via infrequent sweeps
+
+	// we could time session establishment, however do we really care, provided
+	// it succeeds? would also be a very sparse histogram
+
+	// session re-opens must be tracked by the user of the library; we don't
+	// have any visibility here (at least not currently)
+
+	sessionOpenAttempts = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: namespace,
+		Subsystem: "session",
+		Name:      "open_attempts_total",
+		Help:      "The number of times session establishment has begun.",
+	})
+	sessionOpenFailures = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: namespace,
+		Subsystem: "session",
+		Name:      "open_failures_total",
+		Help: "The number of times session establishment did not produce " +
+			"a usable session-based connection.",
+	})
+	sessionsOpen = promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: namespace,
+		Subsystem: "sessions",
+		Name:      "open",
+		Help: "The number of sessions currently established, including " +
+			"those that have failed to close cleanly.",
+	})
 )
 
 // Session is an established session-based IPMI v1.5 or 2.0 connection. More

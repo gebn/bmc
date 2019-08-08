@@ -17,90 +17,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
-var (
-	sessionTransmitAuthenticated = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: namespace,
-			Subsystem: "session",
-			Name:      "transmit_authenticated_total",
-			Help:      "The number of authenticated RMCP+ packets sent to BMCs.",
-		},
-		[]string{"algorithm"},
-	)
-	sessionReceiveAuthenticated = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: namespace,
-			Subsystem: "session",
-			Name:      "receive_authenticated_total",
-			Help:      "The number of authenticated RMCP+ packets received from BMCs.",
-		},
-		[]string{"algorithm"},
-	)
-	sessionTransmitEncrypted = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: namespace,
-			Subsystem: "session",
-			Name:      "transmit_encrypted_total",
-			Help:      "The number of encrypted RMCP+ packets sent to BMCs.",
-		},
-		[]string{"algorithm"},
-	)
-	sessionReceiveEncrypted = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: namespace,
-			Subsystem: "session",
-			Name:      "receive_encrypted_total",
-			Help:      "The number of encrypted RMCP+ packets received from BMCs.",
-		},
-		[]string{"algorithm"},
-	)
-
-	v2SessionCloseAttempts = sessionCloseAttempts.WithLabelValues("2.0")
-	v2SessionCloseFailures = sessionCloseFailures.WithLabelValues("2.0")
-)
-
-func init() {
-	for _, a := range ipmi.IntegrityAlgorithms {
-		sessionTransmitAuthenticated.WithLabelValues(a.String())
-		sessionReceiveAuthenticated.WithLabelValues(a.String())
-	}
-	// remove the "none" algorithm as it breaks label rules - those packets are
-	// not authenticated
-	sessionTransmitAuthenticated.DeleteLabelValues(ipmi.IntegrityAlgorithmNone.String())
-	sessionReceiveAuthenticated.DeleteLabelValues(ipmi.IntegrityAlgorithmNone.String())
-
-	for _, a := range ipmi.ConfidentialityAlgorithms {
-		sessionTransmitEncrypted.WithLabelValues(a.String())
-		sessionReceiveEncrypted.WithLabelValues(a.String())
-	}
-	// remove the "none" algorithm as it breaks label rules - those packets are
-	// not encrypted
-	sessionTransmitEncrypted.DeleteLabelValues(ipmi.ConfidentialityAlgorithmNone.String())
-	sessionReceiveEncrypted.DeleteLabelValues(ipmi.ConfidentialityAlgorithmNone.String())
-}
-
 // V2Session represents an established IPMI v2.0/RMCP+ session with a BMC.
 type V2Session struct {
 	v2ConnectionLayers
 	*v2ConnectionShared
-
-	// the following counters go here to save a map lookup in the hot path
-
-	// transmitAuthenticated counts the number of packets successfully sent with
-	// a non-empty AuthCode field
-	transmitAuthenticated prometheus.Counter
-
-	// receiveAuthenticated counts the number of packets successfully received
-	// with a non-empty AuthCode field
-	receiveAuthenticated prometheus.Counter
-
-	// transmitEncrypted counts the number of packets successfully sent with a
-	// confidentiality layer
-	transmitEncrypted prometheus.Counter
-
-	// receiveEncrypted counts the number of packets successfully received with
-	// a confidentiality layer
-	receiveEncrypted prometheus.Counter
 
 	// decode parses the layers in v2ConnectionShared, plus a confidentiality
 	// layer.
@@ -245,10 +165,6 @@ func (s *V2Session) SendCommand(ctx context.Context, c ipmi.Command) (ipmi.Compl
 	if terminalErr != nil {
 		return ipmi.CompletionCodeUnspecified, terminalErr
 	}
-	// this is not perfect, as Send() does not easily expose whether the send
-	// failed or receive timed out
-	s.transmitAuthenticated.Inc()
-	s.transmitEncrypted.Inc()
 	if _, err := s.decode(response, &s.layers); err != nil {
 		return ipmi.CompletionCodeUnspecified, err
 	}
@@ -260,13 +176,6 @@ func (s *V2Session) SendCommand(ctx context.Context, c ipmi.Command) (ipmi.Compl
 	}
 
 	// if we have a message, we must have a session
-	if s.v2SessionLayer.Authenticated {
-		s.receiveAuthenticated.Inc()
-	}
-	if s.v2SessionLayer.Encrypted {
-		s.receiveEncrypted.Inc()
-	}
-
 	if c.Response() != nil {
 		if err := c.Response().DecodeFromBytes(s.messageLayer.LayerPayload(), gopacket.NilDecodeFeedback); err != nil {
 			return ipmi.CompletionCodeUnspecified, err
@@ -315,16 +224,15 @@ func (s *V2Session) ChassisControl(ctx context.Context, c ipmi.ChassisControl) e
 }
 
 func (s *V2Session) closeSession(ctx context.Context) error {
-	v2SessionCloseAttempts.Inc()
 	cmd := &ipmi.CloseSessionCmd{
 		Req: ipmi.CloseSessionReq{
 			ID: s.RemoteID,
 		},
 	}
 	if err := ValidateResponse(s.SendCommand(ctx, cmd)); err != nil {
-		v2SessionCloseFailures.Inc()
 		return err
 	}
+	sessionsOpen.Dec()
 	return nil
 }
 
