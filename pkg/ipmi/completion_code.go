@@ -33,7 +33,7 @@ func (c CompletionCode) Description() string {
 }
 
 func (c CompletionCode) String() string {
-	return fmt.Sprintf("%#x(%v)", uint8(c), c.Description())
+	return fmt.Sprintf("%#.2x(%v)", uint8(c), c.Description())
 }
 
 const (
