@@ -14,23 +14,18 @@ import (
 
 var (
 	namespace = "bmc" // still an internal pkg
-	subsystem = "network"
+	subsystem = "transport"
 
-	// recording of failure is handled at higher-levels - we have no visibility
-	// into retries here
+	// we don't care about errors in this package, as it's low-level enough that
+	// a single failure is inconsequential, and will manifest itself as an error
+	// (or retry) at higher levels anyway
 
-	socketOpen = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: namespace,
-		Subsystem: subsystem,
-		Name:      "socket_open_total",
-		Help:      "The number of successfully opened UDP sockets.",
-	})
-	socketClose = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: namespace,
-		Subsystem: subsystem,
-		Name:      "socket_close_total",
-		Help:      "The number of successfully closed UDP sockets.",
-	})
+	// transports opened/open are tracked at the connection level - they are 1:1
+	// with transport instances, and ultimately users care about BMC connections
+	// opened rather than sockets opened. However, these metrics would still be
+	// useful if this package was non-internal, so can always implement them
+	// later if needed.
+
 	transmitPackets = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: namespace,
 		Subsystem: subsystem,
@@ -43,6 +38,8 @@ var (
 		Name:      "receive_packets_total",
 		Help:      "The number of UDP packets successfully received.",
 	})
+
+	// _sum allows deriving the equivalent of transmit_bytes_total
 	transmitBytes = promauto.NewHistogram(prometheus.HistogramOpts{
 		Namespace: namespace,
 		Subsystem: subsystem,
@@ -51,6 +48,7 @@ var (
 		// RMCP (4) + IPMI v1.5 session (10+) + Message (7) = 21
 		Buckets: prometheus.ExponentialBuckets(21, 1.1, 10), // 21 -> 49.52
 	})
+	// _sum allows deriving the equivalent of receive_bytes_total
 	receiveBytes = promauto.NewHistogram(prometheus.HistogramOpts{
 		Namespace: namespace,
 		Subsystem: subsystem,
@@ -59,11 +57,12 @@ var (
 		// RMCP (4) + IPMI v1.5 session (10+) + Message (8) = 22
 		Buckets: prometheus.ExponentialBuckets(22, 1.1, 10), // 22 -> 51.87
 	})
+
 	responseLatency = promauto.NewHistogram(prometheus.HistogramOpts{
 		Namespace: namespace,
 		Subsystem: subsystem,
 		Name:      "response_latency_seconds",
-		Help:      "Observes the time taken between sending each packet and receiving its response.",
+		Help:      "Observes the time taken between sending a packet and receiving its response.",
 	})
 )
 
@@ -79,7 +78,6 @@ func New(addr string) (Transport, error) {
 	if err != nil {
 		return nil, err
 	}
-	socketOpen.Inc()
 	return &transport{
 		fd: c,
 	}, nil
@@ -140,7 +138,6 @@ func (t *transport) Send(ctx context.Context, b []byte) ([]byte, error) {
 
 // Close cleanly shuts down the transport, rendering it unusable.
 func (t *transport) Close() error {
-	socketClose.Inc() // even if fails cannot do any more; misleading otherwise
 	return t.fd.Close()
 }
 
