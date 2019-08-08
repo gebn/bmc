@@ -26,20 +26,8 @@ var (
 	// useful if this package was non-internal, so can always implement them
 	// later if needed.
 
-	transmitPackets = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: namespace,
-		Subsystem: subsystem,
-		Name:      "transmit_packets_total",
-		Help:      "The number of UDP packets successfully sent.",
-	})
-	receivePackets = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: namespace,
-		Subsystem: subsystem,
-		Name:      "receive_packets_total",
-		Help:      "The number of UDP packets successfully received.",
-	})
-
-	// _sum allows deriving the equivalent of transmit_bytes_total
+	// _count is the equivalent of transmit_packets_total
+	// _sum is the equivalent of transmit_bytes_total
 	transmitBytes = promauto.NewHistogram(prometheus.HistogramOpts{
 		Namespace: namespace,
 		Subsystem: subsystem,
@@ -48,7 +36,8 @@ var (
 		// RMCP (4) + IPMI v1.5 session (10+) + Message (7) = 21
 		Buckets: prometheus.ExponentialBuckets(21, 1.1, 10), // 21 -> 49.52
 	})
-	// _sum allows deriving the equivalent of receive_bytes_total
+	// _count is the equivalent of receive_packets_total
+	// _sum is the equivalent of receive_bytes_total
 	receiveBytes = promauto.NewHistogram(prometheus.HistogramOpts{
 		Namespace: namespace,
 		Subsystem: subsystem,
@@ -116,7 +105,6 @@ func (t *transport) Send(ctx context.Context, b []byte) ([]byte, error) {
 			len(b))
 	}
 	sent := time.Now()
-	transmitPackets.Inc()
 	transmitBytes.Observe(float64(len(b)))
 
 	// read
@@ -130,7 +118,6 @@ func (t *transport) Send(ctx context.Context, b []byte) ([]byte, error) {
 		return nil, err
 	}
 	responseLatency.Observe(time.Since(sent).Seconds())
-	receivePackets.Inc()
 	receiveBytes.Observe(float64(n))
 
 	return t.recvBuf[:n], nil
