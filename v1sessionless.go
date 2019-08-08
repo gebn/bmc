@@ -8,6 +8,12 @@ import (
 	"github.com/gebn/bmc/pkg/ipmi"
 )
 
+var (
+	v1ConnectionOpenAttempts = connectionOpenAttempts.WithLabelValues("1.5")
+	v1ConnectionOpenFailures = connectionOpenFailures.WithLabelValues("1.5")
+	v1ConnectionsOpen        = connectionsOpen.WithLabelValues("1.5")
+)
+
 // V1Sessionless represents a session-less connection to a BMC using a "null"
 // IPMI v1.5 session wrapper.
 type V1Sessionless struct {

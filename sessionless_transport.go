@@ -40,6 +40,17 @@ type V1SessionlessTransport struct {
 	V1Sessionless
 }
 
+func (s *V1SessionlessTransport) Close() error {
+	// we intercept this call purely to do the bookkeeping. Note, it is
+	// essential to realise that Close() has no meaning at the level of an
+	// abstract "connection", nor in the case of the session-less connection.
+	// Close() only exist for a session-based connection. We cannot have the
+	// asymmetry of Close() on a session-less closing the transport, and Close()
+	// on a session leaving it alone.
+	v1ConnectionsOpen.Dec()
+	return s.Transport.Close()
+}
+
 // V2SessionlessTransport is a session-less connection to a BMC using an IPMI
 // v2.0/RMCP+ session wrapper, along with its underlying transport. A pointer to
 // this type is returned by DialV2().
@@ -49,12 +60,6 @@ type V2SessionlessTransport struct {
 }
 
 func (s *V2SessionlessTransport) Close() error {
-	// we intercept this call purely to do the bookkeeping. Note, it is
-	// essential to realise that Close() has no meaning at the level of an
-	// abstract "connection", nor in the case of the session-less connection.
-	// Close() only exist for a session-based connection. We cannot have the
-	// asymmetry of Close() on a session-less closing the transport, and Close()
-	// on a session leaving it alone.
 	v2ConnectionsOpen.Dec()
 	return s.Transport.Close()
 }
