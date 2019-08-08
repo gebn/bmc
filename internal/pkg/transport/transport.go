@@ -53,7 +53,7 @@ var (
 	receiveBytes = promauto.NewHistogram(prometheus.HistogramOpts{
 		Namespace: namespace,
 		Subsystem: subsystem,
-		Name:      "receive_bytes_total",
+		Name:      "receive_bytes",
 		Help:      "Observes the payload length of successfully received UDP packets.",
 		// RMCP (4) + IPMI v1.5 session (10+) + Message (8) = 22
 		Buckets: prometheus.ExponentialBuckets(22, 1.1, 10), // 22 -> 51.87
