@@ -47,8 +47,11 @@ func (s *V1SessionlessTransport) Close() error {
 	// Close() only exist for a session-based connection. We cannot have the
 	// asymmetry of Close() on a session-less closing the transport, and Close()
 	// on a session leaving it alone.
+	if err := s.Transport.Close(); err != nil {
+		return err
+	}
 	v1ConnectionsOpen.Dec()
-	return s.Transport.Close()
+	return nil
 }
 
 // V2SessionlessTransport is a session-less connection to a BMC using an IPMI
@@ -60,6 +63,9 @@ type V2SessionlessTransport struct {
 }
 
 func (s *V2SessionlessTransport) Close() error {
+	if err := s.Transport.Close(); err != nil {
+		return err
+	}
 	v2ConnectionsOpen.Dec()
-	return s.Transport.Close()
+	return nil
 }
