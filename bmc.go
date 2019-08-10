@@ -1,4 +1,5 @@
-// Package bmc implements an IPMI v1.5/2.0 remote console.
+// Package bmc implements an IPMI v1.5/2.0 remote console. pkg/ipmi provides the
+// layers; this package makes IPMI work in Go.
 package bmc
 
 import (

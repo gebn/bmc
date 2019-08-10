@@ -79,6 +79,13 @@ type transport struct {
 	// recvBuf is used for reading bytes off the wire. This means we do not
 	// allocate any memory in the hot path, but causes a race condition if the
 	// transport is used concurrently.
+	//
+	// Note that sending session-less commands alongside session-based ones, or
+	// creating multiple Sessions, requires synchronisation over both the
+	// sending and receiving of the response. To maximise throughout for a
+	// single BMC, you can open multiple Connections, however take care not to
+	// overwhelm the BMC - they are only recommended to have a packet buffer of
+	// length 2 (6.10.1, v2.0) and support 4 simultaneous sessions (6.12, v2.0).
 	recvBuf [512]byte
 }
 
