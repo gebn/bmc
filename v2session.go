@@ -171,7 +171,7 @@ func (s *V2Session) sendCommand(ctx context.Context, c ipmi.Command) (ipmi.Compl
 			terminalErr = err
 			return nil
 		}
-		requestCtx, cancel := context.WithTimeout(ctx, time.Second*2) // TODO make configurable
+		requestCtx, cancel := context.WithTimeout(ctx, time.Second) // TODO make configurable
 		defer cancel()
 		resp, err := s.transport.Send(requestCtx, s.buffer.Bytes())
 		response = resp

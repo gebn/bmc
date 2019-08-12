@@ -217,7 +217,7 @@ func (s *V2Sessionless) send(ctx context.Context) (gopacket.LayerType, error) {
 			commandRetries.Inc()
 		}
 
-		requestCtx, cancel := context.WithTimeout(ctx, time.Second*2) // TODO make configurable
+		requestCtx, cancel := context.WithTimeout(ctx, time.Second) // TODO make configurable
 		defer cancel()
 		bytes, err := s.transport.Send(requestCtx, s.buffer.Bytes())
 		response = bytes
