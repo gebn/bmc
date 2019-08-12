@@ -3,7 +3,6 @@
 package bmc
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -20,23 +19,6 @@ var (
 	}
 
 	namespace = "bmc"
-
-	// SuccessfulEmptyResponse is special case error used to indicate the
-	// scenario where we execute a command with a response, so we expect >0
-	// bytes after the message, and get a 0x00 (Normal) completion code, but the
-	// response packet ends after the message layer. This is known to happen
-	// when we send DCMI Get Power Reading to a Super Micro motherboard where
-	// the PSU does not support PMBus, and sending a Super Micro motherboard Get
-	// Channel Authentication Capabilities inside a session.
-	//
-	// This indicates a comformance problem with the BMC (it is indeed an
-	// error), however sometimes it is still useful, e.g. Get Channel
-	// Authentication Capabilities is used as a keepalive inside a session:
-	// getting a 0x00 with empty response is the most efficient way of doing
-	// this, so it could be deliberate; it's just unexpected and needs
-	// special-casing.
-	SuccessfulEmptyResponse = errors.New("expected a response payload, but " +
-		"the packet ended after the message layer")
 )
 
 // TODO need to implement v1 sending

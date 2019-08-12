@@ -203,16 +203,9 @@ func (s *V2Session) sendCommand(ctx context.Context, c ipmi.Command) (ipmi.Compl
 	// response if the code is non-normal.
 	code := s.messageLayer.CompletionCode
 
-	if c.Response() != nil { // the command has a response
-		if code == ipmi.CompletionCodeNormal &&
-			len(s.messageLayer.LayerPayload()) == 0 {
-			// we handle this here so every response layer doesn't have to have
-			// this initial if-condition, however this would theoretically break
-			// 0-length command response layers (none of which are known).
-			return code, SuccessfulEmptyResponse
-		}
-
-		// do our best; this may validly fail if the code is non-normal
+	if c.Response() != nil {
+		// the command is expecting a response body in the success case - do our
+		// best; this may validly fail if the code is non-normal
 		if err := c.Response().DecodeFromBytes(s.messageLayer.LayerPayload(),
 			gopacket.NilDecodeFeedback); err != nil {
 			return code, err

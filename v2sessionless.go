@@ -194,15 +194,8 @@ func (s *V2Sessionless) sendCommand(ctx context.Context, c ipmi.Command) (ipmi.C
 	code := s.messageLayer.CompletionCode
 
 	if c.Response() != nil {
-		// this path is *very* unlikely to be executed, as commands outside a
-		// session must return something to be useful - they are stateless so
-		// have no use as a keep-alive or similar.
-		if code == ipmi.CompletionCodeNormal &&
-			len(s.messageLayer.LayerPayload()) == 0 {
-			return code, SuccessfulEmptyResponse
-		}
-
-		if err := c.Response().DecodeFromBytes(s.messageLayer.LayerPayload(), gopacket.NilDecodeFeedback); err != nil {
+		if err := c.Response().DecodeFromBytes(s.messageLayer.LayerPayload(),
+			gopacket.NilDecodeFeedback); err != nil {
 			return code, err
 		}
 	}
