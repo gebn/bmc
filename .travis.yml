@@ -1,5 +1,5 @@
 sudo: false
-language: go  # N.B. Bazel downloads its own Go SDK, so we don't rely on Travis keeping up to date
+language: minimal  # N.B. Bazel downloads its own Go SDK
 env:
   global:
     - BAZEL_VERSION=0.28.1
