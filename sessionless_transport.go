@@ -41,17 +41,15 @@ type V1SessionlessTransport struct {
 }
 
 func (s *V1SessionlessTransport) Close() error {
-	// we intercept this call purely to do the bookkeeping. Note, it is
-	// essential to realise that Close() has no meaning at the level of an
-	// abstract "connection", nor in the case of the session-less connection.
-	// Close() only exist for a session-based connection. We cannot have the
-	// asymmetry of Close() on a session-less closing the transport, and Close()
-	// on a session leaving it alone.
-	if err := s.Transport.Close(); err != nil {
-		return err
-	}
-	v1ConnectionsOpen.Dec()
-	return nil
+	// we intercept this call purely to do the bookkeeping. Even if the
+	// connection fails to close, we regard it as such as there is nothing else
+	// we can do. Note, it is essential to realise that Close() has no meaning
+	// at the level of an abstract "connection", nor in the case of the
+	// session-less connection.  Close() only exist for a session-based
+	// connection. We cannot have the asymmetry of Close() on a session-less
+	// closing the transport, and Close() on a session leaving it alone.
+	defer v1ConnectionsOpen.Dec()
+	return s.Transport.Close()
 }
 
 // V2SessionlessTransport is a session-less connection to a BMC using an IPMI
@@ -63,9 +61,6 @@ type V2SessionlessTransport struct {
 }
 
 func (s *V2SessionlessTransport) Close() error {
-	if err := s.Transport.Close(); err != nil {
-		return err
-	}
-	v2ConnectionsOpen.Dec()
-	return nil
+	defer v2ConnectionsOpen.Dec()
+	return s.Transport.Close()
 }

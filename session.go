@@ -40,8 +40,8 @@ var (
 		Namespace: namespace,
 		Subsystem: "sessions",
 		Name:      "open",
-		Help: "The number of sessions currently established, including " +
-			"those that have failed to close cleanly.",
+		Help: "The number of sessions currently established. We regard " +
+			"sessions that failed to close cleanly as closed.",
 	})
 )
 

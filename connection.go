@@ -34,8 +34,8 @@ var (
 			Namespace: namespace,
 			Subsystem: "connections",
 			Name:      "open",
-			Help: "The number of connections currently open, including those " +
-				"that failed to close cleanly.",
+			Help: "The number of connections currently open. We regard " +
+				"connections that failed to close cleanly as closed.",
 		},
 		[]string{"version"},
 	)

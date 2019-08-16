@@ -254,16 +254,16 @@ func (s *V2Session) ChassisControl(ctx context.Context, c ipmi.ChassisControl) e
 }
 
 func (s *V2Session) closeSession(ctx context.Context) error {
+	// we decrement regardless of whether this command succeeds, as to not do so
+	// would be overly pessimistic - if it fails, there's nothing we can do;
+	// failures are better tracked as Close Session command errors
+	defer sessionsOpen.Dec()
 	cmd := &ipmi.CloseSessionCmd{
 		Req: ipmi.CloseSessionReq{
 			ID: s.RemoteID,
 		},
 	}
-	if err := ValidateResponse(s.SendCommand(ctx, cmd)); err != nil {
-		return err
-	}
-	sessionsOpen.Dec()
-	return nil
+	return ValidateResponse(s.SendCommand(ctx, cmd))
 }
 
 func (s *V2Session) Close(ctx context.Context) error {
