@@ -15,14 +15,14 @@ def _kingpin():
     _maybe(
         go_repository,
         name = "com_github_alecthomas_units",
-        commit = "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a",  # master as of 2015-10-22
+        commit = "c3de453c63f4bdb4dadffab9805ec00426c505f7",
         importpath = "github.com/alecthomas/units",
     )
 
     _maybe(
         go_repository,
         name = "com_github_alecthomas_template",
-        commit = "a0175ee3bccc567396460bf5acd36800cb10c49c",  # master as of 2016-04-05
+        commit = "fb15b899a75114aa79cc930e33c46b577cc664b1",
         importpath = "github.com/alecthomas/template",
     )
 
@@ -52,7 +52,7 @@ def _prometheus():
         go_repository,
         name = "com_github_prometheus_client_model",
         importpath = "github.com/prometheus/client_model",
-        commit = "fd36f4220a901265f90734c3183c5f0c91daa0b8",
+        commit = "14fe0d1b01d4d5fc031dd4bec1823bd3ebbe8016",
     )
 
     _maybe(
@@ -92,5 +92,5 @@ def test():
         go_repository,
         name = "com_github_google_go_cmp",
         importpath = "github.com/google/go-cmp",
-        tag = "v0.3.0",
+        tag = "v0.3.1",
     )
