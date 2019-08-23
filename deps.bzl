@@ -1,10 +1,8 @@
-load("@bazel_gazelle//:deps.bzl", "go_repository")
-
 def _maybe(repo_rule, name, **kwargs):
     if name not in native.existing_rules():
         repo_rule(name = name, **kwargs)
 
-def _kingpin():
+def _kingpin(go_repository):
     _maybe(
         go_repository,
         name = "com_github_alecthomas_kingpin",
@@ -26,7 +24,7 @@ def _kingpin():
         importpath = "github.com/alecthomas/template",
     )
 
-def _prometheus():
+def _prometheus(go_repository):
     _maybe(
         go_repository,
         name = "com_github_prometheus_client_golang",
@@ -69,7 +67,7 @@ def _prometheus():
         commit = "c182affec369e30f25d3eb8cd8a478dee585ae7d",
     )
 
-def deps():
+def deps(go_repository):
     _maybe(
         go_repository,
         name = "com_github_google_gopacket",
@@ -84,10 +82,10 @@ def deps():
         tag = "v3.0.0",
     )
 
-    _kingpin()
-    _prometheus()
+    _kingpin(go_repository)
+    _prometheus(go_repository)
 
-def test():
+def test(go_repository):
     _maybe(
         go_repository,
         name = "com_github_google_go_cmp",

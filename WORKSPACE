@@ -29,5 +29,7 @@ load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
 gazelle_dependencies()
 
 load(":deps.bzl", "deps", "test")
-deps()
-test()
+
+deps(go_repository)
+
+test(go_repository)
