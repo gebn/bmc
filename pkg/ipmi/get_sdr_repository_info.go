@@ -30,11 +30,12 @@ type GetSDRRepositoryInfoRsp struct {
 	FreeSpace uint16
 
 	// LastAddition is the time when the last record was added to the
-	// repository.
+	// repository. This will be the zero value if never.
 	LastAddition time.Time
 
 	// LastErase is the time when the last record was deleted from the
-	// repository, or the entire repository was cleared.
+	// repository, or the entire repository was cleared. This will be the
+	// zero value if never.
 	LastErase time.Time
 
 	// Overflow indicates whether an SDR could not be written due to lack of
