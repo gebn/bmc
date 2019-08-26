@@ -15,7 +15,8 @@ import (
 // command, specified in section 27.9 and 33.9 of IPMI v1.5 and v2.0
 // respectively. This command is useful for finding out how many SDRs are in the
 // repository, as well as the version, which indicates how to decode the Get SDR
-// command response (in practice, the format does not change between versions).
+// command response (the format has not changed since IPMI-over-LAN was
+// introduced so, in practice, we don't care about this).
 type GetSDRRepositoryInfoRsp struct {
 	layers.BaseLayer
 
