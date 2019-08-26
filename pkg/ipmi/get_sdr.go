@@ -75,7 +75,7 @@ func (s *GetSDRRsp) CanDecode() gopacket.LayerClass {
 }
 
 func (*GetSDRRsp) NextLayerType() gopacket.LayerType {
-	return gopacket.LayerTypePayload
+	return LayerTypeSDR
 }
 
 func (s *GetSDRRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {

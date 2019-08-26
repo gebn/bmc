@@ -150,4 +150,11 @@ var (
 			Decoder: layerexts.BuildDecoder(&GetSDRRsp{}),
 		},
 	)
+	LayerTypeSDR = gopacket.RegisterLayerType(
+		1021,
+		gopacket.LayerTypeMetadata{
+			Name:    "SDR Header",
+			Decoder: layerexts.BuildDecoder(&SDR{}),
+		},
+	)
 )
