@@ -137,4 +137,17 @@ var (
 			Decoder: layerexts.BuildDecoder(&GetSDRRepositoryInfoRsp{}),
 		},
 	)
+	LayerTypeGetSDRReq = gopacket.RegisterLayerType(
+		1019,
+		gopacket.LayerTypeMetadata{
+			Name: "Get SDR Request",
+		},
+	)
+	LayerTypeGetSDRRsp = gopacket.RegisterLayerType(
+		1020,
+		gopacket.LayerTypeMetadata{
+			Name:    "Get SDR Response",
+			Decoder: layerexts.BuildDecoder(&GetSDRRsp{}),
+		},
+	)
 )
