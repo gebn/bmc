@@ -27,6 +27,11 @@ type SessionCommands interface {
 	// specified in 22.3 and 28.3 of IPMI v1.5 and 2.0 respectively.
 	ChassisControl(context.Context, ipmi.ChassisControl) error
 
+	// GetSDRRepositoryInfo obtains information about the BMC's Sensor Data
+	// Record Repository. It is specified in 27.9 and 33.9 of IPMI v1.5 and 2.0
+	// respectively.
+	GetSDRRepositoryInfo(context.Context) (*ipmi.GetSDRRepositoryInfoRsp, error)
+
 	// closeSession sends a Close Session command to the BMC. It is unexported
 	// as calling it randomly would leave the session in an invalid state. Call
 	// Close() on the session itself to invoke this.

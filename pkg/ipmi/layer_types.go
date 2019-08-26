@@ -130,4 +130,11 @@ var (
 			Name: "Chassis Control Request",
 		},
 	)
+	LayerTypeGetSDRRepositoryInfoRsp = gopacket.RegisterLayerType(
+		1018,
+		gopacket.LayerTypeMetadata{
+			Name:    "Get SDR Repository Info Response",
+			Decoder: layerexts.BuildDecoder(&GetSDRRepositoryInfoRsp{}),
+		},
+	)
 )

@@ -70,6 +70,14 @@ var (
 		Function: NetworkFunctionAppReq,
 		Command:  0x3c,
 	}
+	OperationGetSDRRepositoryInfoReq = Operation{
+		Function: NetworkFunctionStorageReq,
+		Command:  0x20,
+	}
+	OperationGetSDRRepositoryInfoRsp = Operation{
+		Function: NetworkFunctionStorageRsp,
+		Command:  0x20,
+	}
 
 	// operationLayerTypes tells us which layer comes next given a network
 	// function and command. It should never be modified during runtime, as
@@ -80,6 +88,7 @@ var (
 		OperationGetSystemGUIDRsp:    LayerTypeGetSystemGUIDRsp,
 		//OperationGetChannelAuthenticationCapabilitiesReq: LayerTypeGetChannelAuthenticationCapabilitiesReq,
 		OperationGetChannelAuthenticationCapabilitiesRsp: LayerTypeGetChannelAuthenticationCapabilitiesRsp,
+		OperationGetSDRRepositoryInfoRsp:                 LayerTypeGetSDRRepositoryInfoRsp,
 	}
 )
 

@@ -253,6 +253,14 @@ func (s *V2Session) ChassisControl(ctx context.Context, c ipmi.ChassisControl) e
 	return nil
 }
 
+func (s *V2Session) GetSDRRepositoryInfo(ctx context.Context) (*ipmi.GetSDRRepositoryInfoRsp, error) {
+	cmd := &ipmi.GetSDRRepositoryInfoCmd{}
+	if err := ValidateResponse(s.SendCommand(ctx, cmd)); err != nil {
+		return nil, err
+	}
+	return &cmd.Rsp, nil
+}
+
 func (s *V2Session) closeSession(ctx context.Context) error {
 	// we decrement regardless of whether this command succeeds, as to not do so
 	// would be overly pessimistic - if it fails, there's nothing we can do;
