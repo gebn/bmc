@@ -38,10 +38,10 @@ type V2SessionOpts struct {
 	SessionOpts
 
 	// PrivilegeLevelLookup indicates whether to use both the MaxPrivilegeLevel
-	// and Username to search for the relevant user entry. If this is true and
-	// the username is empty, we effectively use role-based authentication. If
-	// this is false, the supplied MaxPrivilegeLevel will be ignored when
-	// searching for the Username.
+	// and Username to search for the relevant user entry. If this is true, as
+	// both are used in the search, a user will a lower max privilege level than
+	// MaxPrivilegeLevel would not be found. If this is true and the username is
+	// empty, we effectively use role-based authentication.
 	PrivilegeLevelLookup bool
 
 	// KG is the key-generating key or "BMC key". It is almost always unset, as

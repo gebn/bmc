@@ -71,13 +71,18 @@ var (
 
 	// serialise and deserialise errors are rolled up into this - to properly
 	// diagnose why, we need a level of info only logging can provide. Futile to
-	// try to pin this down with metrics, so we don't bother
+	// try to pin this down with metrics, so we don't bother. Note this does not
+	// discriminate on completion code; a non-normal completion code that is
+	// returned to the user with a nil error is not a failure.
 	commandFailures = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: namespace,
 			Subsystem: "command",
 			Name:      "failures_total",
-			Help:      "The number of times a user has received an error having asked to send a command.",
+			Help: "The number of times a user has received an error " +
+				"having asked to send a command. This does not involve " +
+				"response completion codes; a command that succeeds with a " +
+				"error response is not a failure by this definition.",
 		},
 		// we track name here as well to make this and attempts easily
 		// subtractable
@@ -130,9 +135,12 @@ type Connection interface {
 	// until a valid response is received, or the context expires (whichever
 	// happens first). A non-zero completion code is deemed to be a valid
 	// response. If the final request fails with a transport error (including
-	// timeout), a serialise/decode error occurs, or the message layer is
-	// missing, the returned error will be non-nil, and the completion code must
-	// be ignored.
+	// timeout), a serialise/decode error occurs above the command response
+	// layer, or the message layer is missing, the returned error will be
+	// non-nil, and the completion code must be ignored. If the message layer of
+	// the response was decoded successfully, the code will be set to that,
+	// however the error can still be non-nil if the command expects a response
+	// and that failed to decode correctly.
 	//
 	// This method uses the response layer (if any) included in the command
 	// interface for decoding the response. The caller should first check the
@@ -140,11 +148,11 @@ type Connection interface {
 	// read the response layer if required. The ValidateResponse() function can
 	// be used for the sake of brevity.
 	//
-	// This method must not allocate any memory, so is ideal in situations where
-	// you intend to send the same command repeatedly, e.g. a Prometheus
-	// exporter. If you don't need this performance, for the sake of one more
-	// allocation per command, it is recommended to use the higher-level API,
-	// e.g. GetDeviceID(), which wraps this.
+	// This method does not allocate any memory for layers, so is ideal in
+	// situations where you intend to send the same command repeatedly, e.g. a
+	// Prometheus exporter. If you don't need this performance, for the sake of
+	// one more allocation per command, it is recommended to use the
+	// higher-level API, e.g. GetSystemGUID(), which wraps this.
 	SendCommand(ctx context.Context, cmd ipmi.Command) (ipmi.CompletionCode, error)
 
 	// Version returns the underlying IPMI version of the connection, either

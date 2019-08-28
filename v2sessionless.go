@@ -153,18 +153,39 @@ func serializableLayerOrEmpty(s gopacket.SerializableLayer) gopacket.Serializabl
 func (s *V2Sessionless) SendCommand(ctx context.Context, c ipmi.Command) (ipmi.CompletionCode, error) {
 	timer := prometheus.NewTimer(commandDuration)
 	defer timer.ObserveDuration()
-
 	commandAttempts.WithLabelValues(c.Name()).Inc()
-	code, err := s.sendCommand(ctx, c)
-	if err != nil {
+
+	if err := s.buildAndSend(ctx, c); err != nil {
 		commandFailures.WithLabelValues(c.Name()).Inc()
-		return ipmi.CompletionCodeUnspecified, err
+		return 0, err
 	}
+
+	// we got a message, so we have a completion code. Note that if this is
+	// non-normal, BMCs are allowed to truncate the response after that field,
+	// however we attempt to parse a response regardless for the sake of those
+	// BMCs that don't. If we get an error, it is passed back along with the
+	// correct completion code. Users of this function should not rely on the
+	// response if the code is non-normal.
+	code := s.messageLayer.CompletionCode
 	commandResponses.WithLabelValues(code.String()).Inc()
+
+	if c.Response() != nil {
+		// the command is expecting a response body in the success case - do our
+		// best; this may validly fail if the code is non-normal
+		if err := c.Response().DecodeFromBytes(s.messageLayer.LayerPayload(),
+			gopacket.NilDecodeFeedback); err != nil {
+			commandFailures.WithLabelValues(c.Name()).Inc()
+			return code, err
+		}
+	}
+
+	// even if code is non-normal, if we didn't have any issues, we don't log it
+	// as a command failure, as the command succeeded; it just didn't respond a
+	// successful response
 	return code, nil
 }
 
-func (s *V2Sessionless) sendCommand(ctx context.Context, c ipmi.Command) (ipmi.CompletionCode, error) {
+func (s *V2Sessionless) buildAndSend(ctx context.Context, c ipmi.Command) error {
 	s.rmcpLayer = layers.RMCP{
 		Version:  layers.RMCPVersion1,
 		Sequence: 0xFF, // do not send us an ACK
@@ -189,26 +210,15 @@ func (s *V2Sessionless) sendCommand(ctx context.Context, c ipmi.Command) (ipmi.C
 		&s.v2SessionLayer,
 		&s.messageLayer,
 		serializableLayerOrEmpty(c.Request())); err != nil {
-		return ipmi.CompletionCodeUnspecified, err
+		return err
 	}
 
 	if _, err := s.send(ctx); err != nil {
-		return ipmi.CompletionCodeUnspecified, err
+		return err
 	}
 
 	types := layerexts.DecodedTypes(s.layers)
-	if err := types.InnermostEquals(ipmi.LayerTypeMessage); err != nil {
-		return ipmi.CompletionCodeUnspecified, err
-	}
-	code := s.messageLayer.CompletionCode
-
-	if c.Response() != nil {
-		if err := c.Response().DecodeFromBytes(s.messageLayer.LayerPayload(),
-			gopacket.NilDecodeFeedback); err != nil {
-			return code, err
-		}
-	}
-	return code, nil
+	return types.InnermostEquals(ipmi.LayerTypeMessage)
 }
 
 func (s *V2Sessionless) send(ctx context.Context) (gopacket.LayerType, error) {
