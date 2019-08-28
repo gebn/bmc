@@ -29,7 +29,7 @@ type SessionlessTransport interface {
 	// more control over establishment, use DialV*() to obtain a
 	// V1SessionlessTransport or V2SessionlessTransport. NewSession uses the
 	// sessionless methods for establishment.
-	NewSession(ctx context.Context, username string, password []byte) (Session, error)
+	NewSession(ctx context.Context, opts *SessionOpts) (Session, error)
 }
 
 // V1SessionlessTransport is a session-less connection to a BMC using an IPMI

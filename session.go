@@ -3,6 +3,8 @@ package bmc
 import (
 	"context"
 
+	"github.com/gebn/bmc/pkg/ipmi"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -65,4 +67,37 @@ type Session interface {
 	// this call is deferred immediately after successful session establishment.
 	// If an error is returned, the session can be assumed to be closed.
 	Close(context.Context) error
+}
+
+// SessionOpts contains session-establishment options common to IPMI v1.5 and
+// 2.0. A value of this type is required to establish a version-agnostic
+// session.
+type SessionOpts struct {
+
+	// Username is the username of the user to connect as. Only ASCII characters
+	// (excluding \0) are allowed, and it cannot be more than 16 characters
+	// long.
+	Username string
+
+	// Password is the password of the above user, stored on the managed system
+	// as either 16 bytes (for v1.5, or to preserve the ability to log in with a
+	// v1.5 session in v2.0) or 20 bytes of uninterpreted data (hence why this
+	// isn't a string).  Passwords shorter than the maximum length are padded
+	// with 0x00.  This is called K_[UID] in the spec ("the key for the user
+	// with ID
+	// 'UID'").
+	Password []byte
+
+	// MaxPrivilegeLevel is the upper privilege limit for the session. It
+	// defaults to ipmi.PrivilegeLevelHighest, however the channel or user
+	// privilege level limit may further constrain allowed commands.
+	//
+	// In IPMI v2.0, if PrivilegeLevelLookup is true, it is also used in the
+	// user entry lookup, and so in practice a user with a lower max privilege
+	// level than this would not be selected.
+	MaxPrivilegeLevel ipmi.PrivilegeLevel
+
+	// timeout is inherited from the session-less connection used to create the
+	// session, which also controls the time allowed for each attempt of the
+	// session establishment commands
 }

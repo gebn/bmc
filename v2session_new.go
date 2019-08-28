@@ -35,25 +35,7 @@ var (
 // V2SessionOpts contains configurable parameters for RMCP+ session
 // establishment.
 type V2SessionOpts struct {
-
-	// Username is the username of the user to connect as. Only ASCII characters
-	// (excluding \0) are allowed, and it cannot be more than 16 characters
-	// long.
-	Username string
-
-	// Password is the password of the above user, stored on the managed system
-	// as either 16 bytes (to preserve the ability to log in with a v1.5
-	// session) or 20 bytes of uninterpreted data (hence why this isn't a
-	// string).  Passwords shorter than the maximum length are padded with 0x00.
-	// This is called K_[UID] in the spec ("the key for the user with ID
-	// 'UID'").
-	Password []byte
-
-	// MaxPrivilegeLevel is the upper privilege limit for the session. If
-	// PrivilegeLevelLookup is true, it is also used in the user entry lookup.
-	// Regardless of this value, if PrivilegeLevelLookup is false, the channel
-	// or user privilege level limit may further constrain allowed commands.
-	MaxPrivilegeLevel ipmi.PrivilegeLevel
+	SessionOpts
 
 	// PrivilegeLevelLookup indicates whether to use both the MaxPrivilegeLevel
 	// and Username to search for the relevant user entry. If this is true and
@@ -86,19 +68,16 @@ type V2SessionOpts struct {
 	ConfidentialityAlgorithms []ipmi.ConfidentialityAlgorithm
 }
 
-// NewSession establishes a new RMCP+ session using a username and password. Two
-// key login is assumed to be disabled (i.e. KG is null), and all algorithms
-// supported by the library will be offered. This should cover the majority of
-// use cases, and is recommended unless you know a-priori that a BMC key is set.
+// NewSession establishes a new RMCP+ session. Two-key login is assumed to be
+// disabled (i.e. KG is null), and all algorithms supported by the library will
+// be offered. This should cover the majority of use cases, and is recommended
+// unless you know a-priori that a BMC key is set.
 func (s *V2SessionlessTransport) NewSession(
 	ctx context.Context,
-	username string,
-	password []byte,
+	opts *SessionOpts,
 ) (Session, error) {
 	return s.NewV2Session(ctx, &V2SessionOpts{
-		Username:          username,
-		Password:          password,
-		MaxPrivilegeLevel: ipmi.PrivilegeLevelAdministrator,
+		SessionOpts: *opts,
 	})
 }
 

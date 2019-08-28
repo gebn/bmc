@@ -60,7 +60,10 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
 
-	sess, err := machine.NewSession(ctx, *flgUsername, []byte(*flgPassword))
+	sess, err := machine.NewSession(ctx, &bmc.SessionOpts{
+		Username: *flgUsername,
+		Password: []byte(*flgPassword),
+	})
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -81,7 +81,10 @@ func main() {
 		printDCMIPowerPeriods(p)
 	}
 
-	sess, err := machine.NewSession(ctx, *flgUsername, []byte(*flgPassword))
+	sess, err := machine.NewSession(ctx, &bmc.SessionOpts{
+		Username: *flgUsername,
+		Password: []byte(*flgPassword),
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
