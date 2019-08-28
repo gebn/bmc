@@ -246,6 +246,7 @@ func (s *V2SessionlessTransport) newV2Session(ctx context.Context, opts *V2Sessi
 		AdditionalKeyMaterialGenerator: keyMaterialGen,
 		integrityAlgorithm:             hasher,
 		confidentialityLayer:           cipherLayer,
+		timeout:                        s.timeout,
 	}
 	// do not set properties of the session layer here, as it is overwritten
 	// each send

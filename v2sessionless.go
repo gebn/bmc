@@ -70,17 +70,22 @@ type V2Sessionless struct {
 	v2ConnectionLayers
 	v2ConnectionShared
 
+	// timeout is the time we allow the BMC to respond to each UDP request. This
+	// contrasts with the context, which includes retries.
+	timeout time.Duration
+
 	// decode parses the layers in v2ConnectionShared.
 	decode gopacket.DecodingLayerFunc
 }
 
-func newV2Sessionless(t transport.Transport) *V2Sessionless {
+func newV2Sessionless(t transport.Transport, timeout time.Duration) *V2Sessionless {
 	s := &V2Sessionless{
 		v2ConnectionShared: v2ConnectionShared{
 			transport: t,
 			buffer:    gopacket.NewSerializeBuffer(),
 			backoff:   backoff.NewExponentialBackOff(),
 		},
+		timeout: timeout,
 	}
 	dlc := gopacket.DecodingLayerContainer(gopacket.DecodingLayerArray(nil))
 	dlc = dlc.Put(&s.rmcpLayer)
@@ -89,6 +94,10 @@ func newV2Sessionless(t transport.Transport) *V2Sessionless {
 	dlc = dlc.Put(&s.messageLayer)
 	s.decode = dlc.LayersDecoder(s.rmcpLayer.LayerType(), gopacket.NilDecodeFeedback)
 	return s
+}
+
+func (s *V2Sessionless) SetTimeout(t time.Duration) {
+	s.timeout = t
 }
 
 func (s *V2Sessionless) Version() string {
@@ -218,7 +227,7 @@ func (s *V2Sessionless) send(ctx context.Context) (gopacket.LayerType, error) {
 			commandRetries.Inc()
 		}
 
-		requestCtx, cancel := context.WithTimeout(ctx, time.Second) // TODO make configurable
+		requestCtx, cancel := context.WithTimeout(ctx, s.timeout)
 		defer cancel()
 		bytes, err := s.transport.Send(requestCtx, s.buffer.Bytes())
 		response = bytes

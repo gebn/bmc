@@ -5,6 +5,7 @@ package bmc
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gebn/bmc/internal/pkg/transport"
 	"github.com/gebn/bmc/pkg/ipmi"
@@ -74,6 +75,7 @@ func newV1SessionlessTransport(t transport.Transport) *V1SessionlessTransport {
 		Transport: t,
 		V1Sessionless: V1Sessionless{
 			transport: t,
+			timeout:   time.Second,
 		},
 	}
 }
@@ -95,7 +97,7 @@ func DialV2(addr string) (*V2SessionlessTransport, error) {
 func newV2SessionlessTransport(t transport.Transport) *V2SessionlessTransport {
 	return &V2SessionlessTransport{
 		Transport:     t,
-		V2Sessionless: newV2Sessionless(t),
+		V2Sessionless: newV2Sessionless(t, time.Second),
 	}
 }
 

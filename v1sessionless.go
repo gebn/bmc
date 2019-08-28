@@ -3,6 +3,7 @@ package bmc
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/gebn/bmc/internal/pkg/transport"
 	"github.com/gebn/bmc/pkg/ipmi"
@@ -19,6 +20,7 @@ var (
 type V1Sessionless struct {
 	transport transport.Transport
 	session   ipmi.V1Session
+	timeout   time.Duration
 }
 
 func (s *V1Sessionless) Version() string {

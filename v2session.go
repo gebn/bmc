@@ -86,6 +86,10 @@ type V2Session struct {
 	// message, this layer's SerializeTo is called before adding the session
 	// wrapper.
 	confidentialityLayer layerexts.SerializableDecodingLayer
+
+	// timeout is the time allowed per attempt of a command. The context passed
+	// in by the user controls end-to-end.
+	timeout time.Duration
 }
 
 // String returns a summary of the session's attributes on one line.
@@ -171,7 +175,7 @@ func (s *V2Session) sendCommand(ctx context.Context, c ipmi.Command) (ipmi.Compl
 			terminalErr = err
 			return nil
 		}
-		requestCtx, cancel := context.WithTimeout(ctx, time.Second) // TODO make configurable
+		requestCtx, cancel := context.WithTimeout(ctx, s.timeout)
 		defer cancel()
 		resp, err := s.transport.Send(requestCtx, s.buffer.Bytes())
 		response = resp
