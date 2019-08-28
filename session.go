@@ -89,12 +89,16 @@ type SessionOpts struct {
 	Password []byte
 
 	// MaxPrivilegeLevel is the upper privilege limit for the session. It
-	// defaults to ipmi.PrivilegeLevelHighest, however the channel or user
-	// privilege level limit may further constrain allowed commands.
+	// defaults to ipmi.PrivilegeLevelHighest for IPMI v2.0, and
+	// ipmi.PrivilegeLevelUser for IPMI v1.5, which does not have that value,
+	// however the channel or user privilege level limit may further constrain
+	// allowed commands for either version.
 	//
-	// In IPMI v2.0, if PrivilegeLevelLookup is true, it is also used in the
-	// user entry lookup, and so in practice a user with a lower max privilege
-	// level than this would not be selected.
+	// Due to the deliberate inconsistency between IPMI versions, it is always
+	// recommended to explicitly set this. Unfortunately it was not possible to
+	// default to User for v2.0 as, because Highest has value 0, we cannot
+	// distinguish between it being implicitly and explicitly set, so we don't
+	// know when to intervene.
 	MaxPrivilegeLevel ipmi.PrivilegeLevel
 
 	// timeout is inherited from the session-less connection used to create the

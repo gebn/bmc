@@ -82,8 +82,9 @@ func main() {
 	}
 
 	sess, err := machine.NewSession(ctx, &bmc.SessionOpts{
-		Username: *flgUsername,
-		Password: []byte(*flgPassword),
+		Username:          *flgUsername,
+		Password:          []byte(*flgPassword),
+		MaxPrivilegeLevel: ipmi.PrivilegeLevelUser,
 	})
 	if err != nil {
 		log.Fatal(err)

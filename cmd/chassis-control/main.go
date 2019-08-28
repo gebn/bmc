@@ -61,8 +61,9 @@ func main() {
 	defer cancel()
 
 	sess, err := machine.NewSession(ctx, &bmc.SessionOpts{
-		Username: *flgUsername,
-		Password: []byte(*flgPassword),
+		Username:          *flgUsername,
+		Password:          []byte(*flgPassword),
+		MaxPrivilegeLevel: ipmi.PrivilegeLevelOperator,
 	})
 	if err != nil {
 		log.Fatal(err)
