@@ -103,7 +103,7 @@ var (
 		Subsystem: "command",
 		Name:      "duration_seconds",
 		Help:      "The end-to-end time from command send to response return, including retries.",
-		Buckets:   prometheus.ExponentialBuckets(0.001, 2.6, 10), // 5.43
+		Buckets:   prometheus.ExponentialBuckets(0.002, 2.4, 10), // 5.28
 	})
 
 	// we don't track the command here, as if commands are failing, we care that

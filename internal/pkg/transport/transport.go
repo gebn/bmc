@@ -52,7 +52,7 @@ var (
 		Subsystem: subsystem,
 		Name:      "response_latency_seconds",
 		Help:      "Observes the time taken between sending a packet and receiving its response.",
-		Buckets:   prometheus.ExponentialBuckets(0.001, 2.5, 10), // 3.81
+		Buckets:   prometheus.ExponentialBuckets(0.001, 1.6, 10), // 0.069
 	})
 )
 
