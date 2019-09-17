@@ -13,7 +13,7 @@ def _kingpin(go_repository):
     _maybe(
         go_repository,
         name = "com_github_alecthomas_units",
-        commit = "c3de453c63f4bdb4dadffab9805ec00426c505f7",
+        commit = "680d30ca31172657fa50e996eb82d790d1d8b96e",
         importpath = "github.com/alecthomas/units",
     )
 
@@ -36,7 +36,7 @@ def _prometheus(go_repository):
         go_repository,
         name = "com_github_prometheus_common",
         importpath = "github.com/prometheus/common",
-        tag = "v0.6.0",
+        tag = "v0.7.0",
     )
 
     _maybe(
@@ -57,7 +57,7 @@ def _prometheus(go_repository):
         go_repository,
         name = "com_github_prometheus_procfs",
         importpath = "github.com/prometheus/procfs",
-        tag = "v0.0.3",
+        tag = "v0.0.5",
     )
 
     _maybe(
@@ -72,7 +72,7 @@ def deps(go_repository):
         go_repository,
         name = "com_github_google_gopacket",
         importpath = "github.com/google/gopacket",
-        commit = "c340012d34adb8462b1e23ad4d7a73944f4224b8",
+        commit = "2d7fab0d91d6bb77c1df6bdeb222270a2aa13820",
     )
 
     _maybe(
