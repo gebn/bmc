@@ -2,8 +2,8 @@ sudo: false
 language: minimal  # N.B. Bazel downloads its own Go SDK
 env:
   global:
-    - BAZEL_VERSION=1.0.0
-    - BAZEL_SHA256=f8490463360fff5992b5a5af93f930ff984588765f9ccf3e7dd03db5145fbf0f
+    - BAZEL_VERSION=1.1.0
+    - BAZEL_SHA256=1a552f4ce194860fbbd50eeb319f81788ddf50a849e92378eec72231cc64ef65
 before_install:
   - |
     wget -O install.sh "https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh"
@@ -15,23 +15,5 @@ install:
     bazel shutdown  # prevents "WARNING: Running Bazel server needs to be killed, because the startup options are different."
     rm -f install.sh
 script:
-  - |
-    bazel \
-      --host_jvm_args=-Xmx8000m \
-      --host_jvm_args=-Xms8000m \
-      build \
-      --config=ci \
-      --noshow_progress \
-      --noshow_loading_progress \
-      --local_resources=8500,2,1.0 \
-      //...
-  - |
-    bazel \
-      --host_jvm_args=-Xmx8000m \
-      --host_jvm_args=-Xms8000m \
-      test \
-      --config=ci \
-      --noshow_progress \
-      --noshow_loading_progress \
-      --local_resources=8500,2,1.0 \
-      //...
+  - bazel build --config=ci //...
+  - bazel test --config=ci //...

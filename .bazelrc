@@ -3,6 +3,8 @@ test --features=race
 test --test_output=errors
 
 build:ci --sandbox_debug
+build:ci --noshow_progress
+build:ci --noshow_loading_progress
 build:ci --spawn_strategy=standalone
 build:ci --genrule_strategy=standalone
 test:ci --test_strategy=standalone
