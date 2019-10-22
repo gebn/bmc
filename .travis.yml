@@ -12,7 +12,6 @@ before_install:
 install:
   - |
     ./install.sh --user
-    bazel shutdown  # prevents "WARNING: Running Bazel server needs to be killed, because the startup options are different."
     rm -f install.sh
 script:
   - bazel build --config=ci //...
