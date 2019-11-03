@@ -11,6 +11,13 @@ import (
 // GetSDRReq represents a request to retrieve a single Sensor Data Record from
 // the BMC's SDR Repository Device. This command is specified in section 27.12
 // and 33.12 of IPMI v1.5 and 2.0 respectively.
+//
+// No guarantees are made about the ordering of returned SDRs. Record IDs tend
+// to be returned in ascending order, but have big gaps between numbers. The
+// underlying entities and instances are scrambled - it cannot be assumed that
+// when the next SDR has a different entity, there is no more of the current
+// entity. The specification recommends retrieving all SDRs and incrementally
+// indexing or processing them as needed.
 type GetSDRReq struct {
 	layers.BaseLayer
 
