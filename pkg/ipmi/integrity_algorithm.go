@@ -7,11 +7,11 @@ package ipmi
 type IntegrityAlgorithm uint8
 
 const (
-	IntegrityAlgorithmNone          IntegrityAlgorithm = 0x00
-	IntegrityAlgorithmHMACSHA196    IntegrityAlgorithm = 0x01 // 12 byte authcode
-	IntegrityAlgorithmHMACMD5128    IntegrityAlgorithm = 0x02 // 16 bytes ''
-	IntegrityAlgorithmMD5128        IntegrityAlgorithm = 0x03 // 16 bytes ''
-	IntegrityAlgorithmHMACSHA256128 IntegrityAlgorithm = 0x04 // 16 bytes ''
+	IntegrityAlgorithmNone          IntegrityAlgorithm = iota
+	IntegrityAlgorithmHMACSHA196                       // 12 byte authcode
+	IntegrityAlgorithmHMACMD5128                       // 16 bytes ''
+	IntegrityAlgorithmMD5128                           // 16 bytes ''
+	IntegrityAlgorithmHMACSHA256128                    // 16 bytes ''
 )
 
 func (i IntegrityAlgorithm) String() string {

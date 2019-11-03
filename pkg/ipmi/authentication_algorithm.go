@@ -8,30 +8,30 @@ type AuthenticationAlgorithm uint8
 
 const (
 	// AuthenticationAlgorithmNone is equivalent to
-	// AuthenticationAlgorithmHMACSHA1, however the key exchange
-	// authentication code fields in RAKP2 and 3, and the ICV field in RAKP4 are
-	// absent. Password auth and packet level integrity checking are
-	// unavailable. The privilege level is established using only the
-	// username/role (the former of which may be null, with a null password,
-	// allowing anonymous access). Support for this algorithm is mandatory.
-	AuthenticationAlgorithmNone AuthenticationAlgorithm = 0x00
+	// AuthenticationAlgorithmHMACSHA1, however the key exchange authentication
+	// code fields in RAKP2 and 3, and the ICV field in RAKP4 are absent.
+	// Password auth and packet level integrity checking are unavailable. The
+	// privilege level is established using only the username/role (the former
+	// of which may be null, with a null password, allowing anonymous access).
+	// Support for this algorithm is mandatory.
+	AuthenticationAlgorithmNone AuthenticationAlgorithm = iota
 
 	// AuthenticationAlgorithmHMACSHA1 specifies that HMAC-SHA1 (RFC2104) is
 	// used to create 20-byte key exchange authentication code fields in RAKP2
 	// and RAKP3. HMAC-SHA1-96 (RFC2404) is used for generating a 12-byte ICV in
 	// RAKP4. Support for this algorithm is mandatory.
-	AuthenticationAlgorithmHMACSHA1 AuthenticationAlgorithm = 0x01
+	AuthenticationAlgorithmHMACSHA1
 
-	// AuthenticationAlgorithmHMACMD5 specifies that HMAC-MD5 (RFC2104) is
-	// used to create 16-byte key exchange authentication codes in RAKP2 and
-	// RAKP3, and ICV in RAKP4.
-	AuthenticationAlgorithmHMACMD5 AuthenticationAlgorithm = 0x02
+	// AuthenticationAlgorithmHMACMD5 specifies that HMAC-MD5 (RFC2104) is used
+	// to create 16-byte key exchange authentication codes in RAKP2 and RAKP3,
+	// and ICV in RAKP4.
+	AuthenticationAlgorithmHMACMD5
 
-	// AuthenticationAlgorithmHMACSHA256 specifies that HMAC-SHA256 (FIPS
-	// 180-2, RFC4634) is used to create 32-byte key exchange authentication
-	// code fields in RAKP2 and RAKP3. HMAC-SHA256-128 (RFC4868) is used for
+	// AuthenticationAlgorithmHMACSHA256 specifies that HMAC-SHA256 (FIPS 180-2,
+	// RFC4634) is used to create 32-byte key exchange authentication code
+	// fields in RAKP2 and RAKP3. HMAC-SHA256-128 (RFC4868) is used for
 	// generating a 12-byte ICV in RAKP4.
-	AuthenticationAlgorithmHMACSHA256 AuthenticationAlgorithm = 0x03
+	AuthenticationAlgorithmHMACSHA256
 )
 
 func (a AuthenticationAlgorithm) String() string {

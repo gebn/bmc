@@ -10,12 +10,13 @@ import (
 type AuthenticationType uint8
 
 const (
-	AuthenticationTypeNone     AuthenticationType = 0x0
-	AuthenticationTypeMD2      AuthenticationType = 0x1
-	AuthenticationTypeMD5      AuthenticationType = 0x2
-	AuthenticationTypePassword AuthenticationType = 0x3
-	AuthenticationTypeOEM      AuthenticationType = 0x5
-	AuthenticationTypeRMCPPlus AuthenticationType = 0x6 // IPMI v2 only
+	AuthenticationTypeNone AuthenticationType = iota
+	AuthenticationTypeMD2
+	AuthenticationTypeMD5
+	_ // reserved
+	AuthenticationTypePassword
+	AuthenticationTypeOEM
+	AuthenticationTypeRMCPPlus // IPMI v2 only
 )
 
 func (t AuthenticationType) name() string {

@@ -7,7 +7,7 @@ package ipmi
 type ConfidentialityAlgorithm uint8
 
 const (
-	ConfidentialityAlgorithmNone ConfidentialityAlgorithm = 0x00
+	ConfidentialityAlgorithmNone ConfidentialityAlgorithm = iota
 
 	// ConfidentialityAlgorithmAESCBC128 specifies the use of AES-128-CBC (the
 	// naming is to be consistent with the spec) for encrypted packets. The
@@ -18,10 +18,10 @@ const (
 	// added. The pad bytes start at 0x01, and increment each byte;
 	// implementations must validate this. Support for this algorithm is
 	// mandatory.
-	ConfidentialityAlgorithmAESCBC128 ConfidentialityAlgorithm = 0x01
+	ConfidentialityAlgorithmAESCBC128
 
-	ConfidentialityAlgorithmXRC4128 ConfidentialityAlgorithm = 0x02
-	ConfidentialityAlgorithmXRC440  ConfidentialityAlgorithm = 0x03
+	ConfidentialityAlgorithmXRC4128
+	ConfidentialityAlgorithmXRC440
 )
 
 func (c ConfidentialityAlgorithm) String() string {

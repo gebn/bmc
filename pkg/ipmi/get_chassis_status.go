@@ -11,22 +11,22 @@ import (
 // power returns. This is a 2-bit uint on the wire.
 type PowerRestorePolicy uint8
 
-var (
+const (
 	// PowerRestorePolicyRemainOff means the system will not attempt to turn on
 	// when power returns, regardless of state before the outage.
-	PowerRestorePolicyRemainOff PowerRestorePolicy = 0x00
+	PowerRestorePolicyRemainOff PowerRestorePolicy = iota
 
 	// PowerRestorePolicyPriorState means the system will return to the state it
 	// was in when the power was lost.
-	PowerRestorePolicyPriorState PowerRestorePolicy = 0x01
+	PowerRestorePolicyPriorState
 
 	// PowerRestorePolicyPowerOn means the system will always attempt to turn on
 	// when power returns, regardless of state before the outage.
-	PowerRestorePolicyPowerOn PowerRestorePolicy = 0x02
+	PowerRestorePolicyPowerOn
 
 	// PowerRestorePolicyUnknown means the BMC does not know what the chassis
 	// will do.
-	PowerRestorePolicyUnknown PowerRestorePolicy = 0x03
+	PowerRestorePolicyUnknown
 )
 
 // Description returns a human-readable representation of the policy.
@@ -51,19 +51,19 @@ func (p PowerRestorePolicy) String() string {
 // identification mechanism, usually a flashing light.
 type ChassisIdentifyState uint8
 
-var (
+const (
 	// ChassisIdentifyStateOff means the chassis identification mechanism is
 	// not currently active.
-	ChassisIdentifyStateOff ChassisIdentifyState = 0x00
+	ChassisIdentifyStateOff ChassisIdentifyState = iota
 
 	// ChassisIdentifyStateTemporary means the chassis identification mechanism
 	// is active, but will disable automatically at an unknown point in the
 	// future.
-	ChassisIdentifyStateTemporary ChassisIdentifyState = 0x01
+	ChassisIdentifyStateTemporary
 
 	// ChassisIdentifyStateIndefinite means the chassis identification mechanism
 	// will remain active until manually disabled.
-	ChassisIdentifyStateIndefinite ChassisIdentifyState = 0x02
+	ChassisIdentifyStateIndefinite
 
 	// ChassisIdentifyStateUnknown means the BMC indicated it does not support
 	// revealing the identify state in the Get Chassis Status command, however

@@ -12,6 +12,29 @@ package ipmi
 // Session Privilege Level command.
 type PrivilegeLevel uint8
 
+const (
+	// PrivilegeLevelHighest is used in the RMCP+ Open Session Request message
+	// to ask the BMC to set the session maximum privilege level to the highest
+	// it is willing to, given the cipher suites the remote console indicated
+	// support for. Note this is for the channel; the user (provided in RAKP1)
+	// may have a lower privilege level limit.
+	//
+	// Use of this value is not recommended for two reasons. Firstly, you
+	// normally know what privilege level you require in advance, and this may
+	// result in insufficient privileges, or overly lax ones (breaking the
+	// principle of least privilege). Secondly, it is not supported by all BMCs,
+	// e.g. Super Micro.
+	//
+	// This is a reserved value in IPMI v1.5.
+	PrivilegeLevelHighest PrivilegeLevel = iota
+
+	PrivilegeLevelCallback
+	PrivilegeLevelUser
+	PrivilegeLevelOperator
+	PrivilegeLevelAdministrator
+	PrivilegeLevelOEM
+)
+
 func (p PrivilegeLevel) String() string {
 	switch p {
 	case PrivilegeLevelHighest:
@@ -30,26 +53,3 @@ func (p PrivilegeLevel) String() string {
 		return "Unknown"
 	}
 }
-
-const (
-	// PrivilegeLevelHighest is used in the RMCP+ Open Session Request message
-	// to ask the BMC to set the session maximum privilege level to the highest
-	// it is willing to, given the cipher suites the remote console indicated
-	// support for. Note this is for the channel; the user (provided in RAKP1)
-	// may have a lower privilege level limit.
-	//
-	// Use of this value is not recommended for two reasons. Firstly, you
-	// normally know what privilege level you require in advance, and this may
-	// result in insufficient privileges, or overly lax ones (breaking the
-	// principle of least privilege). Secondly, it is not supported by all BMCs,
-	// e.g. Super Micro.
-	//
-	// This is a reserved value in IPMI v1.5.
-	PrivilegeLevelHighest PrivilegeLevel = 0x0
-
-	PrivilegeLevelCallback      PrivilegeLevel = 0x1
-	PrivilegeLevelUser          PrivilegeLevel = 0x2
-	PrivilegeLevelOperator      PrivilegeLevel = 0x3
-	PrivilegeLevelAdministrator PrivilegeLevel = 0x4
-	PrivilegeLevelOEM           PrivilegeLevel = 0x5
-)

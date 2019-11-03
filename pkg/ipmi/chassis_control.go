@@ -13,34 +13,34 @@ import (
 // wire.
 type ChassisControl uint
 
-var (
+const (
 	// ChassisControlPowerOff forces the system into a soft off (S4/S5) state.
 	// Unlike ChassisControlSoftPowerOff, this does not initiate a clean
 	// shutdown of the OS prior to powering down.
-	ChassisControlPowerOff ChassisControl = 0x00
+	ChassisControlPowerOff ChassisControl = iota
 
 	// ChassisControlPowerOn powers up the chassis.
-	ChassisControlPowerOn ChassisControl = 0x01
+	ChassisControlPowerOn
 
 	// ChassisControlPowerCycle reboots the machine. The spec recommends that
 	// this be a no-op if the system is powered down (S4/S5) and returns a 0xd5
 	// completion code, however this command may cause some machines to power
 	// up.
-	ChassisControlPowerCycle ChassisControl = 0x02
+	ChassisControlPowerCycle
 
 	// ChassisControlHardReset performs a hardware reset of the chassis,
 	// excluding the chassis device itself. For host systems, this corresponds
 	// to a system hard reset.
-	ChassisControlHardReset ChassisControl = 0x03
+	ChassisControlHardReset
 
 	// ChassisControlDiagnosticInterrupt pulses a diagnostic interrupt to the
 	// CPU(s), usually causing a diagnostic dump. The exact interrupt delivered
 	// is architecture-dependent.
-	ChassisControlDiagnosticInterrupt ChassisControl = 0x04
+	ChassisControlDiagnosticInterrupt
 
 	// ChassisControlSoftPowerOff emulates a fatal over-temperature, causing a
 	// soft-shutdown of the OS via ACPI. This is not supported by all chassis.
-	ChassisControlSoftPowerOff ChassisControl = 0x05
+	ChassisControlSoftPowerOff
 )
 
 // Description returns a human-readable representation of the command.
