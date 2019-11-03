@@ -1,0 +1,192 @@
+package ipmi
+
+import (
+	"fmt"
+	"math"
+)
+
+const (
+	LinearisationLinear Linearisation = iota
+	LinearisationLn
+	LinearisationLog10
+	LinearisationLog2
+	LinearisationE
+	LinearisationExp10
+	LinearisationExp2
+	LinearisationInverse
+	LinearisationSqr
+	LinearisationCube
+	LinearisationSqrt
+	LinearisationCubeRt
+	LinearisationNonLinear
+)
+
+var (
+	linearisationDescriptions = map[Linearisation]string{
+		LinearisationLinear:    "Linear",
+		LinearisationLn:        "ln",
+		LinearisationLog10:     "log10",
+		LinearisationLog2:      "log2",
+		LinearisationE:         "e",
+		LinearisationExp10:     "exp10",
+		LinearisationExp2:      "exp2",
+		LinearisationInverse:   "1/x",
+		LinearisationSqr:       "sqr(x)",
+		LinearisationCube:      "cube(x)",
+		LinearisationSqrt:      "sqrt(x)",
+		LinearisationCubeRt:    "x^(1/3)",
+		LinearisationNonLinear: "Non-linear",
+	}
+
+	// linearisationLinearisers allows us to find out what linearisation formula
+	// needs to be applied to the converted output of a linearised sensor, to
+	// produce a real value. Note that linear and non-linear linearisations do
+	// not appear here as they don't need a linearisation formula.
+	linearisationLinearisers = map[Linearisation]Lineariser{
+		LinearisationLn:    LineariserFunc(math.Log),
+		LinearisationLog10: LineariserFunc(math.Log10),
+		LinearisationLog2:  LineariserFunc(math.Log2),
+		LinearisationE:     LineariserFunc(math.Exp),
+		LinearisationExp10: LineariserFunc(func(f float64) float64 {
+			// cannot use math.Pow10 as that takes an int
+			return math.Pow(10, f)
+		}),
+		LinearisationExp2: LineariserFunc(math.Exp2),
+		LinearisationInverse: LineariserFunc(func(f float64) float64 {
+			return math.Pow(f, -1)
+		}),
+		LinearisationSqr: LineariserFunc(func(f float64) float64 {
+			return math.Pow(f, 2)
+		}),
+		LinearisationCube: LineariserFunc(func(f float64) float64 {
+			return math.Pow(f, 3)
+		}),
+		LinearisationSqrt: LineariserFunc(math.Sqrt),
+		LinearisationCubeRt: LineariserFunc(func(f float64) float64 {
+			return math.Pow(f, 1.0/3.0)
+		}),
+	}
+
+	// identityLineariser implements a no-op linearisation formula that is
+	// returned as a convenience when the user attempts to retrieve the
+	// Lineariser for a linear or non-linear sensor (only linearised sensors
+	// have a linearisation formula). Linear sensors do not require any
+	// transformation, and non-linear sensors do the appropriate transformation
+	// using conversion factors alone.
+	identityLineariser = LineariserFunc(func(f float64) float64 {
+		return f
+	})
+)
+
+// Linearisation indicates whether a sensor is linear, linearised, or
+// non-linear. Values are specified in the Full Sensor Record wire format table
+// in the spec (37-1 and 43-1 of v1.5 and v2.0 respectively).
+//
+// Linear sensors are the easiest to deal with. The sensor's raw readings are
+// converted into real readings (e.g. Celsius) with a linear formula. Accuracy
+// and resolution are constant in real terms across the entire range of values
+// produced by the sensor. In practice
+//
+// Linearised are slightly more challenging. The same linear formula is applied
+// as for linear sensors, however a final "linearisation formula" is applied to
+// obtain the real reading. This transformation is one of 11 defined in the
+// spec, e.g.  log or sqrt, and obviously does not have to be linear itself. The
+// tolerance (the spec misuses accuracy as a synonym) of linearised sensors is
+// also constant for all values. This is possible despite the existence of the
+// linearisation formula turning raw values into disproportionate real values,
+// as tolerance is expressed relative to 0. This assumes the sensor's tolerance
+// does not diminish in real, absolute terms at extreme values (positive or
+// negative), as there is no way of representing it (you'd have to resort to
+// declaring it a non-linear sensor). Note that tolerance can only be expressed
+// in half-raw value increments, which is in itself quite coarse. Regarding
+// resolution, this will vary with reading due to the linearisation formula. The
+// recommended way to calculate it is to retrieve and calculate the real values
+// (with the help of Get Sensor Reading Factors as necessary) corresponding to
+// the raw values below and above the actual raw value observed. Subtracting the
+// real reading for the raw value below the observed raw value from the real
+// reading for the observed value gives the negative resolution, and the process
+// is equivalent for the positive resolution using the raw value one above.
+//
+// All consistency bets are off with non-linear sensors. Not only does
+// resolution vary by reading (calculated in the same was as for linearised
+// sensors), but so does tolerance. Get Sensor Reading Factors must be sent with
+// the result of each Get Sensor Reading command. Applying the linear formula
+// using the returned conversion factors yields the real reading, and can the
+// same factors can be plugged into the tolerance and resolution formulae to
+// calculate them.
+type Linearisation uint8
+
+// IsLinear returns whether the underlying sensor is linear. Calling the
+// Lineariser is effectively a no-op; only the linear formula in the spec need
+// be applied.
+func (l Linearisation) IsLinear() bool {
+	return l == LinearisationLinear
+}
+
+// IsLinearised returns whether the underlying sensor is linearised, meaning the
+// value after conversion needs to be fed through a linearisation formula as a
+// final step before being used. A suitable implementation of this function is
+// returned by the Lineariser() method.
+func (l Linearisation) IsLinearised() bool {
+	return l > LinearisationLinear && l < LinearisationNonLinear
+}
+
+// IsNonLinear returns whether the underlying sensor is not consistent enough
+// for the constraints of linear and linearised. Readings from these sensors
+// require Get Sensor Reading Factors to convert them into usable values.
+func (l Linearisation) IsNonLinear() bool {
+	return l >= LinearisationNonLinear
+}
+
+// Lineariser returns a suitable Lineariser implementation that will turn the
+// converted raw value produced by the underlying sensor into a usable value.
+// For convenience, so this can be used as part of a higher-level function to
+// action conversion factors, if the sensor is already linear, or non-linear,
+// this will return an identity function.
+//
+// Note that if the sensor is non-linear, the conversion factors returned by Get
+// Sensor Reading Factors are all that are needed to obtain a real value. By
+// being unique to the raw sensor reading, there is no need for a separate
+// linearisation formula.
+func (l Linearisation) Lineariser() Lineariser {
+	if lineariser, ok := linearisationLinearisers[l]; ok {
+		return lineariser
+	}
+	// this will always be the case if IsNonLinear() == true; we check the map
+	// instead as it is more internally consistent and defensive
+	return identityLineariser
+}
+
+func (l Linearisation) Description() string {
+	if desc, ok := linearisationDescriptions[l]; ok {
+		return desc
+	}
+	if l >= 0x71 && l <= 0x7f {
+		return "Non-linear OEM"
+	}
+	return "Unknown"
+}
+
+func (l Linearisation) String() string {
+	return fmt.Sprintf("%v(%v)", uint8(l), l.Description())
+}
+
+// Lineariser is implemented by formulae that can linearise a value returned by
+// the Get Sensor Reading command that has gone through the linear formula
+// containing M, B, K1 and K2, used for all sensors.
+type Lineariser interface {
+
+	// Linearise applies a linearisation formula to a converted value, returning
+	// the final value in the correct unit. This is the last step in the "Sensor
+	// Reading Conversion Formula" described in section 30.3 of IPMI v1.5 and
+	// v2.0.
+	Linearise(float64) float64
+}
+
+// LineariserFunc is the type of the function in the Lineariser interface. It
+// allows us to create Lineariser implementations from raw functions.
+type LineariserFunc func(float64) float64
+
+func (l LineariserFunc) Linearise(f float64) float64 {
+	return l(f)
+}

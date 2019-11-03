@@ -27,6 +27,7 @@ go_library(
         "integrity_algorithm.go",
         "integrity_payload.go",
         "layer_types.go",
+        "linearisation.go",
         "lun.go",
         "message.go",
         "network_function.go",
