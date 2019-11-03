@@ -84,24 +84,24 @@ var (
 		}),
 		LinearisationSqrt: LineariserFunc(math.Sqrt),
 		LinearisationCubeRt: LineariserFunc(func(f float64) float64 {
-			return math.Pow(f, 1.0/3.0)
+			return math.Pow(f, 1./3)
 		}),
 	}
 )
 
 // Linearisation indicates whether a sensor is linear, linearised, or
 // non-linear. Values are specified in the Full Sensor Record wire format table
-// in the spec (37-1 and 43-1 of v1.5 and v2.0 respectively).
+// in 37-1 and 43-1 of v1.5 and v2.0 respectively.
 //
 // Linear sensors are the easiest to deal with. The sensor's raw readings are
 // converted into real readings (e.g. Celsius) with a linear formula. Accuracy
 // and resolution are constant in real terms across the entire range of values
-// produced by the sensor. In practice
+// produced by the sensor.
 //
 // Linearised are slightly more challenging. The same linear formula is applied
 // as for linear sensors, however a final "linearisation formula" is applied to
 // obtain the real reading. This transformation is one of 11 defined in the
-// spec, e.g.  log or sqrt, and obviously does not have to be linear itself. The
+// spec, e.g. log or sqrt, and obviously does not have to be linear itself. The
 // tolerance (the spec misuses accuracy as a synonym) of linearised sensors is
 // also constant for all values. This is possible despite the existence of the
 // linearisation formula turning raw values into disproportionate real values,
@@ -121,15 +121,15 @@ var (
 // All consistency bets are off with non-linear sensors. Not only does
 // resolution vary by reading (calculated in the same was as for linearised
 // sensors), but so does tolerance. Get Sensor Reading Factors must be sent with
-// the result of each Get Sensor Reading command. Applying the linear formula
-// using the returned conversion factors yields the real reading, and can the
-// same factors can be plugged into the tolerance and resolution formulae to
-// calculate them.
+// each raw reading; applying the linear formula using the returned conversion
+// factors yields the real reading, and can the same factors can be plugged into
+// the tolerance and resolution formulae to calculate them.
 type Linearisation uint8
 
-// IsLinear returns whether the underlying sensor is linear. Calling the
-// Lineariser is effectively a no-op; only the linear formula in the spec need
-// be applied.
+// IsLinear returns whether the underlying sensor is linear. Calling
+// Lineariser() will return an error, as there is no linearisation formula (it
+// is effectively a no-op). Only the linear formula in the spec needs be applied
+// to obtain a real reading.
 func (l Linearisation) IsLinear() bool {
 	return l == LinearisationLinear
 }
@@ -143,8 +143,10 @@ func (l Linearisation) IsLinearised() bool {
 }
 
 // IsNonLinear returns whether the underlying sensor is not consistent enough
-// for the constraints of linear and linearised. Readings from these sensors
-// require Get Sensor Reading Factors to convert them into usable values.
+// for the constraints of linear and linearised. As for linear sensors,
+// attempting to retrieve a Lineariser will return an error. Readings from these
+// sensors require Get Sensor Reading Factors to convert them into usable
+// values.
 func (l Linearisation) IsNonLinear() bool {
 	return l >= LinearisationNonLinear
 }
@@ -187,9 +189,11 @@ type Lineariser interface {
 }
 
 // LineariserFunc is the type of the function in the Lineariser interface. It
-// allows us to create Lineariser implementations from raw functions.
+// allows us to create stateless Lineariser implementations from raw functions,
+// including those in the math package.
 type LineariserFunc func(float64) float64
 
+// Linearise invokes the wrapped function, passing through the input and result.
 func (l LineariserFunc) Linearise(f float64) float64 {
 	return l(f)
 }
