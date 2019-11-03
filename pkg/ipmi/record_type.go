@@ -21,31 +21,26 @@ const (
 	RecordTypeBMCMessageChannelInfo             RecordType = 0x14
 )
 
-func (t RecordType) Description() string {
-	switch t {
-	case RecordTypeFullSensor:
-		return "Full Sensor Record"
-	case RecordTypeCompactSensor:
-		return "Compact Sensor Record"
-	case RecordTypeEventOnly:
-		return "Event-Only Record"
-	case RecordTypeEntityAssociation:
-		return "Entity Association Record"
-	case RecordTypeDeviceRelativeEntityAssociation:
-		return "Device-relative Entity Association Record"
-	case RecordTypeGenericDeviceLocator:
-		return "Generic Device Locator Record"
-	case RecordTypeFRUDeviceLocator:
-		return "FRU Device Locator Record"
-	case RecordTypeManagementControllerDeviceLocator:
-		return "Management Controller Device Locator Record"
-	case RecordTypeManagementControllerConfirmation:
-		return "Management Controller Confirmation Record"
-	case RecordTypeBMCMessageChannelInfo:
-		return "BMC Message Channel Info Record"
-	default:
-		return "Unknown"
+var (
+	recordTypeDescriptions = map[RecordType]string{
+		RecordTypeFullSensor:                        "Full Sensor Record",
+		RecordTypeCompactSensor:                     "Compact Sensor Record",
+		RecordTypeEventOnly:                         "Event-only Record",
+		RecordTypeEntityAssociation:                 "Entity Association Record",
+		RecordTypeDeviceRelativeEntityAssociation:   "Device-relative Entity Association Record",
+		RecordTypeGenericDeviceLocator:              "Generic Device Locator Record",
+		RecordTypeFRUDeviceLocator:                  "FRU Device Locator Record",
+		RecordTypeManagementControllerDeviceLocator: "Management Controller Device Locator Record",
+		RecordTypeManagementControllerConfirmation:  "Management Controller Confirmation Record",
+		RecordTypeBMCMessageChannelInfo:             "BMC Message Channel Info Record",
 	}
+)
+
+func (t RecordType) Description() string {
+	if desc, ok := recordTypeDescriptions[t]; ok {
+		return desc
+	}
+	return "Unknown"
 }
 
 func (t RecordType) String() string {
