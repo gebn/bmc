@@ -20,6 +20,12 @@ const (
 	LinearisationSqrt
 	LinearisationCubeRt
 	LinearisationNonLinear
+
+	// 0x71 through 0x7f are reserved for non-linear, OEM defined
+	// linearisations. It is unclear why these cannot use
+	// LinearisationNonLinear, as being non-linear, they do not have a
+	// linearisation formula. Waiting for a use case to emerge rather than
+	// implementing a questionably useful RegisterLineariser() function.
 )
 
 var (
