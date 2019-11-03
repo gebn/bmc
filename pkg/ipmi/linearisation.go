@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"errors"
 	"fmt"
 	"math"
 )
@@ -22,6 +23,20 @@ const (
 )
 
 var (
+	// ErrNotLinearised is returned if Lineariser() is called on a linear or
+	// non-linear linearisation. Linear sensors' values do not require any
+	// tranformation by virtue of the sensor already being linear. If the sensor
+	// is non-linear, the conversion factors returned by Get Sensor Reading
+	// Factors are all that are needed to obtain a real value: by being unique
+	// to the raw sensor reading, there is no need for a separate linearisation
+	// formula.
+	//
+	// Linearise() could return a no-op lineariser, however the current
+	// implementation should never ask for one on a non-linearised sensor, so
+	// instead we return an error to flag up a possible bug.
+	ErrNotLinearised = errors.New(
+		"only linearised sensors have a linearisation formula")
+
 	linearisationDescriptions = map[Linearisation]string{
 		LinearisationLinear:    "Linear",
 		LinearisationLn:        "ln",
@@ -66,16 +81,6 @@ var (
 			return math.Pow(f, 1.0/3.0)
 		}),
 	}
-
-	// identityLineariser implements a no-op linearisation formula that is
-	// returned as a convenience when the user attempts to retrieve the
-	// Lineariser for a linear or non-linear sensor (only linearised sensors
-	// have a linearisation formula). Linear sensors do not require any
-	// transformation, and non-linear sensors do the appropriate transformation
-	// using conversion factors alone.
-	identityLineariser = LineariserFunc(func(f float64) float64 {
-		return f
-	})
 )
 
 // Linearisation indicates whether a sensor is linear, linearised, or
@@ -139,22 +144,14 @@ func (l Linearisation) IsNonLinear() bool {
 }
 
 // Lineariser returns a suitable Lineariser implementation that will turn the
-// converted raw value produced by the underlying sensor into a usable value.
-// For convenience, so this can be used as part of a higher-level function to
-// action conversion factors, if the sensor is already linear, or non-linear,
-// this will return an identity function.
-//
-// Note that if the sensor is non-linear, the conversion factors returned by Get
-// Sensor Reading Factors are all that are needed to obtain a real value. By
-// being unique to the raw sensor reading, there is no need for a separate
-// linearisation formula.
-func (l Linearisation) Lineariser() Lineariser {
+// converted raw value produced by the underlying sensor into a usable value. If
+// the sensor is already linear, or non-linear, this will return
+// ErrNotLinearised.
+func (l Linearisation) Lineariser() (Lineariser, error) {
 	if lineariser, ok := linearisationLinearisers[l]; ok {
-		return lineariser
+		return lineariser, nil
 	}
-	// this will always be the case if IsNonLinear() == true; we check the map
-	// instead as it is more internally consistent and defensive
-	return identityLineariser
+	return nil, ErrNotLinearised
 }
 
 func (l Linearisation) Description() string {
