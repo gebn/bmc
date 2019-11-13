@@ -164,13 +164,6 @@ func (*FullSensorRecord) NextLayerType() gopacket.LayerType {
 	return gopacket.LayerTypePayload
 }
 
-// TODO
-// complain loudly if IsContainerEntity - we don't know to/can't handle this currently
-// filter out AnalogDataFormatNotAnalog and IsPercentage == true
-// work out what to do with Ignore
-// need to treat all instances as device-relative (i.e. unique by owner, entity and instance)
-// complain loudly if there are multiple possible temp sensors for a given processor, even after the above filtering
-
 func (r *FullSensorRecord) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
 	if len(data) < 43 {
 		df.SetTruncated()
