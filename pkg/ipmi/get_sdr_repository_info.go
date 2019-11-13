@@ -14,13 +14,14 @@ import (
 // GetSDRRepositoryInfoRsp represents the response to a Get SDR Repository Info
 // command, specified in section 27.9 and 33.9 of IPMI v1.5 and v2.0
 // respectively. This command is useful for finding out how many SDRs are in the
-// repository, as well as the version, which indicates how to decode the Get SDR
-// command response (the format has not changed since IPMI-over-LAN was
-// introduced so, in practice, we don't care about this).
+// repository, and finding whether any changes were made during enumeration
+// (meaning a re-retrieval is required).
 type GetSDRRepositoryInfoRsp struct {
 	layers.BaseLayer
 
-	// Version is the command set version number for the SDR device.
+	// Version indicates the command set supported by the SDR Repository Device.
+	// This is little-endian packed BCD, and has not changed from 0x51 (i.e.
+	// IPMI v1.5) since IPMI-over-LAN was introduced in v1.5.
 	Version uint8
 
 	// Records is the number of records in the SDR repository.
@@ -34,8 +35,8 @@ type GetSDRRepositoryInfoRsp struct {
 	LastAddition time.Time
 
 	// LastErase is the time when the last record was deleted from the
-	// repository, or the entire repository was cleared. This will be the
-	// zero value if never.
+	// repository, or the entire repository was cleared. This will be the zero
+	// value if never.
 	LastErase time.Time
 
 	// Overflow indicates whether an SDR could not be written due to lack of

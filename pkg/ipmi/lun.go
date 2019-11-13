@@ -5,9 +5,10 @@ import (
 )
 
 // LUN represents a Logical Unit Number. It can be thought of as a sub-address
-// within a given slave address (i.e. a sub-interface). It is meaningless in the
-// context of software IDs. This is a two-bit field. See section 7.2 of IPMI
-// v1.5 and v2.0 for value definitions. It is a 2-bit uint on the wire.
+// within a given slave address (i.e. a sub-interface of the BMC, reachable via
+// IPMB). It is meaningless in the context of software IDs. This is a two-bit
+// field. See section 7.2 of IPMI v1.5 and v2.0 for value definitions. It is a
+// 2-bit uint on the wire.
 type LUN uint8
 
 const (

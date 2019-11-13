@@ -11,22 +11,40 @@ import (
 )
 
 // SDR represents a Sensor Data Record header, outlined at the beginning of 37
-// and 43 of IPMI v1.5 and 2.0 respectively.
+// and 43 of IPMI v1.5 and 2.0 respectively. These fields are common to all
+// SDRs, and is the limit of what the SDR Repository Device cares about: the
+// record key and body are opaque bytes.
+//
+// Despite the name, an SDR may not pertain to a sensor, e.g. there are Device
+// Locator and Entity Association SDR types.
 type SDR struct {
 	layers.BaseLayer
 
-	// ID is the current Record ID for the SDR. Note this may change whenever
-	// the SDR Repository is modified. See RecordID documentation for more
-	// details.
+	// ID is the current Record ID for the SDR. This is not the record key (that
+	// is a set of fields specific to the record type), and may change if the
+	// SDR Repository is modified. See RecordID documentation for more details.
 	ID RecordID
 
 	// Version is the version number of the SDR specification. It is used with
-	// the Type field to control how the record is parsed.
+	// the Type field to control how the record is parsed. We return an error
+	// during decoding if this is not supported.
 	Version uint8
 
-	// Type indicates the variety of SDR. Confusingly, not all SDRs pertain to
-	// sensors.
+	// Type indicates what the SDR describes. Confusingly, not all SDRs pertain
+	// to sensors.
 	Type RecordType
+
+	// There is a 1-byte length field containing the number of remaining bytes
+	// in the payload (i.e. after the header), so the max SDR size on the wire
+	// is 260 bytes. In practice, OEM records notwithstanding, it is unlikely to
+	// be >60.
+	//
+	// If it weren't for this field, the limit for the whole SDR including
+	// header could theoretically be 255 + the max supported payload size (the
+	// SDR Repo Device commands provide no way to address subsequent sections
+	// for reading).
+
+	// payload contains the record key and body
 }
 
 func (*SDR) LayerType() gopacket.LayerType {

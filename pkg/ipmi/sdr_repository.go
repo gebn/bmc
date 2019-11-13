@@ -1,11 +1,13 @@
 package ipmi
 
-// RecordID uniquely identifies a SDR. Record IDs are not guaranteed to be
-// sequential within an SDR Repository, let alone consecutive. It is more
-// accurate in terms of the specification's guarantees to think of them as
-// opaque keys into the SDR "map", rather than array indices. The only
-// requirement is that, at a given point in time (which is vague as IPMI does
-// not have transactions), each SDR in the repo has a unique Record ID.
+// RecordID uniquely identifies an SDR in the SDR Repository, and is used for
+// access. Record IDs are not guaranteed to be enumerated sequentially, let
+// alone consecutively, and there are likely to be gaps in them once the entire
+// repository has been retrieved. It is more accurate in terms of the
+// specification's guarantees to think of them as opaque keys into the SDR
+// "map", rather than sparse array indices. The only requirement is that, at a
+// given point in time (which is vague as IPMI does not have transactions), each
+// SDR in the repo has a unique Record ID.
 //
 // A given Record ID is only valid until the SDR Repository is written to
 // (either addition or removal of an SDR), at which point the controller may
@@ -51,6 +53,5 @@ const (
 // there is no guarantee of access. Back-off, ideally with jitter, is essential
 // to reservation logic, to ensure one of two competing applications will
 // eventually be able to finish its work and they don't repeatedly stall each
-// other. Unfortunately to implement this relies on other applications doing the
-// right thing.
+// other. Unfortunately this relies on other applications doing the right thing.
 type ReservationID uint16
