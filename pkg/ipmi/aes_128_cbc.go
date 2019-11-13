@@ -105,7 +105,7 @@ func (a *AES128CBC) SerializeTo(b gopacket.SerializeBuffer, opts gopacket.Serial
 		return err
 	}
 
-	// encrypted everything after IV
+	// encrypt everything after IV
 	mode := cipher.NewCBCEncrypter(a.cipher, iv)
 	mode.CryptBlocks(toEncrypt, toEncrypt)
 	return nil
