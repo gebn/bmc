@@ -22,8 +22,8 @@ type StringDecoder interface {
 
 	// Decode parses the first c characters (0 <= c <= 30) in b in the expected
 	// format (N.B. this could be a varying number of bytes depending on the
-	// encoding), returning the resulting string and number of bytes consumed, or an error
-	// if the data is too short or invalid.
+	// encoding), returning the resulting string and number of bytes consumed,
+	// or an error if the data is too short or invalid.
 	//
 	// c was implemented as an int rather than uint8 to reduce the number of
 	// conversions required.
