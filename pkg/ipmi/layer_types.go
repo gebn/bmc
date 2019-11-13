@@ -157,4 +157,11 @@ var (
 			Decoder: layerexts.BuildDecoder(&SDR{}),
 		},
 	)
+	LayerTypeFullSensorRecord = gopacket.RegisterLayerType(
+		1022,
+		gopacket.LayerTypeMetadata{
+			Name:    "Full Sensor Record",
+			Decoder: layerexts.BuildDecoder(&FullSensorRecord{}),
+		},
+	)
 )

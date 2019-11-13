@@ -173,7 +173,7 @@ func (l Linearisation) Description() string {
 }
 
 func (l Linearisation) String() string {
-	return fmt.Sprintf("%v(%v)", uint8(l), l.Description())
+	return fmt.Sprintf("%#v(%v)", uint8(l), l.Description())
 }
 
 // Lineariser is implemented by formulae that can linearise a value returned by

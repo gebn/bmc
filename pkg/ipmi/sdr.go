@@ -37,8 +37,9 @@ func (s *SDR) CanDecode() gopacket.LayerClass {
 	return s.LayerType()
 }
 
-func (*SDR) NextLayerType() gopacket.LayerType {
-	return gopacket.LayerTypePayload
+func (s *SDR) NextLayerType() gopacket.LayerType {
+	// there may eventually be a need to switch on both Type and Version
+	return s.Type.NextLayerType()
 }
 
 func (s *SDR) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {

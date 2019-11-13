@@ -2,10 +2,15 @@ package ipmi
 
 import (
 	"fmt"
+
+	"github.com/google/gopacket"
 )
 
-// RecordType identifies the format of a Sensor Data Record. Although called
-// SDRs, a sensor data record does not necessarily pertain to a sensor.
+// RecordType indicates the format of a Sensor Data Record, e.g. a Full Sensor
+// Record, Compact Sensor Record, or Entity Association Record. It is a field in
+// the SDR header, essential for informing the remote console how to interpret
+// the rest of the packet. Although "sensor" is in the name, an SDR does not
+// necessarily pertain to a sensor.
 type RecordType uint8
 
 const (
@@ -22,6 +27,9 @@ const (
 )
 
 var (
+	recordTypeLayerTypes = map[RecordType]gopacket.LayerType{
+		RecordTypeFullSensor: LayerTypeFullSensorRecord,
+	}
 	recordTypeDescriptions = map[RecordType]string{
 		RecordTypeFullSensor:                        "Full Sensor Record",
 		RecordTypeCompactSensor:                     "Compact Sensor Record",
@@ -35,6 +43,13 @@ var (
 		RecordTypeBMCMessageChannelInfo:             "BMC Message Channel Info Record",
 	}
 )
+
+func (t RecordType) NextLayerType() gopacket.LayerType {
+	if layer, ok := recordTypeLayerTypes[t]; ok {
+		return layer
+	}
+	return gopacket.LayerTypePayload
+}
 
 func (t RecordType) Description() string {
 	if desc, ok := recordTypeDescriptions[t]; ok {
