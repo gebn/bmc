@@ -2,13 +2,19 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "go_default_library",
-    srcs = ["twos.go"],
+    srcs = [
+        "ones.go",
+        "twos.go",
+    ],
     importpath = "github.com/gebn/bmc/internal/pkg/complement",
     visibility = ["//:__subpackages__"],
 )
 
 go_test(
     name = "go_default_test",
-    srcs = ["twos_test.go"],
+    srcs = [
+        "ones_test.go",
+        "twos_test.go",
+    ],
     embed = [":go_default_library"],
 )
