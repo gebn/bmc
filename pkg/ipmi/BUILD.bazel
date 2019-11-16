@@ -81,6 +81,7 @@ go_test(
         "aes_128_cbc_test.go",
         "authentication_payload_test.go",
         "confidentiality_payload_test.go",
+        "conversion_factors_test.go",
         "entity_instance_test.go",
         "full_sensor_record_test.go",
         "get_channel_authentication_capabilities_test.go",

@@ -21,25 +21,33 @@ import (
 // Lineariser for linearisation.
 type ConversionFactors struct {
 
-	// M is the constant multiplier.
+	// M is the constant multiplier. This is a 10-bit 2's complement number on
+	// the wire.
 	M int16
 
-	// B is the additive offset.
+	// B is the additive offset. This is a 10-bit 2's complement number on the
+	// wire.
 	B int16
 
 	// BExp is the exponent, controlling the location of the decimal point in B.
-	// This is also referred to as K1 in the spec.
+	// This is also referred to as K1 in the spec, and is a 4-bit 2's complement
+	// number on the wire.
 	BExp int8
 
 	// RExp is the result exponent, controlling the location of the decimal
 	// point in the result of the linear formula and hence input to the
-	// linearisation function. This is also referred to as K2 in the spec.
+	// linearisation function. This is also referred to as K2 in the spec, and
+	// is a 4-bit 2's complement number on the wire.
 	RExp int8
 }
 
-// ConvertReading applies the linear formula, without the linearisation formula.
-// It is independent of unit.
-func (f *ConversionFactors) ConvertReading(raw uint8) int64 {
+// ConvertReading applies the linear formula to a raw sensor reading, without
+// the linearisation formula. It is independent of unit. This method takes an
+// int16 rather than uint8 as raw values can be in 1 or 2's complement, or
+// unsigned, so it must accept from -128 (lowest 2's complement) to 255 (highest
+// unsigned). The conversion from the raw format to a native int must be done
+// before calling this method.
+func (f *ConversionFactors) ConvertReading(raw int16) int64 {
 	return (int64(f.M)*int64(raw) + int64(f.B)*int64(math.Pow(10,
 		float64(f.BExp)))) * int64(math.Pow(10, float64(f.RExp)))
 }
