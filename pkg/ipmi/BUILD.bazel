@@ -79,6 +79,7 @@ go_test(
     size = "small",
     srcs = [
         "aes_128_cbc_test.go",
+        "analog_data_format_test.go",
         "authentication_payload_test.go",
         "confidentiality_payload_test.go",
         "conversion_factors_test.go",
