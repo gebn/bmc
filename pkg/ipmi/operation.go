@@ -86,6 +86,14 @@ var (
 		Function: NetworkFunctionStorageRsp,
 		Command:  0x23,
 	}
+	OperationGetSensorReadingReq = Operation{
+		Function: NetworkFunctionSensorReq,
+		Command:  0x2d,
+	}
+	OperationGetSensorReadingRsp = Operation{
+		Function: NetworkFunctionSensorRsp,
+		Command:  0x2d,
+	}
 
 	// operationLayerTypes tells us which layer comes next given a network
 	// function and command. It should never be modified during runtime, as
@@ -98,6 +106,7 @@ var (
 		OperationGetChannelAuthenticationCapabilitiesRsp: LayerTypeGetChannelAuthenticationCapabilitiesRsp,
 		OperationGetSDRRepositoryInfoRsp:                 LayerTypeGetSDRRepositoryInfoRsp,
 		OperationGetSDRRsp:                               LayerTypeGetSDRRsp,
+		OperationGetSensorReadingRsp:                     LayerTypeGetSensorReadingRsp,
 	}
 )
 

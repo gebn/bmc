@@ -258,6 +258,18 @@ func (s *V2Session) GetSDRRepositoryInfo(ctx context.Context) (*ipmi.GetSDRRepos
 	return &cmd.Rsp, nil
 }
 
+func (s *V2Session) GetSensorReading(ctx context.Context, sensor uint8) (*ipmi.GetSensorReadingRsp, error) {
+	cmd := &ipmi.GetSensorReadingCmd{
+		Req: ipmi.GetSensorReadingReq{
+			Number: sensor,
+		},
+	}
+	if err := ValidateResponse(s.SendCommand(ctx, cmd)); err != nil {
+		return nil, err
+	}
+	return &cmd.Rsp, nil
+}
+
 func (s *V2Session) closeSession(ctx context.Context) error {
 	// we decrement regardless of whether this command succeeds, as to not do so
 	// would be overly pessimistic - if it fails, there's nothing we can do;

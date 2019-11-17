@@ -32,6 +32,13 @@ type SessionCommands interface {
 	// respectively.
 	GetSDRRepositoryInfo(context.Context) (*ipmi.GetSDRRepositoryInfoRsp, error)
 
+	// GetSensorReading retrieves the current value of a sensor, identified by
+	// its number. It is specified in 29.14 and 35.14 of IPMI v1.5 and 2.0
+	// respectively. Note, the raw value is in one of three formats, and is
+	// converted into a "real" reading via one or more formulae - interpreting
+	// it requires the SDR.
+	GetSensorReading(context.Context, uint8) (*ipmi.GetSensorReadingRsp, error)
+
 	// closeSession sends a Close Session command to the BMC. It is unexported
 	// as calling it randomly would leave the session in an invalid state. Call
 	// Close() on the session itself to invoke this.

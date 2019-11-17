@@ -164,4 +164,17 @@ var (
 			Decoder: layerexts.BuildDecoder(&FullSensorRecord{}),
 		},
 	)
+	LayerTypeGetSensorReadingReq = gopacket.RegisterLayerType(
+		1023,
+		gopacket.LayerTypeMetadata{
+			Name: "Get Sensor Reading Request",
+		},
+	)
+	LayerTypeGetSensorReadingRsp = gopacket.RegisterLayerType(
+		1024,
+		gopacket.LayerTypeMetadata{
+			Name:    "Get Sensor Reading Response",
+			Decoder: layerexts.BuildDecoder(&GetSensorReadingRsp{}),
+		},
+	)
 )
