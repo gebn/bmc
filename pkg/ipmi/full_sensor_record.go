@@ -107,9 +107,9 @@ type FullSensorRecord struct {
 	// the entity.
 	Direction SensorDirection
 
-	// ReadingSpecified indicates whether the Reading field should be
-	// interpreted.
-	ReadingSpecified bool
+	// NominalReadingSpecified indicates whether the NominalReading field should
+	// be interpreted.
+	NominalReadingSpecified bool
 
 	// NormalMinSpecified indicates whether the NormalMin field should be
 	// interpreted.
@@ -119,10 +119,11 @@ type FullSensorRecord struct {
 	// interpreted.
 	NormalMaxSpecified bool
 
-	// Reading contains the current nominal value of the sensor. This is in the
-	// format specified by AnalogDataFormat. It should be ignored if the
-	// characteristic flags indicate the nominal reading is not specified.
-	Reading uint8
+	// NominalReading contains a sample value for the sensor. Note: this is
+	// *not* the current reading. This is in the format specified by
+	// AnalogDataFormat. It should be ignored if the characteristic flags
+	// indicate the nominal reading is not specified.
+	NominalReading uint8
 
 	// NormalMin prints the lower threshold for normal reading range. It is in
 	// the format specified by AnalogDataFormat. It should be ignored if the
@@ -215,11 +216,11 @@ func (r *FullSensorRecord) DecodeFromBytes(data []byte, df gopacket.DecodeFeedba
 	buf[1] = data[24] & 0xf
 	r.BExp = int8(complement.Twos(buf, 4))
 
-	r.ReadingSpecified = data[25]&1 != 0
+	r.NominalReadingSpecified = data[25]&1 != 0
 	r.NormalMaxSpecified = data[25]&(1<<1) != 0
 	r.NormalMinSpecified = data[25]&(1<<2) != 0
 
-	r.Reading = uint8(data[26])
+	r.NominalReading = uint8(data[26])
 	r.NormalMax = uint8(data[27])
 	r.NormalMin = uint8(data[28])
 
