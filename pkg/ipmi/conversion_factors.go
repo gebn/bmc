@@ -47,7 +47,8 @@ type ConversionFactors struct {
 // unsigned, so it must accept from -128 (lowest 2's complement) to 255 (highest
 // unsigned). The conversion from the raw format to a native int must be done
 // before calling this method.
-func (f *ConversionFactors) ConvertReading(raw int16) int64 {
-	return (int64(f.M)*int64(raw) + int64(f.B)*int64(math.Pow(10,
-		float64(f.BExp)))) * int64(math.Pow(10, float64(f.RExp)))
+func (f *ConversionFactors) ConvertReading(raw int16) float64 {
+	mX := int64(f.M) * int64(raw)
+	b10k1 := float64(f.B) * math.Pow10(int(f.BExp))
+	return (float64(mX) + b10k1) * math.Pow10(int(f.RExp))
 }
