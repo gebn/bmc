@@ -10,15 +10,19 @@ var (
 	LayerTypeSessionSelector = gopacket.RegisterLayerType(
 		1000,
 		gopacket.LayerTypeMetadata{
-			Name:    "IPMI Session Selector",
-			Decoder: layerexts.BuildDecoder(&SessionSelector{}),
+			Name: "IPMI Session Selector",
+			Decoder: layerexts.BuildDecoder(func() layerexts.LayerDecodingLayer {
+				return &SessionSelector{}
+			}),
 		},
 	)
 	LayerTypeV1Session = gopacket.RegisterLayerType(
 		1001,
 		gopacket.LayerTypeMetadata{
-			Name:    "Session v1.5",
-			Decoder: layerexts.BuildDecoder(&V1Session{}),
+			Name: "Session v1.5",
+			Decoder: layerexts.BuildDecoder(func() layerexts.LayerDecodingLayer {
+				return &V1Session{}
+			}),
 		},
 	)
 	LayerTypeGetChannelAuthenticationCapabilitiesReq = gopacket.RegisterLayerType(
@@ -30,8 +34,10 @@ var (
 	LayerTypeGetChannelAuthenticationCapabilitiesRsp = gopacket.RegisterLayerType(
 		1003,
 		gopacket.LayerTypeMetadata{
-			Name:    "Get Channel Authentication Capabilities Response",
-			Decoder: layerexts.BuildDecoder(&GetChannelAuthenticationCapabilitiesRsp{}),
+			Name: "Get Channel Authentication Capabilities Response",
+			Decoder: layerexts.BuildDecoder(func() layerexts.LayerDecodingLayer {
+				return &GetChannelAuthenticationCapabilitiesRsp{}
+			}),
 		},
 	)
 	LayerTypeV2Session = gopacket.RegisterLayerType(
@@ -41,7 +47,9 @@ var (
 			// by default this layer can only encode and decode unauthenticated
 			// packets; to deal with authenticated packets, the
 			// IntegrityAlgorithm attribute must be set
-			Decoder: layerexts.BuildDecoder(&V2Session{}),
+			Decoder: layerexts.BuildDecoder(func() layerexts.LayerDecodingLayer {
+				return &V2Session{}
+			}),
 		},
 	)
 	LayerTypeOpenSessionReq = gopacket.RegisterLayerType(
@@ -53,8 +61,10 @@ var (
 	LayerTypeOpenSessionRsp = gopacket.RegisterLayerType(
 		1006,
 		gopacket.LayerTypeMetadata{
-			Name:    "RMCP+ Open Session Response",
-			Decoder: layerexts.BuildDecoder(&OpenSessionRsp{}),
+			Name: "RMCP+ Open Session Response",
+			Decoder: layerexts.BuildDecoder(func() layerexts.LayerDecodingLayer {
+				return &OpenSessionRsp{}
+			}),
 		},
 	)
 	LayerTypeRAKPMessage1 = gopacket.RegisterLayerType(
@@ -66,8 +76,10 @@ var (
 	LayerTypeRAKPMessage2 = gopacket.RegisterLayerType(
 		1008,
 		gopacket.LayerTypeMetadata{
-			Name:    "RAKP Message 2",
-			Decoder: layerexts.BuildDecoder(&RAKPMessage2{}),
+			Name: "RAKP Message 2",
+			Decoder: layerexts.BuildDecoder(func() layerexts.LayerDecodingLayer {
+				return &RAKPMessage2{}
+			}),
 		},
 	)
 	LayerTypeRAKPMessage3 = gopacket.RegisterLayerType(
@@ -79,8 +91,10 @@ var (
 	LayerTypeRAKPMessage4 = gopacket.RegisterLayerType(
 		1010,
 		gopacket.LayerTypeMetadata{
-			Name:    "RAKP Message 4",
-			Decoder: layerexts.BuildDecoder(&RAKPMessage4{}),
+			Name: "RAKP Message 4",
+			Decoder: layerexts.BuildDecoder(func() layerexts.LayerDecodingLayer {
+				return &RAKPMessage4{}
+			}),
 		},
 	)
 	layerTypeAES128CBC = gopacket.RegisterLayerType(
@@ -93,8 +107,10 @@ var (
 	LayerTypeMessage = gopacket.RegisterLayerType(
 		1012,
 		gopacket.LayerTypeMetadata{
-			Name:    "IPMI Message",
-			Decoder: layerexts.BuildDecoder(&Message{}),
+			Name: "IPMI Message",
+			Decoder: layerexts.BuildDecoder(func() layerexts.LayerDecodingLayer {
+				return &Message{}
+			}),
 		},
 	)
 	LayerTypeCloseSessionReq = gopacket.RegisterLayerType(
@@ -106,22 +122,28 @@ var (
 	LayerTypeGetSystemGUIDRsp = gopacket.RegisterLayerType(
 		1014,
 		gopacket.LayerTypeMetadata{
-			Name:    "Get System GUID Response",
-			Decoder: layerexts.BuildDecoder(&GetSystemGUIDRsp{}),
+			Name: "Get System GUID Response",
+			Decoder: layerexts.BuildDecoder(func() layerexts.LayerDecodingLayer {
+				return &GetSystemGUIDRsp{}
+			}),
 		},
 	)
 	LayerTypeGetDeviceIDRsp = gopacket.RegisterLayerType(
 		1015,
 		gopacket.LayerTypeMetadata{
-			Name:    "Get Device ID Response",
-			Decoder: layerexts.BuildDecoder(&GetDeviceIDRsp{}),
+			Name: "Get Device ID Response",
+			Decoder: layerexts.BuildDecoder(func() layerexts.LayerDecodingLayer {
+				return &GetDeviceIDRsp{}
+			}),
 		},
 	)
 	LayerTypeGetChassisStatusRsp = gopacket.RegisterLayerType(
 		1016,
 		gopacket.LayerTypeMetadata{
-			Name:    "Get Chassis Status Response",
-			Decoder: layerexts.BuildDecoder(&GetChassisStatusRsp{}),
+			Name: "Get Chassis Status Response",
+			Decoder: layerexts.BuildDecoder(func() layerexts.LayerDecodingLayer {
+				return &GetChassisStatusRsp{}
+			}),
 		},
 	)
 	LayerTypeChassisControlReq = gopacket.RegisterLayerType(
@@ -133,8 +155,10 @@ var (
 	LayerTypeGetSDRRepositoryInfoRsp = gopacket.RegisterLayerType(
 		1018,
 		gopacket.LayerTypeMetadata{
-			Name:    "Get SDR Repository Info Response",
-			Decoder: layerexts.BuildDecoder(&GetSDRRepositoryInfoRsp{}),
+			Name: "Get SDR Repository Info Response",
+			Decoder: layerexts.BuildDecoder(func() layerexts.LayerDecodingLayer {
+				return &GetSDRRepositoryInfoRsp{}
+			}),
 		},
 	)
 	LayerTypeGetSDRReq = gopacket.RegisterLayerType(
@@ -146,22 +170,28 @@ var (
 	LayerTypeGetSDRRsp = gopacket.RegisterLayerType(
 		1020,
 		gopacket.LayerTypeMetadata{
-			Name:    "Get SDR Response",
-			Decoder: layerexts.BuildDecoder(&GetSDRRsp{}),
+			Name: "Get SDR Response",
+			Decoder: layerexts.BuildDecoder(func() layerexts.LayerDecodingLayer {
+				return &GetSDRRsp{}
+			}),
 		},
 	)
 	LayerTypeSDR = gopacket.RegisterLayerType(
 		1021,
 		gopacket.LayerTypeMetadata{
-			Name:    "SDR Header",
-			Decoder: layerexts.BuildDecoder(&SDR{}),
+			Name: "SDR Header",
+			Decoder: layerexts.BuildDecoder(func() layerexts.LayerDecodingLayer {
+				return &SDR{}
+			}),
 		},
 	)
 	LayerTypeFullSensorRecord = gopacket.RegisterLayerType(
 		1022,
 		gopacket.LayerTypeMetadata{
-			Name:    "Full Sensor Record",
-			Decoder: layerexts.BuildDecoder(&FullSensorRecord{}),
+			Name: "Full Sensor Record",
+			Decoder: layerexts.BuildDecoder(func() layerexts.LayerDecodingLayer {
+				return &FullSensorRecord{}
+			}),
 		},
 	)
 	LayerTypeGetSensorReadingReq = gopacket.RegisterLayerType(
@@ -173,8 +203,10 @@ var (
 	LayerTypeGetSensorReadingRsp = gopacket.RegisterLayerType(
 		1024,
 		gopacket.LayerTypeMetadata{
-			Name:    "Get Sensor Reading Response",
-			Decoder: layerexts.BuildDecoder(&GetSensorReadingRsp{}),
+			Name: "Get Sensor Reading Response",
+			Decoder: layerexts.BuildDecoder(func() layerexts.LayerDecodingLayer {
+				return &GetSensorReadingRsp{}
+			}),
 		},
 	)
 )
