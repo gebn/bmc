@@ -13,6 +13,7 @@ go_library(
         "connection.go",
         "firmware.go",
         "hasher.go",
+        "sdr_repository.go",
         "sequence_numbers.go",
         "session.go",
         "session_commands.go",
