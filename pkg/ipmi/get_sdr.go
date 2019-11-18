@@ -68,9 +68,6 @@ type GetSDRRsp struct {
 	// current record has RecordIDLast, and this is equal to RecordIDLast, the
 	// end of the repository has been reached.
 	Next RecordID
-
-	// TODO need to decide what to do with payload - almost definitely another
-	// layer
 }
 
 func (*GetSDRRsp) LayerType() gopacket.LayerType {
@@ -108,7 +105,7 @@ func (*GetSDRCmd) Name() string {
 	return "Get SDR"
 }
 
-// Operation returns OperationGetSDRReq.
+// Operation returns &OperationGetSDRReq.
 func (*GetSDRCmd) Operation() *Operation {
 	return &OperationGetSDRReq
 }
