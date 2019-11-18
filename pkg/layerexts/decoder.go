@@ -13,26 +13,20 @@ type layerDecodingLayer interface {
 	NextLayerType() gopacket.LayerType
 }
 
-// decodingLayerDecoder is a shortcut for implementing the layer decode
-// function. It is lifted from gopacket, where it is not exported.
-func decodingLayerDecoder(d layerDecodingLayer, data []byte, p gopacket.PacketBuilder) error {
-	err := d.DecodeFromBytes(data, p)
-	if err != nil {
-		return err
-	}
-	p.AddLayer(d)
-	next := d.NextLayerType()
-	if next == gopacket.LayerTypeZero {
-		return nil
-	}
-	return p.NextDecoder(next)
-}
-
 // BuildDecoder creates a gopacket.Decoder for a layer implementing the required
 // methods. It is useful when creating a gopacket.LayerTypeMetadata, however
-// note this decoder is not used in the context of gopacket.DecodingLayers.
+// note this decoder is not used in the context of gopacket.DecodingLayer.
 func BuildDecoder(l layerDecodingLayer) gopacket.Decoder {
 	return gopacket.DecodeFunc(func(d []byte, p gopacket.PacketBuilder) error {
-		return decodingLayerDecoder(l, d, p)
+		err := l.DecodeFromBytes(d, p)
+		if err != nil {
+			return err
+		}
+		p.AddLayer(l)
+		next := l.NextLayerType()
+		if next == gopacket.LayerTypeZero {
+			return nil
+		}
+		return p.NextDecoder(next)
 	})
 }
