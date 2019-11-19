@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "doc.go",
         "get_dcmi_capabilities_info.go",
+        "get_dcmi_sensor_info.go",
         "get_power_reading.go",
         "layer_types.go",
         "operations.go",
@@ -31,6 +32,7 @@ go_test(
     size = "small",
     srcs = [
         "get_dcmi_capabilities_info_test.go",
+        "get_dcmi_sensor_info_test.go",
         "get_power_reading_test.go",
         "rolling_average_test.go",
     ],

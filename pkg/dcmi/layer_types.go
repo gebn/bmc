@@ -73,4 +73,19 @@ var (
 			}),
 		},
 	)
+	layerTypeGetDCMISensorInfoReq = gopacket.RegisterLayerType(
+		2008,
+		gopacket.LayerTypeMetadata{
+			Name: "Get DCMI Sensor Info Request",
+		},
+	)
+	layerTypeGetDCMISensorInfoRsp = gopacket.RegisterLayerType(
+		2009,
+		gopacket.LayerTypeMetadata{
+			Name: "Get DCMI Sensor Info Response",
+			Decoder: layerexts.BuildDecoder(func() layerexts.LayerDecodingLayer {
+				return &GetDCMISensorInfoRsp{}
+			}),
+		},
+	)
 )

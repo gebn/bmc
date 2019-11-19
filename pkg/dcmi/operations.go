@@ -15,4 +15,9 @@ var (
 		Body:     ipmi.BodyCodeDCMI,
 		Command:  0x02,
 	}
+	operationGetDCMISensorInfoReq = ipmi.Operation{
+		Function: ipmi.NetworkFunctionGroupReq,
+		Body:     ipmi.BodyCodeDCMI,
+		Command:  0x07,
+	}
 )

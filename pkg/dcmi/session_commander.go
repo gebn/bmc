@@ -21,6 +21,16 @@ func (s sessionCommander) GetPowerReading(ctx context.Context, r *GetPowerReadin
 	return &cmd.Rsp, nil
 }
 
+func (s sessionCommander) GetDCMISensorInfo(ctx context.Context, r *GetDCMISensorInfoReq) (*GetDCMISensorInfoRsp, error) {
+	cmd := &GetDCMISensorInfoCmd{
+		Req: *r,
+	}
+	if err := bmc.ValidateResponse(s.SendCommand(ctx, cmd)); err != nil {
+		return nil, err
+	}
+	return &cmd.Rsp, nil
+}
+
 // NewSessionCommander wraps a session-based connection in a context that
 // provides high-level access to DCMI commands. For convenience, this function
 // accepts the Session interface, however DCMI is unlikely to work over IPMI

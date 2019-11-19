@@ -36,6 +36,21 @@ const (
 	EntityIDSystemChassis EntityID = 0x17
 	EntityIDCoolingDevice EntityID = 0x1d
 	EntityIDMemoryDevice  EntityID = 0x20
+
+	EntityIDAirInlet EntityID = 0x37
+
+	// EntityIDDCMIAirInlet allows associating temperature sensors to the
+	// airflow at an air inlet. This is effectively deprecated, used by DCMI
+	// v1.0 and v1.1. EntityIDAirInlet should be preferred.
+	EntityIDDCMIAirInlet EntityID = 0x40
+
+	// EntityIDDCMIProcessor is effectively deprecated, used by DCMI v1.0 and
+	// v1.1. EntityIDProcessor should be preferred.
+	EntityIDDCMIProcessor EntityID = 0x41
+
+	// EntityIDDCMISystemBoard is effectively deprecated, used by DCMI v1.0 and
+	// v1.1. EntityIDSystemBoard should be preferred.
+	EntityIDDCMISystemBoard EntityID = 0x42
 )
 
 var (
@@ -58,6 +73,10 @@ var (
 		EntityIDSystemChassis:          "System Chassis",
 		EntityIDCoolingDevice:          "Cooling Device",
 		EntityIDMemoryDevice:           "Memory Device",
+		EntityIDAirInlet:               "Air Inlet",
+		EntityIDDCMIAirInlet:           "Air Inlet (DCMI)",
+		EntityIDDCMIProcessor:          "Processor (DCMI)",
+		EntityIDDCMISystemBoard:        "System Board (DCMI)",
 	}
 )
 

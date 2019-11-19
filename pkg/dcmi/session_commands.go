@@ -10,4 +10,6 @@ type SessionCommands interface {
 	SessionlessCommands
 
 	GetPowerReading(context.Context, *GetPowerReadingReq) (*GetPowerReadingRsp, error)
+
+	GetDCMISensorInfo(context.Context, *GetDCMISensorInfoReq) (*GetDCMISensorInfoRsp, error)
 }
