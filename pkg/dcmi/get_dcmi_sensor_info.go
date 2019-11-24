@@ -108,6 +108,8 @@ func (g *GetDCMISensorInfoRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFe
 		return fmt.Errorf("expected %v bytes for %v record IDs, got %v",
 			expectLength, recordIDs, len(data))
 	}
+	g.BaseLayer.Contents = data[:expectLength]
+	g.BaseLayer.Payload = data[expectLength:]
 
 	g.RecordIDs = g.RecordIDs[:0] // it would be nice to set this to len(recordIDs)
 	for i := 0; i < recordIDs; i++ {
@@ -115,9 +117,6 @@ func (g *GetDCMISensorInfoRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFe
 		recordID := ipmi.RecordID(binary.LittleEndian.Uint16(data[offset:]))
 		g.RecordIDs = append(g.RecordIDs, recordID)
 	}
-
-	g.BaseLayer.Contents = data[:expectLength]
-	g.BaseLayer.Payload = data[expectLength:]
 	return nil
 }
 
