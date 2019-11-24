@@ -28,7 +28,7 @@ type GetDCMISensorInfoReq struct {
 	// and 0x42 respectively were used to refer to these, however v1.5
 	// recommends using the IPMI entity IDs: 0x37, 0x03 and 0x07 respectively.
 	// DCMI v1.5 promises to map the DCMI values to their IPMI equivalents,
-	// encouraging use of the letter. In practice, try the IPMI entities first,
+	// encouraging use of the latter. In practice, try the IPMI entities first,
 	// falling back on the DCMI ones if there is an empty response.
 	Entity ipmi.EntityID
 
@@ -36,7 +36,7 @@ type GetDCMISensorInfoReq struct {
 	// retrieve all instance associated with the entity.
 	Instance ipmi.EntityInstance
 
-	// InstanceStart is for use when Instance is 0x00. It is indended for when
+	// InstanceStart is for use when Instance is 0x00. It is intended for when
 	// there are >8 instances of a particular sensor, so they cannot all be
 	// returned in a single response. This can be used to offset the start
 	// record ID. It looks like the idea is to set this to the highest instance

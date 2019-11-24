@@ -9,7 +9,7 @@ import (
 // fan. EntityID codes can be found in 37.14 and 43.14 of IPMI v1.5 and 2.0
 // respectively.
 //
-// A separate "instance" field discriminates between multiple occurances of a
+// A separate "instance" field discriminates between multiple occurrences of a
 // given entity, e.g. multi-core CPUs and redundant power supplies. All sensors
 // pertaining to a given piece of hardware will have the same entity and
 // instance.

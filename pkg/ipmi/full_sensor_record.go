@@ -42,7 +42,7 @@ type FullSensorRecord struct {
 	// processor. See EntityID for more details.
 	Entity EntityID
 
-	// Instance provides a way to distinguish between multiple occurences of a
+	// Instance provides a way to distinguish between multiple occurrences of a
 	// given entity, e.g. a dual socket system will likely have two processor
 	// temperature sensors, each with a different instance. We can enumerate all
 	// instances to ensure all processors are covered.
