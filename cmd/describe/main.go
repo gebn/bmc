@@ -39,7 +39,8 @@ func main() {
 
 	machine, err := bmc.DialV2(*argBMCAddr) // TODO change to Dial (need to implement v1.5 sessionless communication...)
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		return
 	}
 	defer machine.Close()
 
@@ -88,7 +89,8 @@ func main() {
 		MaxPrivilegeLevel: ipmi.PrivilegeLevelUser,
 	})
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		return
 	}
 	defer sess.Close(ctx)
 
