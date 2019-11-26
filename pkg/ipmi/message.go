@@ -184,6 +184,9 @@ func (m *Message) decodeSpecialNetFns(data []byte, df gopacket.DecodeFeedback) (
 	switch m.Function {
 	case NetworkFunctionGroupReq, NetworkFunctionGroupRsp:
 		if len(data) < 1 {
+			// this has been observed to happen due to insufficient privileges
+			// (e.g. user when operator is required), and when the BMC does not
+			// support the command (e.g. SuperMicro)
 			df.SetTruncated()
 			return 0, fmt.Errorf("data too short for body code")
 		}
