@@ -148,6 +148,19 @@ func main() {
 			fmt.Printf("\t%-19v no reading/missing\n", fsr.Identity)
 		}
 	}
+
+	dcmiSensors, err := dcmi.GetSensorInfo(ctx, sess)
+	if err != nil {
+		log.Printf("failed to get DCMI sensor info: %v", err)
+	} else {
+		fmt.Println("DCMI Sensors:")
+		fmt.Printf("\tInlet:\n")
+		printRecords(dcmiSensors.Inlet, repo)
+		fmt.Printf("\tCPU:\n")
+		printRecords(dcmiSensors.CPU, repo)
+		fmt.Printf("\tBaseboard:\n")
+		printRecords(dcmiSensors.Baseboard, repo)
+	}
 }
 
 func presencePing(ctx context.Context, t transport.Transport) (*layers.ASFPresencePong, error) {
@@ -298,4 +311,15 @@ func printPowerReading(r *dcmi.GetPowerReadingRsp) {
 	fmt.Printf("\tMax: %v\n", r.Max)
 	fmt.Printf("\tAs of: %v\n", r.Timestamp)
 	fmt.Printf("\tActive: %v\n", r.Active)
+}
+
+func printRecords(records []ipmi.RecordID, repo bmc.SDRRepository) {
+	for _, record := range records {
+		fsr, ok := repo[record]
+		if ok {
+			fmt.Printf("\t\t%v (%v)\n", fsr.Identity, record)
+		} else {
+			fmt.Printf("\t\tUnknown: %v\n", record)
+		}
+	}
 }
