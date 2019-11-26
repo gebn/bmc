@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestConvertAnalogDataFormatUnsigned(t *testing.T) {
+func TestParseAnalogDataFormatUnsigned(t *testing.T) {
 	tests := []struct {
 		in   byte
 		want int16
@@ -15,15 +15,15 @@ func TestConvertAnalogDataFormatUnsigned(t *testing.T) {
 		{0b11111111, 255},
 	}
 	for _, test := range tests {
-		got := convertAnalogDataFormatUnsigned(test.in)
+		got := parseAnalogDataFormatUnsigned(test.in)
 		if got != test.want {
-			t.Errorf("convertAnalogDataFormatUnsigned(%#b) = %v, want %v",
+			t.Errorf("parseAnalogDataFormatUnsigned(%#b) = %v, want %v",
 				test.in, got, test.want)
 		}
 	}
 }
 
-func TestConvertAnalogDataFormatOnesComplement(t *testing.T) {
+func TestParseAnalogDataFormatOnesComplement(t *testing.T) {
 	tests := []struct {
 		in   byte
 		want int16
@@ -34,15 +34,15 @@ func TestConvertAnalogDataFormatOnesComplement(t *testing.T) {
 		{0b11111111, 0},
 	}
 	for _, test := range tests {
-		got := convertAnalogDataFormatOnesComplement(test.in)
+		got := parseAnalogDataFormatOnesComplement(test.in)
 		if got != test.want {
-			t.Errorf("convertAnalogDataFormatOnesComplement(%#b) = %v, want %v",
+			t.Errorf("parseAnalogDataFormatOnesComplement(%#b) = %v, want %v",
 				test.in, got, test.want)
 		}
 	}
 }
 
-func TestConvertAnalogDataFormatTwosComplement(t *testing.T) {
+func TestParseAnalogDataFormatTwosComplement(t *testing.T) {
 	tests := []struct {
 		in   byte
 		want int16
@@ -53,15 +53,15 @@ func TestConvertAnalogDataFormatTwosComplement(t *testing.T) {
 		{0b11111111, -1},
 	}
 	for _, test := range tests {
-		got := convertAnalogDataFormatTwosComplement(test.in)
+		got := parseAnalogDataFormatTwosComplement(test.in)
 		if got != test.want {
-			t.Errorf("convertAnalogDataFormatTwosComplement(%#b) = %v, want %v",
+			t.Errorf("parseAnalogDataFormatTwosComplement(%#b) = %v, want %v",
 				test.in, got, test.want)
 		}
 	}
 }
 
-func TestAnalogDataFormatConverter(t *testing.T) {
+func TestAnalogDataFormatParser(t *testing.T) {
 	tests := []struct {
 		adf  AnalogDataFormat
 		err  bool
@@ -78,27 +78,25 @@ func TestAnalogDataFormatConverter(t *testing.T) {
 		{123, true, 0, 0},
 	}
 	for _, test := range tests {
-		converter, err := test.adf.Converter()
+		parser, err := test.adf.Parser()
 		if err != nil && test.err == false {
-			t.Errorf("%v.Converter() returned '%v', want converter",
-				test.adf, err)
+			t.Errorf("%v.Parser() returned '%v', want parser", test.adf, err)
 			continue
 		}
 		if err == nil && test.err == true {
-			t.Errorf("%v.Converter() returned %v, want err",
-				test.adf, converter)
+			t.Errorf("%v.Parser() returned %v, want err", test.adf, parser)
 			continue
 		}
 
-		if converter == nil {
+		if parser == nil {
 			// passed - expected err, got one
 			continue
 		}
 
-		converted := converter.Convert(test.in)
-		if converted != test.want {
-			t.Errorf("%v.Convert(%v) = %v, want %v",
-				converter, test.in, converted, test.want)
+		parsed := parser.Parse(test.in)
+		if parsed != test.want {
+			t.Errorf("%v.Parse(%v) = %v, want %v",
+				parser, test.in, parsed, test.want)
 			continue
 		}
 	}
