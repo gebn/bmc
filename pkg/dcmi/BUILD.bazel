@@ -10,6 +10,7 @@ go_library(
         "layer_types.go",
         "operations.go",
         "rolling_average.go",
+        "sensor_info.go",
         "session_commander.go",
         "session_commands.go",
         "sessionless_commander.go",
