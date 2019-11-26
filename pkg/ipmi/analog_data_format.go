@@ -87,7 +87,7 @@ func (f AnalogDataFormat) Parser() (AnalogDataFormatParser, error) {
 	if parser, ok := analogDataFormatParsers[f]; ok {
 		return parser, nil
 	}
-	return nil, fmt.Errorf("no parser found for %v", f)
+	return nil, fmt.Errorf("no analog data format parser found for %v", f)
 }
 
 func (f AnalogDataFormat) Description() string {
