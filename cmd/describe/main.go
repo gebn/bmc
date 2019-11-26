@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"sort"
 	"time"
 
 	"github.com/gebn/bmc"
@@ -112,6 +113,37 @@ func main() {
 			log.Printf("failed to get power reading: %v", err)
 		} else {
 			printPowerReading(power)
+		}
+	}
+
+	repo, err := bmc.RetrieveSDRRepository(ctx, sess)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+	recordIDs := make([]ipmi.RecordID, 0, len(repo))
+	for recordID := range repo {
+		recordIDs = append(recordIDs, recordID)
+	}
+	sort.Slice(recordIDs, func(i, j int) bool {
+		return recordIDs[i] < recordIDs[j]
+	})
+	fmt.Println("Sensors:")
+	for _, recordID := range recordIDs {
+		fsr := repo[recordID]
+		reader, err := bmc.NewSensorReader(fsr)
+		if err != nil {
+			fmt.Printf("\t%-19v not analog\n", fsr.Identity)
+			continue
+		}
+		reading, err := reader.Read(ctx, sess)
+		switch err {
+		case nil:
+			fmt.Printf("\t%-19v %v%v\n", fsr.Identity, reading, fsr.BaseUnit.Symbol())
+		case bmc.ErrSensorScanningDisabled:
+			fmt.Printf("\t%-19v disabled\n", fsr.Identity)
+		default:
+			fmt.Printf("\t%-19v no reading/missing\n", fsr.Identity)
 		}
 	}
 }

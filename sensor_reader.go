@@ -13,6 +13,12 @@ var (
 	// "reading/state unavailable" flag in the Get Sensor Reading response. This
 	// indicates the reading should be ignored, so is returned as an error.
 	ErrSensorReadingUnavailable = errors.New("sensor reading is not available")
+
+	// ErrSensorScanningDisabled is returned when the BMC sets the "sensor
+	// scanning disabled" flag in the Get Sensor Reading response. This suggests
+	// the machine is powered down and the reading should be ignored, so is
+	// returned as an error.
+	ErrSensorScanningDisabled = errors.New("sensor is disabled")
 )
 
 // SensorReader is implemented by types that can read the current value of a
@@ -76,6 +82,9 @@ func (r *linearSensorReader) Read(ctx context.Context, s Session) (float64, erro
 	}
 	if r.readingCmd.Rsp.ReadingUnavailable {
 		return 0, ErrSensorReadingUnavailable
+	}
+	if !r.readingCmd.Rsp.ScanningEnabled {
+		return 0, ErrSensorScanningDisabled
 	}
 	parsed := r.parser.Parse(r.readingCmd.Rsp.Reading)
 	return r.factors.ConvertReading(parsed), nil
