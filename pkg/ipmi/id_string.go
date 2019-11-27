@@ -102,7 +102,7 @@ func decodeBCDPlus(b []byte, c int) (string, int, error) {
 
 	runes := make([]rune, c)
 	for i := 0; i < c; i++ {
-		shift := 0
+		shift := uint8(0)
 		if i%2 == 0 {
 			// character is in the most significant 4 bits; need to
 			// shift down
