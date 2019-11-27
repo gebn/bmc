@@ -72,17 +72,6 @@ func main() {
 		printSystemGUID(guid)
 	}
 
-	c, m, p := getDCMICaps(ctx, machine)
-	if c != nil {
-		printDCMICaps(c)
-	}
-	if m != nil {
-		printDCMIPlatformAttrs(m)
-	}
-	if p != nil {
-		printDCMIPowerPeriods(p)
-	}
-
 	sess, err := machine.NewSession(ctx, &bmc.SessionOpts{
 		Username:          *flgUsername,
 		Password:          []byte(*flgPassword),
@@ -104,18 +93,6 @@ func main() {
 		log.Printf("failed to get chassis status: %v", err)
 	} else {
 		printChassisStatus(status)
-	}
-
-	if c != nil && c.PowerManagement {
-		commander := dcmi.NewSessionCommander(sess)
-		req := &dcmi.GetPowerReadingReq{
-			Mode: dcmi.SystemPowerStatisticsModeNormal,
-		}
-		if power, err := commander.GetPowerReading(ctx, req); err != nil {
-			log.Printf("failed to get power reading: %v", err)
-		} else {
-			printPowerReading(power)
-		}
 	}
 
 	repo, err := bmc.RetrieveSDRRepository(ctx, sess)
@@ -146,6 +123,29 @@ func main() {
 			fmt.Printf("\t%-19v disabled\n", fsr.Identity)
 		default:
 			fmt.Printf("\t%-19v no reading/missing\n", fsr.Identity)
+		}
+	}
+
+	c, m, p := getDCMICaps(ctx, machine)
+	if c != nil {
+		printDCMICaps(c)
+	}
+	if m != nil {
+		printDCMIPlatformAttrs(m)
+	}
+	if p != nil {
+		printDCMIPowerPeriods(p)
+	}
+
+	if c != nil && c.PowerManagement {
+		commander := dcmi.NewSessionCommander(sess)
+		req := &dcmi.GetPowerReadingReq{
+			Mode: dcmi.SystemPowerStatisticsModeNormal,
+		}
+		if power, err := commander.GetPowerReading(ctx, req); err != nil {
+			log.Printf("failed to get power reading: %v", err)
+		} else {
+			printPowerReading(power)
 		}
 	}
 
