@@ -182,7 +182,6 @@ func (s *V2Sessionless) SendCommand(ctx context.Context, c ipmi.Command) (ipmi.C
 	// correct completion code. Users of this function should not rely on the
 	// response if the code is non-normal.
 	code := s.messageLayer.CompletionCode
-	commandResponses.WithLabelValues(code.String()).Inc()
 
 	if c.Response() != nil {
 		// the command is expecting a response body in the success case - do our
@@ -256,11 +255,14 @@ func (s *V2Sessionless) buildAndSendCommand(ctx context.Context, c ipmi.Command)
 			return err
 		}
 
+		code := s.messageLayer.CompletionCode
+		// must increment here, otherwise we'll miss temporary codes at the
+		// higher levels
+		commandResponses.WithLabelValues(code.String()).Inc()
 		// check completion code is permanent
-		if code := s.messageLayer.CompletionCode; code.IsTemporary() {
+		if code.IsTemporary() {
 			return errRetryableCode
 		}
-
 		return nil
 	}, backoff.WithContext(s.backoff, ctx))
 }

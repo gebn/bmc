@@ -123,7 +123,6 @@ func (s *V2Session) SendCommand(ctx context.Context, c ipmi.Command) (ipmi.Compl
 	}
 
 	code := s.messageLayer.CompletionCode
-	commandResponses.WithLabelValues(code.String()).Inc()
 
 	if c.Response() != nil {
 		if err := c.Response().DecodeFromBytes(s.messageLayer.LayerPayload(),
@@ -195,7 +194,11 @@ func (s *V2Session) buildAndSend(ctx context.Context, c ipmi.Command) error {
 		if err := types.InnermostEquals(ipmi.LayerTypeMessage); err != nil {
 			return err
 		}
-		if code := s.messageLayer.CompletionCode; code.IsTemporary() {
+		code := s.messageLayer.CompletionCode
+		// must increment here, otherwise we'll miss temporary codes at the
+		// higher levels
+		commandResponses.WithLabelValues(code.String()).Inc()
+		if code.IsTemporary() {
 			return errRetryableCode
 		}
 		return nil
