@@ -185,7 +185,11 @@ func (s *V2Session) buildAndSend(ctx context.Context, c ipmi.Command) error {
 		response, err := s.transport.Send(requestCtx, s.buffer.Bytes())
 		cancel()
 		if err != nil {
-			return err
+			// session is now in an unknown state - if we send another command,
+			// some BMCs can tear their send buffer. The BMC may also ignore us
+			// completely if it does not support the command.
+			terminalErr = err
+			return nil
 		}
 		if _, err := s.decode(response, &s.layers); err != nil {
 			return err
