@@ -82,10 +82,9 @@ type SessionOpts struct {
 	// Password is the password of the above user, stored on the managed system
 	// as either 16 bytes (for v1.5, or to preserve the ability to log in with a
 	// v1.5 session in v2.0) or 20 bytes of uninterpreted data (hence why this
-	// isn't a string).  Passwords shorter than the maximum length are padded
-	// with 0x00.  This is called K_[UID] in the spec ("the key for the user
-	// with ID
-	// 'UID'").
+	// isn't a string). Passwords shorter than the maximum length are padded
+	// with 0x00. This is called K_[UID] in the spec ("the key for the user
+	// with ID 'UID'").
 	Password []byte
 
 	// MaxPrivilegeLevel is the upper privilege limit for the session. It
