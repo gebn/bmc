@@ -18,7 +18,7 @@ type Payload interface {
 
 	// Descriptor returns the PayloadDescriptor for the request layer. This
 	// should avoid allocation, returning a pointer to static memory.
-	// Technically this should be a memory of the Request(), however we put it
+	// Technically this should be a member of the Request(), however we put it
 	// here for consistency with Command. Note that unlike in Command, Request()
 	// and Response() here cannot return nil.
 	Descriptor() *PayloadDescriptor

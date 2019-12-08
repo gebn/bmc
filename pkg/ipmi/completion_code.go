@@ -13,29 +13,6 @@ import (
 // practice the rest of the message should be uninterpreted.
 type CompletionCode uint8
 
-func (c CompletionCode) Description() string {
-	switch c {
-	case CompletionCodeNormal:
-		return "Normal"
-	case CompletionCodeInvalidSessionID:
-		return "Invalid session ID"
-	case CompletionCodeNodeBusy:
-		return "Node Busy"
-	case CompletionCodeUnrecognisedCommand:
-		return "Unrecognised Command"
-	case CompletionCodeRequestTruncated:
-		return "Request Truncated"
-	case CompletionCodeUnspecified:
-		return "Unspecified error"
-	default:
-		return "Unknown"
-	}
-}
-
-func (c CompletionCode) String() string {
-	return fmt.Sprintf("%#.2x(%v)", uint8(c), c.Description())
-}
-
 const (
 	CompletionCodeNormal CompletionCode = 0x0
 
@@ -47,6 +24,7 @@ const (
 
 	CompletionCodeNodeBusy            CompletionCode = 0xc0
 	CompletionCodeUnrecognisedCommand CompletionCode = 0xc1
+	CompletionCodeTimeout             CompletionCode = 0xc3
 
 	// CompletionCodeRequestTruncated means the request ended prematurely. Did
 	// you forget to add the final request data layer?
@@ -54,3 +32,34 @@ const (
 
 	CompletionCodeUnspecified CompletionCode = 0xff
 )
+
+var (
+	completionCodeDescriptions = map[CompletionCode]string{
+		CompletionCodeNormal:              "Normal",
+		CompletionCodeInvalidSessionID:    "Invalid Session ID",
+		CompletionCodeNodeBusy:            "Node Busy",
+		CompletionCodeUnrecognisedCommand: "Unrecognised Command",
+		CompletionCodeTimeout:             "Timeout",
+		CompletionCodeRequestTruncated:    "Request Truncated",
+		CompletionCodeUnspecified:         "Unspecified Error",
+	}
+)
+
+func (c CompletionCode) Description() string {
+	if description, ok := completionCodeDescriptions[c]; ok {
+		return description
+	}
+	return "Unknown"
+}
+
+// IsTemporary returns whether the code indicates a retry may produce a
+// successful result, or the error is permanent.
+func (c CompletionCode) IsTemporary() bool {
+	// at some point, will be more efficient implemented as
+	// map[CompletionCode]struct{}, but this is sufficient for now
+	return c == CompletionCodeNodeBusy || c == CompletionCodeTimeout
+}
+
+func (c CompletionCode) String() string {
+	return fmt.Sprintf("%#.2x(%v)", uint8(c), c.Description())
+}

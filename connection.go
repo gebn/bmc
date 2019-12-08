@@ -132,9 +132,9 @@ type Connection interface {
 
 	// SendCommand sends a command to the BMC, blocking until it receives a
 	// response. This method will retry with the configured per-request timeout
-	// until a valid response is received, or the context expires (whichever
-	// happens first). A non-zero completion code is deemed to be a valid
-	// response. If the final request fails with a transport error (including
+	// until a valid response with a non-temporary error (e.g. resource
+	// exhaustion) is received, or the context expires (whichever happens
+	// first). If the final request fails with a transport error (including
 	// timeout), a serialise/decode error occurs above the command response
 	// layer, or the message layer is missing, the returned error will be
 	// non-nil, and the completion code must be ignored. If the message layer of

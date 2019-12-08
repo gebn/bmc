@@ -2,6 +2,7 @@ package bmc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -16,6 +17,8 @@ import (
 )
 
 var (
+	errRetryableCode = errors.New("completion code indicated temporary failure")
+
 	// these not only save a map lookup each open, but also register the labels
 	v2ConnectionOpenAttempts = connectionOpenAttempts.WithLabelValues("2.0")
 	v2ConnectionOpenFailures = connectionOpenFailures.WithLabelValues("2.0")
@@ -96,15 +99,18 @@ func newV2Sessionless(t transport.Transport, timeout time.Duration) *V2Sessionle
 	return s
 }
 
-func (s *V2Sessionless) SetTimeout(t time.Duration) {
-	s.timeout = t
-}
-
 func (s *V2Sessionless) Version() string {
 	return "2.0"
 }
 
-func (s *V2Sessionless) sendPayload(ctx context.Context, p ipmi.Payload) error {
+// SetTimeout configures the per-request timeout for a given RMCP+ or IPMI
+// command. Methods will retry temporary errors until the context expires; this
+// configures how long we will wait for a response.
+func (s *V2Sessionless) SetTimeout(t time.Duration) {
+	s.timeout = t
+}
+
+func (s *V2Sessionless) buildAndSendPayload(ctx context.Context, p ipmi.Payload) error {
 	s.rmcpLayer = layers.RMCP{
 		Version:  layers.RMCPVersion1,
 		Sequence: 0xFF, // do not send us an ACK
@@ -126,20 +132,29 @@ func (s *V2Sessionless) sendPayload(ctx context.Context, p ipmi.Payload) error {
 		return err
 	}
 
-	if _, err := s.send(ctx); err != nil {
+	s.backoff.Reset()
+	retryable := func() error {
+		requestCtx, cancel := context.WithTimeout(ctx, s.timeout)
+		response, err := s.transport.Send(requestCtx, s.buffer.Bytes())
+		cancel()
+		if err != nil {
+			return err
+		}
+		if _, err := s.decode(response, &s.layers); err != nil {
+			return err
+		}
+		types := layerexts.DecodedTypes(s.layers)
+		if err := types.InnermostEquals(ipmi.LayerTypeV2Session); err != nil {
+			return err
+		}
+		return nil
+	}
+	if err := backoff.Retry(retryable, backoff.WithContext(s.backoff, ctx)); err != nil {
 		return err
 	}
 
-	// makes it easier to work with
-	types := layerexts.DecodedTypes(s.layers)
-	if err := types.InnermostEquals(ipmi.LayerTypeV2Session); err != nil {
-		return err
-	}
-
-	if err := p.Response().DecodeFromBytes(s.v2SessionLayer.LayerPayload(), gopacket.NilDecodeFeedback); err != nil {
-		return err
-	}
-	return nil
+	return p.Response().DecodeFromBytes(
+		s.v2SessionLayer.LayerPayload(), gopacket.NilDecodeFeedback)
 }
 
 // saves having to write two SerializeLayers calls in SendCommand
@@ -155,7 +170,7 @@ func (s *V2Sessionless) SendCommand(ctx context.Context, c ipmi.Command) (ipmi.C
 	defer timer.ObserveDuration()
 	commandAttempts.WithLabelValues(c.Name()).Inc()
 
-	if err := s.buildAndSend(ctx, c); err != nil {
+	if err := s.buildAndSendCommand(ctx, c); err != nil {
 		commandFailures.WithLabelValues(c.Name()).Inc()
 		return 0, err
 	}
@@ -179,13 +194,13 @@ func (s *V2Sessionless) SendCommand(ctx context.Context, c ipmi.Command) (ipmi.C
 		}
 	}
 
-	// even if code is non-normal, if we didn't have any issues, we don't log it
-	// as a command failure, as the command succeeded; it just didn't respond a
-	// successful response
+	// even if code is non-normal, if we didn't have any issues, we don't report
+	// it as a command failure, as execution itself completed successfully; it
+	// just didn't have the intended result
 	return code, nil
 }
 
-func (s *V2Sessionless) buildAndSend(ctx context.Context, c ipmi.Command) error {
+func (s *V2Sessionless) buildAndSendCommand(ctx context.Context, c ipmi.Command) error {
 	s.rmcpLayer = layers.RMCP{
 		Version:  layers.RMCPVersion1,
 		Sequence: 0xFF, // do not send us an ACK
@@ -213,24 +228,9 @@ func (s *V2Sessionless) buildAndSend(ctx context.Context, c ipmi.Command) error 
 		return err
 	}
 
-	if _, err := s.send(ctx); err != nil {
-		return err
-	}
-
-	types := layerexts.DecodedTypes(s.layers)
-	return types.InnermostEquals(ipmi.LayerTypeMessage)
-}
-
-func (s *V2Sessionless) send(ctx context.Context) (gopacket.LayerType, error) {
-	response := []byte(nil)
-	ctxErr := error(nil)
+	s.backoff.Reset()
 	firstAttempt := true
-	retryable := func() error {
-		if err := ctx.Err(); err != nil {
-			ctxErr = err
-			return nil
-		}
-
+	return backoff.Retry(func() error {
 		if firstAttempt {
 			firstAttempt = false
 		} else {
@@ -238,20 +238,31 @@ func (s *V2Sessionless) send(ctx context.Context) (gopacket.LayerType, error) {
 		}
 
 		requestCtx, cancel := context.WithTimeout(ctx, s.timeout)
-		defer cancel()
-		bytes, err := s.transport.Send(requestCtx, s.buffer.Bytes())
-		response = bytes
-		return err
-	}
-	s.backoff.Reset()
-	if err := backoff.Retry(retryable, s.backoff); err != nil {
-		return gopacket.LayerTypeZero, err
-	}
-	if ctxErr != nil {
-		return gopacket.LayerTypeZero, ctxErr
-	}
+		response, err := s.transport.Send(requestCtx, s.buffer.Bytes())
+		cancel()
+		if err != nil {
+			return err
+		}
 
-	return s.decode(response, &s.layers)
+		// parse bytes
+		if _, err := s.decode(response, &s.layers); err != nil {
+			return err
+		}
+
+		// ensure we got a message (we don't attempt to parse below message
+		// here)
+		types := layerexts.DecodedTypes(s.layers)
+		if err := types.InnermostEquals(ipmi.LayerTypeMessage); err != nil {
+			return err
+		}
+
+		// check completion code is permanent
+		if code := s.messageLayer.CompletionCode; code.IsTemporary() {
+			return errRetryableCode
+		}
+
+		return nil
+	}, backoff.WithContext(s.backoff, ctx))
 }
 
 func (s *V2Sessionless) GetSystemGUID(ctx context.Context) ([16]byte, error) {
@@ -300,7 +311,7 @@ func (s *V2Sessionless) openSession(ctx context.Context, r *ipmi.OpenSessionReq)
 	payload := &ipmi.OpenSessionPayload{
 		Req: *r,
 	}
-	if err := s.sendPayload(ctx, payload); err != nil {
+	if err := s.buildAndSendPayload(ctx, payload); err != nil {
 		return nil, err
 	}
 	rsp := &payload.Rsp
@@ -319,7 +330,7 @@ func (s *V2Sessionless) rakpMessage1(ctx context.Context, r *ipmi.RAKPMessage1) 
 	payload := &ipmi.RAKPMessage1Payload{
 		Req: *r,
 	}
-	if err := s.sendPayload(ctx, payload); err != nil {
+	if err := s.buildAndSendPayload(ctx, payload); err != nil {
 		return nil, err
 	}
 	rsp := &payload.Rsp
@@ -338,7 +349,7 @@ func (s *V2Sessionless) rakpMessage3(ctx context.Context, r *ipmi.RAKPMessage3) 
 	payload := &ipmi.RAKPMessage3Payload{
 		Req: *r,
 	}
-	if err := s.sendPayload(ctx, payload); err != nil {
+	if err := s.buildAndSendPayload(ctx, payload); err != nil {
 		return nil, err
 	}
 	rsp := &payload.Rsp
