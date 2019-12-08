@@ -122,7 +122,8 @@ func main() {
 		case bmc.ErrSensorScanningDisabled:
 			fmt.Printf("\t%-19v disabled\n", fsr.Identity)
 		default:
-			fmt.Printf("\t%-19v no reading/missing\n", fsr.Identity)
+			// also ctx expired
+			fmt.Printf("\t%-19v no reading/missing (%v)\n", fsr.Identity, err)
 		}
 	}
 

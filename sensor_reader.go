@@ -78,6 +78,7 @@ func newLinearSensorReader(r *ipmi.FullSensorRecord) (*linearSensorReader, error
 
 func (r *linearSensorReader) Read(ctx context.Context, s Session) (float64, error) {
 	if err := ValidateResponse(s.SendCommand(ctx, &r.readingCmd)); err != nil {
+		// some BMCs return an empty response when the component is not present
 		return 0, err
 	}
 	if r.readingCmd.Rsp.ReadingUnavailable {
