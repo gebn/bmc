@@ -158,15 +158,9 @@ func (s *V2Session) buildAndSend(ctx context.Context, c ipmi.Command) error {
 		Sequence:      1, // used at the session level
 	}
 
-	response := []byte(nil)
-	terminalErr := error(nil)
 	firstAttempt := true
+	terminalErr := error(nil)
 	retryable := func() error {
-		if err := ctx.Err(); err != nil {
-			terminalErr = err
-			return nil
-		}
-
 		if firstAttempt {
 			firstAttempt = false
 		} else {
@@ -189,26 +183,28 @@ func (s *V2Session) buildAndSend(ctx context.Context, c ipmi.Command) error {
 			return nil
 		}
 		requestCtx, cancel := context.WithTimeout(ctx, s.timeout)
-		defer cancel()
-		resp, err := s.transport.Send(requestCtx, s.buffer.Bytes())
-		response = resp
-		return err
+		response, err := s.transport.Send(requestCtx, s.buffer.Bytes())
+		cancel()
+		if err != nil {
+			return err
+		}
+		if _, err := s.decode(response, &s.layers); err != nil {
+			return err
+		}
+		types := layerexts.DecodedTypes(s.layers)
+		if err := types.InnermostEquals(ipmi.LayerTypeMessage); err != nil {
+			return err
+		}
+		if code := s.messageLayer.CompletionCode; code.IsTemporary() {
+			return errRetryableCode
+		}
+		return nil
 	}
 	s.backoff.Reset()
-	if err := backoff.Retry(retryable, s.backoff); err != nil {
+	if err := backoff.Retry(retryable, backoff.WithContext(s.backoff, ctx)); err != nil {
 		return err
 	}
-	if terminalErr != nil {
-		return terminalErr
-	}
-
-	if _, err := s.decode(response, &s.layers); err != nil {
-		return err
-	}
-
-	// makes it easier to work with
-	types := layerexts.DecodedTypes(s.layers)
-	return types.InnermostEquals(ipmi.LayerTypeMessage)
+	return terminalErr
 }
 
 func (s *V2Session) GetSystemGUID(ctx context.Context) ([16]byte, error) {
