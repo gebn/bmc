@@ -112,6 +112,7 @@ func main() {
 		fsr := repo[recordID]
 		reader, err := bmc.NewSensorReader(fsr)
 		if err != nil {
+			// e.g. chassis intrusion
 			fmt.Printf("\t%-19v not analog\n", fsr.Identity)
 			continue
 		}
@@ -120,9 +121,10 @@ func main() {
 		case nil:
 			fmt.Printf("\t%-19v %v%v\n", fsr.Identity, reading, fsr.BaseUnit.Symbol())
 		case bmc.ErrSensorScanningDisabled:
+			// suggests system is off
 			fmt.Printf("\t%-19v disabled\n", fsr.Identity)
 		default:
-			// also ctx expired
+			// suggests slot empty (fan, memory module), or ctx expired
 			fmt.Printf("\t%-19v no reading/missing (%v)\n", fsr.Identity, err)
 		}
 	}
