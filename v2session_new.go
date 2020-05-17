@@ -5,6 +5,7 @@ import (
 	"crypto/hmac"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 
 	"github.com/gebn/bmc/pkg/ipmi"
@@ -13,6 +14,9 @@ import (
 )
 
 var (
+	ErrIncorrectPassword = errors.New("RAKP2 HMAC fail (this indicates the " +
+		"BMC is using a different password)")
+
 	defaultAuthenticationAlgorithms = []ipmi.AuthenticationAlgorithm{
 		//ipmi.AuthenticationAlgorithmNone,
 		ipmi.AuthenticationAlgorithmHMACSHA1,
@@ -97,6 +101,9 @@ func (s *V2SessionlessTransport) NewV2Session(ctx context.Context, opts *V2Sessi
 	return sess, nil
 }
 
+// newV2Session negotiates a new session, returning it on success. It will
+// return ErrIncorrectPassword if the BMC appears to be using a different
+// password to the remote console.
 func (s *V2SessionlessTransport) newV2Session(ctx context.Context, opts *V2SessionOpts) (*V2Session, error) {
 	if opts.AuthenticationAlgorithms == nil {
 		opts.AuthenticationAlgorithms = defaultAuthenticationAlgorithms
@@ -170,9 +177,7 @@ func (s *V2SessionlessTransport) newV2Session(ctx context.Context, opts *V2Sessi
 	rakpMessage2AuthCode := calculateRAKPMessage2AuthCode(authCodeHash,
 		rakpMessage1, rakpMessage2)
 	if !hmac.Equal(rakpMessage2.AuthCode, rakpMessage2AuthCode) {
-		return nil, fmt.Errorf("RAKP2 HMAC fail: got %v, want %v (this indicates the BMC is using a different password)",
-			hex.EncodeToString(rakpMessage2.AuthCode),
-			hex.EncodeToString(rakpMessage2AuthCode))
+		return nil, ErrIncorrectPassword
 	}
 
 	effectiveBMCKey := opts.KG
