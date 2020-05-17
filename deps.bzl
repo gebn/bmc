@@ -13,7 +13,7 @@ def _kingpin(go_repository):
     _maybe(
         go_repository,
         name = "com_github_alecthomas_units",
-        commit = "680d30ca31172657fa50e996eb82d790d1d8b96e",
+        commit = "f65c72e2690dc4b403c8bd637baf4611cd4c069b",
         importpath = "github.com/alecthomas/units",
     )
 
@@ -29,7 +29,7 @@ def _prometheus(go_repository):
         go_repository,
         name = "com_github_prometheus_client_golang",
         importpath = "github.com/prometheus/client_golang",
-        tag = "v1.4.1",
+        tag = "v1.6.0",
     )
 
     _maybe(
@@ -65,7 +65,7 @@ def _prometheus(go_repository):
         go_repository,
         name = "com_github_prometheus_procfs",
         importpath = "github.com/prometheus/procfs",
-        tag = "v0.0.8",
+        tag = "v0.0.11",
     )
 
     _maybe(
@@ -75,19 +75,26 @@ def _prometheus(go_repository):
         commit = "c182affec369e30f25d3eb8cd8a478dee585ae7d",
     )
 
+    _maybe(
+        go_repository,
+        name = "org_golang_x_sys",
+        commit = "1151b9dac4a98d49ef7f80f07ddd826ff51e0b36",
+        importpath = "golang.org/x/sys",
+    )
+
 def deps(go_repository):
     _maybe(
         go_repository,
         name = "com_github_google_gopacket",
         importpath = "github.com/google/gopacket",
-        commit = "acf5713f69a6d7d46793de01046a2e72f6c2d84f",
+        commit = "a83d5be3a7a49b54dbe6a0c55fd10abd833f3aa2",
     )
 
     _maybe(
         go_repository,
         name = "com_github_cenkalti_backoff",
         importpath = "github.com/cenkalti/backoff",
-        tag = "v4.0.0",
+        tag = "v4.0.2",
     )
 
     _kingpin(go_repository)
@@ -98,5 +105,5 @@ def test(go_repository):
         go_repository,
         name = "com_github_google_go_cmp",
         importpath = "github.com/google/go-cmp",
-        tag = "v0.4.0",
+        tag = "v0.4.1",
     )
