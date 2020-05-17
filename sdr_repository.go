@@ -81,7 +81,10 @@ func walkSDRs(ctx context.Context, s Session) (SDRRepository, error) {
 		}
 
 		packet := gopacket.NewPacket(getSDRCmd.Rsp.Payload, ipmi.LayerTypeSDR,
-			gopacket.Default)
+			gopacket.DecodeOptions{
+				Lazy: true,
+				// we can't set NoCopy because we reuse getSDRCmd.Rsp
+			})
 		if packet == nil {
 			return nil, fmt.Errorf("invalid SDR: %v", getSDRCmd)
 		}
