@@ -66,7 +66,7 @@ var (
 		// or NetFns have the same name, they will be counted as one; can add
 		// tie-breaker labels if/when this actually happens; the command name is
 		// more there as an indication than forensics
-		[]string{"name"}, // e.g. "Get Device ID", specified in Cmd struct
+		[]string{"command"}, // e.g. "Get Device ID", specified in Cmd struct
 	)
 
 	// serialise and deserialise errors are rolled up into this - to properly
@@ -84,9 +84,9 @@ var (
 				"response completion codes; a command that succeeds with a " +
 				"error response is not a failure by this definition.",
 		},
-		// we track name here as well to make this and attempts easily
+		// we track command name here as well to make this and attempts easily
 		// subtractable
-		[]string{"name"},
+		[]string{"command"},
 	)
 
 	commandRetries = promauto.NewCounter(prometheus.CounterOpts{
