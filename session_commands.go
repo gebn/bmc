@@ -15,8 +15,12 @@ type SessionCommands interface {
 	// keepalive.
 	SessionlessCommands
 
-	// GetDeviceID send a Get Device ID command to the BMC. This is specified in
-	// 17.1 and 20.1 of IPMI v1.5 and 2.0 respectively.
+	// GetSessionInfo sends a Get Session Info command to the BMC. This is
+	// specified in 18.18 and 22.20 of IPMI v1.5 and v2.0 respectively.
+	GetSessionInfo(context.Context, *ipmi.GetSessionInfoReq) (*ipmi.GetSessionInfoRsp, error)
+
+	// GetDeviceID sends a Get Device ID command to the BMC. This is specified
+	// in 17.1 and 20.1 of IPMI v1.5 and 2.0 respectively.
 	GetDeviceID(context.Context) (*ipmi.GetDeviceIDRsp, error)
 
 	// GetChassisStatus sends a Get Chassis Status command to the BMC. This is

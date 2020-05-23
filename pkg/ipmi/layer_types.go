@@ -209,4 +209,19 @@ var (
 			}),
 		},
 	)
+	LayerTypeGetSessionInfoReq = gopacket.RegisterLayerType(
+		1025,
+		gopacket.LayerTypeMetadata{
+			Name: "Get Session Info Request",
+		},
+	)
+	LayerTypeGetSessionInfoRsp = gopacket.RegisterLayerType(
+		1026,
+		gopacket.LayerTypeMetadata{
+			Name: "Get Session Info Response",
+			Decoder: layerexts.BuildDecoder(func() layerexts.LayerDecodingLayer {
+				return &GetSessionInfoRsp{}
+			}),
+		},
+	)
 )

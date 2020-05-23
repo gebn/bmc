@@ -225,6 +225,16 @@ func (s *V2Session) GetChannelAuthenticationCapabilities(
 	return getChannelAuthenticationCapabilities(ctx, s, r)
 }
 
+func (s *V2Session) GetSessionInfo(ctx context.Context, r *ipmi.GetSessionInfoReq) (*ipmi.GetSessionInfoRsp, error) {
+	cmd := &ipmi.GetSessionInfoCmd{
+		Req: *r,
+	}
+	if err := ValidateResponse(s.SendCommand(ctx, cmd)); err != nil {
+		return nil, err
+	}
+	return &cmd.Rsp, nil
+}
+
 func (s *V2Session) GetDeviceID(ctx context.Context) (*ipmi.GetDeviceIDRsp, error) {
 	cmd := &ipmi.GetDeviceIDCmd{}
 	if err := ValidateResponse(s.SendCommand(ctx, cmd)); err != nil {

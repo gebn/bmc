@@ -94,6 +94,14 @@ var (
 		Function: NetworkFunctionSensorRsp,
 		Command:  0x2d,
 	}
+	OperationGetSessionInfoReq = Operation{
+		Function: NetworkFunctionAppReq,
+		Command:  0x3d,
+	}
+	OperationGetSessionInfoRsp = Operation{
+		Function: NetworkFunctionAppRsp,
+		Command:  0x3d,
+	}
 
 	// operationLayerTypes tells us which layer comes next given a network
 	// function and command. It should never be modified during runtime, as
@@ -107,6 +115,7 @@ var (
 		OperationGetSDRRepositoryInfoRsp:                 LayerTypeGetSDRRepositoryInfoRsp,
 		OperationGetSDRRsp:                               LayerTypeGetSDRRsp,
 		OperationGetSensorReadingRsp:                     LayerTypeGetSensorReadingRsp,
+		OperationGetSessionInfoRsp:                       LayerTypeGetSessionInfoRsp,
 	}
 )
 
