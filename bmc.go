@@ -3,6 +3,7 @@
 package bmc
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -22,67 +23,20 @@ var (
 	namespace = "bmc"
 )
 
-// TODO need to implement v1 sending
-//// Dial queries the BMC at the supplied IP[:port] (IPv6 must be enclosed in
-//// square brackets) for IPMI v2.0 capability. If it supports IPMI v2.0, a
-//// V2SessionlessTransport will be returned, otherwise a V1SessionlessTransport
-//// will be returned. If you know the BMC's capabilities, or need a specific
-//// feature (e.g. DCMI), use the DialV*() functions instead, which expose
-//// additional information and functionality.
-//func Dial(ctx context.Context, addr string) (SessionlessTransport, error) {
-//	t, err := newTransport(addr)
-//	if err != nil {
-//		return nil, err
-//	}
-//	v1 := newV1SessionlessTransport(t)
-//	capabilities, err := v1.GetChannelAuthenticationCapabilities(
-//		ctx,
-//		&ipmi.GetChannelAuthenticationCapabilitiesReq{
-//			ExtendedData:      true,
-//			Channel:           ipmi.ChannelPresentInterface,
-//			MaxPrivilegeLevel: ipmi.PrivilegeLevelAdministrator,
-//		},
-//	)
-//	if err != nil {
-//		v1.Close()
-//		return nil, err
-//	}
-//	if capabilities.SupportsV2 {
-//		// prefer IPMI v2.0 if supported; reuse socket
-//		return newV2SessionlessTransport(t), nil
-//	}
-//	// assume capabilities.SupportsV1 == true by virtue of getting here
-//	return v1, nil
-//}
-
-// DialV1 establishes a new IPMI v1.5 connection with the supplied BMC. The
-// address follows the same format as for Dial(). Use this if you know the BMC
-// does not support IPMI v2.0. In general, if a BMC supports v2.0, that should
-// be used over v1.5.
-func DialV1(addr string) (*V1SessionlessTransport, error) {
-	v1ConnectionOpenAttempts.Inc()
-	t, err := newTransport(addr)
-	if err != nil {
-		v1ConnectionOpenFailures.Inc()
-		return nil, err
-	}
-	v1ConnectionsOpen.Inc()
-	return newV1SessionlessTransport(t), nil
-}
-
-func newV1SessionlessTransport(t transport.Transport) *V1SessionlessTransport {
-	return &V1SessionlessTransport{
-		Transport: t,
-		V1Sessionless: V1Sessionless{
-			transport: t,
-			timeout:   time.Second,
-		},
-	}
+// Dial is currently an alias for DialV2. When IPMI v1.5 is implemented, this
+// will query the BMC for IPMI v2.0 capability. If it supports IPMI v2.0, a
+// V2SessionlessTransport will be returned, otherwise a V1SessionlessTransport
+// will be returned. If you know the BMC's capabilities, or need a specific
+// feature (e.g. DCMI), use the DialV*() functions instead, which expose
+// additional information and functionality.
+func Dial(_ context.Context, addr string) (SessionlessTransport, error) {
+	return DialV2(addr)
 }
 
 // DialV2 establishes a new IPMI v2.0 connection with the supplied BMC. The
-// address follows the same format as for Dial(). Use this if you know the BMC
-// supports IPMI v2.0 and/or require DCMI functionality.
+// address is of the form IP[:port] (IPv6 must be enclosed in square brackets).
+// Use this if you know the BMC supports IPMI v2.0 and/or require DCMI
+// functionality.
 func DialV2(addr string) (*V2SessionlessTransport, error) {
 	v2ConnectionOpenAttempts.Inc()
 	t, err := newTransport(addr)

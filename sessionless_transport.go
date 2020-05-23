@@ -25,31 +25,8 @@ type SessionlessTransport interface {
 	Sessionless
 
 	// NewSession opens a new session to the BMC using the underlying wrapper
-	// format. This is generic as is works with both IPMI v1.5 and v2.0; for
-	// more control over establishment, use DialV*() to obtain a
-	// V1SessionlessTransport or V2SessionlessTransport. NewSession uses the
-	// sessionless methods for establishment.
+	// format. NewSession uses the sessionless methods for establishment.
 	NewSession(ctx context.Context, opts *SessionOpts) (Session, error)
-}
-
-// V1SessionlessTransport is a session-less connection to a BMC using an IPMI
-// v1.5 session wrapper, along with its underlying transport. A pointer to this
-// type is returned by DialV1().
-type V1SessionlessTransport struct {
-	transport.Transport
-	V1Sessionless
-}
-
-func (s *V1SessionlessTransport) Close() error {
-	// we intercept this call purely to do the bookkeeping. Even if the
-	// connection fails to close, we regard it as such as there is nothing else
-	// we can do. Note, it is essential to realise that Close() has no meaning
-	// at the level of an abstract "connection", nor in the case of the
-	// session-less connection.  Close() only exist for a session-based
-	// connection. We cannot have the asymmetry of Close() on a session-less
-	// closing the transport, and Close() on a session leaving it alone.
-	defer v1ConnectionsOpen.Dec()
-	return s.Transport.Close()
 }
 
 // V2SessionlessTransport is a session-less connection to a BMC using an IPMI
