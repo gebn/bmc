@@ -8,7 +8,7 @@ This project implements an IPMI v1.5/2.0 remote console in pure Go, to interact 
 
 ## Specifications
 
-All references to sections in code use the following documents:
+All section references in the code use the following documents:
 
  - ASF
     - [v2.0](https://www.dmtf.org/sites/default/files/standards/documents/DSP0136.pdf)
