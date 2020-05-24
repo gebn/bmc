@@ -13,6 +13,7 @@ go_library(
 
 go_test(
     name = "go_default_test",
+    size = "small",
     srcs = [
         "ones_test.go",
         "twos_test.go",
