@@ -37,7 +37,10 @@ var (
 func main() {
 	kingpin.Parse()
 
-	machine, err := bmc.DialV2(*argBMCAddr) // TODO change to Dial (need to implement v1.5 sessionless communication...)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	machine, err := bmc.Dial(ctx, *argBMCAddr)
 	if err != nil {
 		log.Print(err)
 		return
@@ -45,9 +48,6 @@ func main() {
 	defer machine.Close()
 
 	log.Printf("connected to %v over IPMI v%v", machine.Address(), machine.Version())
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 
 	if pong, err := presencePing(ctx, machine); err != nil {
 		log.Printf("failed to get presence pong capabilities: %v", err)

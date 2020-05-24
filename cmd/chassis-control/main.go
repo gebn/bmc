@@ -49,16 +49,16 @@ func lookupCommand(cmd string) (ipmi.ChassisControl, error) {
 func main() {
 	kingpin.Parse()
 
-	machine, err := bmc.DialV2(*argBMCAddr) // TODO change to Dial (need to implement v1.5 sessionless communication...)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	machine, err := bmc.Dial(ctx, *argBMCAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer machine.Close()
 
 	log.Printf("connected to %v over IPMI v%v", machine.Address(), machine.Version())
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-	defer cancel()
 
 	sess, err := machine.NewSession(ctx, &bmc.SessionOpts{
 		Username:          *flgUsername,
