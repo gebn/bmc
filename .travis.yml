@@ -2,17 +2,17 @@ os: linux
 language: shell  # N.B. Bazel downloads its own Go SDK
 env:
   global:
-    - BAZEL_VERSION=3.4.1
-    - BAZEL_SHA256=9808adad931ac652e8ff5022a74507c532250c2091d21d6aebc7064573669cc5
+  - BAZEL_VERSION=3.4.1
+  - BAZEL_SHA256=9808adad931ac652e8ff5022a74507c532250c2091d21d6aebc7064573669cc5
 before_install:
-  - |
-    wget -O install.sh "https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh"
-    echo "${BAZEL_SHA256}  install.sh" | sha256sum -c
-    chmod +x install.sh
+- |
+  wget -O install.sh "https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh"
+  echo "${BAZEL_SHA256}  install.sh" | sha256sum -c
+  chmod +x install.sh
 install:
-  - |
-    ./install.sh --user
-    rm -f install.sh
+- |
+  ./install.sh --user
+  rm -f install.sh
 script:
-  - travis_wait bazel build --config=ci //...
-  - bazel test --config=ci //...
+- travis_wait bazel build --config=ci //...
+- bazel test --config=ci //...
