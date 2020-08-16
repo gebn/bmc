@@ -78,7 +78,7 @@ def _prometheus(go_repository):
     _maybe(
         go_repository,
         name = "org_golang_x_sys",
-        commit = "ddb9806d33aed8dbaac1cd6f1cba58952e87f933",
+        commit = "3d37ad5750ed7900cf6800ca4b000cb87d6e497a",
         importpath = "golang.org/x/sys",
     )
 
@@ -87,7 +87,7 @@ def deps(go_repository):
         go_repository,
         name = "com_github_google_gopacket",
         importpath = "github.com/google/gopacket",
-        commit = "914d8955fc258b9a501fa5e227117c4cd293f981",
+        commit = "5e49d8961df06368385353c8be68fa1051e9fa95",
     )
 
     _maybe(
@@ -105,5 +105,5 @@ def test(go_repository):
         go_repository,
         name = "com_github_google_go_cmp",
         importpath = "github.com/google/go-cmp",
-        tag = "v0.5.0",
+        tag = "v0.5.1",
     )
