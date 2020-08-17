@@ -39,6 +39,8 @@ load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 
 protobuf_deps()
 
+# gazelle:repository go_repository name=org_golang_x_sys importpath=golang.org/x/sys
+
 load(":deps.bzl", "deps", "test")
 
 deps(go_repository)
