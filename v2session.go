@@ -10,7 +10,7 @@ import (
 	"github.com/gebn/bmc/pkg/ipmi"
 	"github.com/gebn/bmc/pkg/layerexts"
 
-	"github.com/cenkalti/backoff"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/prometheus/client_golang/prometheus"

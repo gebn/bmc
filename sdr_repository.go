@@ -7,7 +7,7 @@ import (
 
 	"github.com/gebn/bmc/pkg/ipmi"
 
-	"github.com/cenkalti/backoff"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/google/gopacket"
 )
 
