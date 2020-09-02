@@ -1,5 +1,7 @@
 os: linux
-language: shell  # N.B. Bazel downloads its own Go SDK
+language: go
+go:
+- 1.15.1  # Bazel still uses its own version
 env:
   global:
   - BAZEL_VERSION=3.4.1
