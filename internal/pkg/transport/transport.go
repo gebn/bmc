@@ -57,7 +57,7 @@ var (
 )
 
 type transport struct {
-	fd *net.UDPConn
+	conn *net.UDPConn
 
 	// recvBuf is used for reading bytes off the wire. This means we do not
 	// allocate any memory in the hot path, but causes a race condition if the
@@ -80,18 +80,18 @@ func New(addr string) (Transport, error) {
 		return nil, err
 	}
 
-	c, err := net.DialUDP("udp", nil, raddr)
+	conn, err := net.DialUDP("udp", nil, raddr)
 	if err != nil {
 		return nil, err
 	}
 	return &transport{
-		fd: c,
+		conn: conn,
 	}, nil
 }
 
 // Address returns the remote IP:port of the endpoint.
 func (t *transport) Address() net.Addr {
-	return t.fd.RemoteAddr()
+	return t.conn.RemoteAddr()
 }
 
 // Send sends the supplied data to the remote host, blocking until it receives a
@@ -100,11 +100,11 @@ func (t *transport) Address() net.Addr {
 func (t *transport) Send(ctx context.Context, b []byte) ([]byte, error) {
 	// write
 	if deadline, ok := ctx.Deadline(); ok {
-		if err := t.fd.SetWriteDeadline(deadline); err != nil {
+		if err := t.conn.SetWriteDeadline(deadline); err != nil {
 			return nil, err
 		}
 	}
-	n, err := t.fd.Write(b)
+	n, err := t.conn.Write(b)
 	if err != nil {
 		return nil, err
 	}
@@ -117,11 +117,11 @@ func (t *transport) Send(ctx context.Context, b []byte) ([]byte, error) {
 
 	// read
 	if deadline, ok := ctx.Deadline(); ok {
-		if err := t.fd.SetReadDeadline(deadline); err != nil {
+		if err := t.conn.SetReadDeadline(deadline); err != nil {
 			return nil, err
 		}
 	}
-	n, _, err = t.fd.ReadFromUDP(t.recvBuf[:])
+	n, _, err = t.conn.ReadFromUDP(t.recvBuf[:])
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func (t *transport) Send(ctx context.Context, b []byte) ([]byte, error) {
 
 // Close cleanly shuts down the transport, rendering it unusable.
 func (t *transport) Close() error {
-	return t.fd.Close()
+	return t.conn.Close()
 }
 
 // Transport defines an interface capable of sending and receiving data to and
