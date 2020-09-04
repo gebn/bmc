@@ -72,8 +72,16 @@ type transport struct {
 	recvBuf [512]byte
 }
 
-// New establishes a connection to a UDP endpoint. It is recommended to defer a
-// call to Close() immediately after the error check.
+// New establishes a connection to a UDP endpoint. Most implementations should
+// defer a call to Close() immediately after the error check.
+//
+// It is strongly recommended to use an IP address literal rather than hostname,
+// as the exporter only re-connects on error, so may hold onto the original
+// address long after DNS changes. If a hostname is passed, A records take
+// priority over AAAA to follow the Go design decision referenced in issue #35.
+// To force IPv6, hardcode the IP literal. We assume a BMC has a single address,
+// so no attempt is made to try successive A records if multiple ones are
+// returned.
 func New(addr string) (Transport, error) {
 	raddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {

@@ -36,7 +36,8 @@ func Dial(_ context.Context, addr string) (SessionlessTransport, error) {
 // DialV2 establishes a new IPMI v2.0 connection with the supplied BMC. The
 // address is of the form IP[:port] (IPv6 must be enclosed in square brackets).
 // Use this if you know the BMC supports IPMI v2.0 and/or require DCMI
-// functionality.
+// functionality. Note v4 is preferred to v6 if a hostname is passed returning
+// both A and AAAA records.
 func DialV2(addr string) (*V2SessionlessTransport, error) {
 	v2ConnectionOpenAttempts.Inc()
 	t, err := newTransport(addr)
