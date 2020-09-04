@@ -71,18 +71,25 @@ var (
 
 	// serialise and deserialise errors are rolled up into this - to properly
 	// diagnose why, we need a level of info only logging can provide. Futile to
-	// try to pin this down with metrics, so we don't bother. Note this does not
-	// discriminate on completion code; a non-normal completion code that is
-	// returned to the user with a nil error is not a failure.
+	// try to pin this down with metrics, so we don't bother.
+	//
+	// Note this does not directly correspond to completion codes. If we cannot
+	// reach a completion code, that is always a command failure, however a
+	// normal completion code can still be a command failure, and a non-normal
+	// completion code can be a command success. Command failure is based solely
+	// on our ability to send the command and fully decode the response without
+	// error. A non-normal completion code is a command failure if and only if
+	// the response body could not be fully deserialised. This is correlated
+	// with non-normal completion codes, as the BMC tends to truncate it under
+	// error conditions, but not directly related. A non-normal completion code
+	// that is returned to the user with a nil error is not a failure.
 	commandFailures = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: namespace,
 			Subsystem: "command",
 			Name:      "failures_total",
-			Help: "The number of times a user has received an error " +
-				"having asked to send a command. This does not involve " +
-				"response completion codes; a command that succeeds with a " +
-				"error response is not a failure by this definition.",
+			Help: "The number of times a user has received an error having " +
+				"asked to send a command.",
 		},
 		// we track command name here as well to make this and attempts easily
 		// subtractable
