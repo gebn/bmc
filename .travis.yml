@@ -4,8 +4,8 @@ go:
 - 1.15.1  # Bazel still uses its own version
 env:
   global:
-  - BAZEL_VERSION=3.4.1
-  - BAZEL_SHA256=9808adad931ac652e8ff5022a74507c532250c2091d21d6aebc7064573669cc5
+  - BAZEL_VERSION=3.5.0
+  - BAZEL_SHA256=8b92c871dc85afc74f4e1c55992b8edd2984b52df809009afaa290fad7587973
 before_install:
 - |
   wget -O install.sh "https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh"
