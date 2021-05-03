@@ -30,18 +30,24 @@ const (
 	// you forget to add the final request data layer?
 	CompletionCodeRequestTruncated CompletionCode = 0xc6
 
+	// CompletionCodeInsufficientPrivileges indicates the channel or effective
+	// user privilege level is insufficient to execute the command, or the
+	// request was blocked by the firmware firewall.
+	CompletionCodeInsufficientPrivileges CompletionCode = 0xd4
+
 	CompletionCodeUnspecified CompletionCode = 0xff
 )
 
 var (
 	completionCodeDescriptions = map[CompletionCode]string{
-		CompletionCodeNormal:              "Normal",
-		CompletionCodeInvalidSessionID:    "Invalid Session ID",
-		CompletionCodeNodeBusy:            "Node Busy",
-		CompletionCodeUnrecognisedCommand: "Unrecognised Command",
-		CompletionCodeTimeout:             "Timeout",
-		CompletionCodeRequestTruncated:    "Request Truncated",
-		CompletionCodeUnspecified:         "Unspecified Error",
+		CompletionCodeNormal:                 "Normal",
+		CompletionCodeInvalidSessionID:       "Invalid Session ID",
+		CompletionCodeNodeBusy:               "Node Busy",
+		CompletionCodeUnrecognisedCommand:    "Unrecognised Command",
+		CompletionCodeTimeout:                "Timeout",
+		CompletionCodeRequestTruncated:       "Request Truncated",
+		CompletionCodeInsufficientPrivileges: "Insufficient Privileges",
+		CompletionCodeUnspecified:            "Unspecified Error",
 	}
 )
 
