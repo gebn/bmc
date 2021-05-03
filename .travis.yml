@@ -1,11 +1,11 @@
 os: linux
 language: go
 go:
-- 1.15.1  # Bazel still uses its own version
+- 1.16.3  # Bazel still uses its own version
 env:
   global:
-  - BAZEL_VERSION=3.5.0
-  - BAZEL_SHA256=8b92c871dc85afc74f4e1c55992b8edd2984b52df809009afaa290fad7587973
+  - BAZEL_VERSION=4.0.0
+  - BAZEL_SHA256=bd7a3a583a18640f58308c26e654239d412adaa833b6b6a7b57a216ab62fabc2
 before_install:
 - |
   wget -O install.sh "https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh"
