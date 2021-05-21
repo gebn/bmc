@@ -10,6 +10,7 @@ import (
 // RAKPMessage1 represents a RAKP Message 1, defined in 13.20 of the spec. It
 // begins the session authentication process.
 type RAKPMessage1 struct {
+	layers.BaseLayer
 
 	// Tag is an arbitrary 8-bit quantity used by the remote console to match
 	// this message with RAKP Message 2.
