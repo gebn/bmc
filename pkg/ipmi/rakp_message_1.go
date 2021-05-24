@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 )
 
 // RAKPMessage1 represents a RAKP Message 1, defined in 13.20 of the spec. It
