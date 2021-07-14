@@ -25,6 +25,10 @@ const (
 	// Inc.
 	EnterpriseSuperMicro Enterprise = 10876
 
+	// EnterpriseGigaByte is the enterprise number of Giga-Byte Technology Co.,
+	// Ltd.
+	EnterpriseGigaByte Enterprise = 15370
+
 	// EnterpriseAten is the enterprise number of ATEN International Co., Ltd.
 	EnterpriseAten Enterprise = 21317
 )
@@ -37,6 +41,7 @@ var (
 		EnterpriseDell:       "Dell Inc.",
 		EnterpriseQuanta:     "Quanta Computer Inc.",
 		EnterpriseSuperMicro: "Super Micro Computer Inc.",
+		EnterpriseGigaByte:   "GIGA-BYTE TECHNOLOGY CO., LTD",
 		EnterpriseAten:       "ATEN INTERNATIONAL CO., LTD.",
 	}
 )
