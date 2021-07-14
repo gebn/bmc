@@ -250,14 +250,17 @@ func getDCMICaps(ctx context.Context, s bmc.Sessionless) (
 	c, err := commander.GetDCMICapabilitiesInfoSupportedCapabilities(ctx)
 	if err != nil {
 		log.Printf("failed to fetch DCMI supported capabilities: %v", err)
+		c = nil
 	}
 	m, err := commander.GetDCMICapabilitiesInfoMandatoryPlatformAttrs(ctx)
 	if err != nil {
 		log.Printf("failed to fetch DCMI mandatory platform attrs: %v", err)
+		m = nil
 	}
 	p, err := commander.GetDCMICapabilitiesInfoEnhancedSystemPowerStatisticsAttrs(ctx)
 	if err != nil {
 		log.Printf("failed to fetch DCMI enhanced power stats attrs: %v", err)
+		p = nil
 	}
 	return c, m, p
 }
