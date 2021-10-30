@@ -16,7 +16,7 @@ import (
 type SessionIndex uint8
 
 const (
-	// sessionIndexCurrent is a sentinel value for the Index field in a Get
+	// SessionIndexCurrent is a sentinel value for the Index field in a Get
 	// Session Info request, requesting information about the session the
 	// command was received over.
 	SessionIndexCurrent SessionIndex = 0x00

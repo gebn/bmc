@@ -10,9 +10,9 @@ import (
 // established session. These commands are common to all versions of IPMI.
 type SessionCommands interface {
 
-	// All session-less commands can also be sent inside a session; indeed it is
-	// convention for Get Channel Authentication Capabilities to be used as a
-	// keepalive.
+	// SessionlessCommands enables all session-less commands to also be sent
+	// inside a session; indeed it is convention for Get Channel Authentication
+	// Capabilities to be used as a keepalive.
 	SessionlessCommands
 
 	// GetSessionInfo sends a Get Session Info command to the BMC. This is
