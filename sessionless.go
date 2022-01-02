@@ -1,10 +1,10 @@
 package bmc
 
-// Sessionless is a session-less IPMI v1.5 or 2.0 connection. It enables the
-// sending of commands to a BMC outside of the context of a session (however
-// note that all such commands can also be validly sent inside a session, for
-// example Get Channel Authentication Capabilities is commonly used as a form of
-// keepalive). Creating a concrete session-less connection will require a
+// Sessionless is a session-less IPMI v1.5 or 2.0 connection. It enables
+// sending commands to a BMC outside the context of a session (however note
+// that all such commands can also be validly sent inside a session, for
+// example Get Channel Authentication Capabilities is commonly used as a form
+// of keepalive). Creating a concrete session-less connection will require a
 // transport in order to send bytes.
 type Sessionless interface {
 	Connection

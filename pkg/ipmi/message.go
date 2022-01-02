@@ -112,7 +112,7 @@ func (m *Message) NextLayerType() gopacket.LayerType {
 	// LayerTypePayload. Fundamentally, a non-zero completion code is not a
 	// *decode* error. It's still a valid packet. The spec says additional
 	// fields after such a completion code have device-specific content, so it
-	// is useless for us to make assumptions and we'd probably just get false
+	// is useless for us to make assumptions, and we'd probably just get false
 	// positive errors. "Typically, a responder will truncate all fields
 	// following a non-zero completion code and addressing extension bytes"
 	// (i.e. parse the completion code and body code/EN, then check the

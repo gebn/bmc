@@ -16,14 +16,14 @@ var (
 		"the SDR Repository was modified during enumeration")
 )
 
-// SDRRepository is the type of a retrieved SDR Repository. For the time being,
-// this is a collection of Full Sensor Records, indexed by record ID. Note that
-// because this is a map, iteration order is randomised and almost definitely
-// not the same as retrieval order, which has no guarantees anyway.
+// SDRRepository is a retrieved SDR Repository. For the time being, this is a
+// collection of Full Sensor Records, indexed by record ID. Note that because
+// this is a map, iteration order is randomised and almost definitely not the
+// same as retrieval order, which has no guarantees anyway.
 type SDRRepository map[ipmi.RecordID]*ipmi.FullSensorRecord
 
 // RetrieveSDRRepository enumerates all Full Sensor Records in the BMC's SDR
-// Repository. This method will back-off if an error occurs or it detects a
+// Repository. This method will back-off if an error occurs, or it detects a
 // change mid-way through iteration, which would invalidate records retrieved so
 // far. The session-configured timeout is used for individual commands.
 func RetrieveSDRRepository(ctx context.Context, s Session) (SDRRepository, error) {

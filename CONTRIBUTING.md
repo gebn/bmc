@@ -17,7 +17,7 @@ E.g. `GetChannelAuthenticationCapabilitiesReq` and `GetChannelAuthenticationCapa
 If a command has no request parameters (relying only on NetFn and Cmd), the `*Req` struct should be omitted.
 Likewise, if the response is empty and the completion code is sufficient, the `*Rsp` struct should be omitted.
 These structs correspond to layers that can be sent and received respectively.
-Is is perfectly fine - and even encouraged - for request structs to not be decodable, and response struct to not be serialisable.
+It is perfectly fine - and even encouraged - for request structs to not be decodable, and response struct to not be serialisable.
 Be sure to reference the relevant section(s) of the spec(s) in the struct documentation.
 Layers are defined in `layer_types.go` and simply returned in `LayerType()`. It is generally recommended for these to be exported.
 Tests are encouraged, especially for complex responses where there's lots of bit shifting.

@@ -5,7 +5,7 @@ import (
 )
 
 // SensorUnit defines the unit of a sensor. It is specified in 37.17 and 43.17
-// of v1.5 and v2.0 respectively. It is a 8-bit uint on the wire.
+// of v1.5 and v2.0 respectively. It is an 8-bit uint on the wire.
 type SensorUnit uint8
 
 const (

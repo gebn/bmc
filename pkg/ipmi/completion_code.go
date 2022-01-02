@@ -16,10 +16,10 @@ type CompletionCode uint8
 const (
 	CompletionCodeNormal CompletionCode = 0x0
 
-	// CompletionCodeInvalidSessionID is returned by Close Session if the
-	// specified session ID does not match one the BMC knows about. Untested as
-	// to whether this is also returned if the used doesn't have the required
-	// privileges.
+    // CompletionCodeInvalidSessionID is returned by Close Session if the
+    // specified session ID does not match one the BMC knows about. Whether
+    // this is also returned if the used doesn't have the required privileges
+    // is untested.
 	CompletionCodeInvalidSessionID CompletionCode = 0x87
 
 	CompletionCodeNodeBusy            CompletionCode = 0xc0

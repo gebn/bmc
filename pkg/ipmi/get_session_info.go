@@ -42,7 +42,7 @@ type GetSessionInfoReq struct {
 
 	// Index is an offset into the logical sessions table maintained by the BMC.
 	// Active sessions can be enumerated by incrementing this from 1 through to
-	// the .Active field of the response.
+	// the Active field of the response.
 	Index SessionIndex
 
 	// Handle is the handle of the session to request information for. This is

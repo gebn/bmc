@@ -75,7 +75,7 @@ type GetPowerReadingRsp struct {
 
 	// Period is the sampling period over which the controller is reporting
 	// statistics. If SystemPowerStatisticsModeEnhanced was used, this will
-	// equal the duration requested, otherwise it is up the the BMC.
+	// equal the duration requested, otherwise it is up to the BMC.
 	Period time.Duration
 
 	// Active indicates whether power measurement is currently active.

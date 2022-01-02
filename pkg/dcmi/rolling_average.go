@@ -40,8 +40,8 @@ func rollingAvgPeriodDuration(b byte) time.Duration {
 }
 
 // rollingAvgPeriodByte turns a native duration into the wire representation of
-// a rolling average time period. Only a subset of durations are representable;
-// this function is best effort. Rather than overlow, the max will be returned
+// a rolling average time period. Only a subset of durations is representable;
+// this function is best-effort. Rather than overflow, the max will be returned
 // if the duration is too long. To convert the other way, use
 // rollingAvgPeriodByte.
 //

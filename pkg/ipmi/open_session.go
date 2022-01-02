@@ -13,7 +13,7 @@ import (
 type OpenSessionReq struct {
 	layers.BaseLayer
 
-	// Tag is returned in the BMC's Open Session Response message to help the
+	// Tag is copied into the BMC's Open Session Response message to help the
 	// remote console match it up with this request. If the remote console
 	// retries this message, it should increment this.
 	Tag uint8

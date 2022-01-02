@@ -44,7 +44,7 @@ type V2Session struct {
 	UnauthenticatedSequenceNumbers sequenceNumbers
 
 	// SIK is the session integrity key, whose creation is described in section
-	// 13.31 of the spes. It is the result of applying the negotiated
+	// 13.31 of the specs. It is the result of applying the negotiated
 	// authentication algorithm (which is usually, but may not be, an HMAC) to
 	// some random numbers, the remote console's requested maximum privilege
 	// level, and username. The SIK is then used to derive K_1 and K_2 (and

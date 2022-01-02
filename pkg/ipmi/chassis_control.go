@@ -55,7 +55,7 @@ func (c ChassisControl) Description() string {
 	case ChassisControlHardReset:
 		return "Hard reset"
 	case ChassisControlDiagnosticInterrupt:
-		return "Diagnostic interrrupt"
+		return "Diagnostic interrupt"
 	case ChassisControlSoftPowerOff:
 		return "Soft power off"
 	default:

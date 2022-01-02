@@ -10,7 +10,7 @@ func TestTwos(t *testing.T) {
 		bits uint8
 		want int16
 	}{
-		// we test the following values for each of 4, 8, 10 and 16 bit numbers:
+		// we test the following values for each of 4, 8, 10 and 16-bit numbers:
 		//   lowest
 		//   lowest + 1
 		//   lowest + 2

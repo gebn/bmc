@@ -166,7 +166,7 @@ type GetChassisStatusRsp struct {
 	StandbyButtonDisableAllowed bool
 
 	// DiagnosticInterruptButtonDisableAllowed indicates whether the chassis
-	// allows disabling the diagnostic interrrupt button.
+	// allows disabling the diagnostic interrupt button.
 	DiagnosticInterruptButtonDisableAllowed bool
 
 	// ResetButtonDisableAllowed indicates whether the chassis allows disabling
@@ -179,19 +179,19 @@ type GetChassisStatusRsp struct {
 	// disabled.
 	PowerOffButtonDisableAllowed bool
 
-	// StandbyButtonDisabled indicates whether the chassis's standby/sleep
+	// StandbyButtonDisabled indicates whether the chassis' standby/sleep
 	// button is currently disabled.
 	StandbyButtonDisabled bool
 
-	// DiagnosticInterruptButtonDisabled indicates whether the chassis's
+	// DiagnosticInterruptButtonDisabled indicates whether the chassis'
 	// diagnostic interrupt button is currently disabled.
 	DiagnosticInterruptButtonDisabled bool
 
-	// ResetButtonDisableAllowed indicates whether the chassis's reset button is
+	// ResetButtonDisableAllowed indicates whether the chassis' reset button is
 	// currently disabled.
 	ResetButtonDisabled bool
 
-	// PowerOffButtonDisabled indicates whether the chassis's power off button
+	// PowerOffButtonDisabled indicates whether the chassis' power off button
 	// is currently disabled. If the button also controls sleep, this being true
 	// indicates that sleep requests via the same button are also disabled.
 	PowerOffButtonDisabled bool

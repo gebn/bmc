@@ -89,7 +89,7 @@ func (s *V2Session) NextLayerType() gopacket.LayerType {
 	if layerType == LayerTypeMessage && s.Encrypted {
 		// special case - this must be handled here, because lower layers don't
 		// know whether it's encrypted. I imagine the spec authors left the
-		// encrypted bit in the session layer so it could apply to OEM payloads,
+		// encrypted bit in the session layer, so it could apply to OEM payloads,
 		// but in practice this just leads to hacks like this. The correct way
 		// is for there to be an IPMI message payload layer, containing just
 		// this boolean and an encrypted or unencrypted IPMI message.

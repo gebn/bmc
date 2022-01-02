@@ -13,8 +13,8 @@ import (
 // Capabilities request. Its wire format is specified in section 18.12 of IPMI
 // v1.5, and 22.13 of IPMI v2.0. This command is used to retrieve authentication
 // algorithm support for a given channel at a given privilege level. In IPMIv2,
-// this also reveals support for IPMI v1.5. This command can be sent outside of
-// a session. Inside a session, it is normally used used as a keepalive. BMC
+// this also reveals support for IPMI v1.5. This command can be sent outside a
+// session. Inside a session, it is normally used as a keepalive. BMC
 // implementations of IP-based channels must support this command using the IPMI
 // v1.5 packet format, so it makes sense to always send it using v1.5
 // encapsulation unless you know a-priori that the managed system supports IPMI
@@ -99,8 +99,8 @@ type GetChannelAuthenticationCapabilitiesRsp struct {
 	// the Activate Session request to be authenticated - and likely only its
 	// reply will be authenticated. Subsequent packets can use an authentication
 	// type of NONE. A remote console is free to authenticate all packets it
-	// sends, however the BMC can choose whether or not to validate these, and
-	// if it is incorrect, it may still drop the packet.
+	// sends, however the BMC can choose whether to validate these, and if it is
+	// incorrect, it may still drop the packet.
 	PerMessageAuthentication bool
 
 	// UserLevelAuthentication being disabled means that commands requiring the

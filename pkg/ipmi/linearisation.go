@@ -31,7 +31,7 @@ const (
 var (
 	// ErrNotLinearised is returned if Lineariser() is called on a linear or
 	// non-linear linearisation. Linear sensors' values do not require any
-	// tranformation by virtue of the sensor already being linear. If the sensor
+	// transformation by virtue of the sensor already being linear. If the sensor
 	// is non-linear, the conversion factors returned by Get Sensor Reading
 	// Factors are all that are needed to obtain a real value: by being unique
 	// to the raw sensor reading, there is no need for a separate linearisation

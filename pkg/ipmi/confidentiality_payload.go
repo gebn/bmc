@@ -47,7 +47,7 @@ func (c *ConfidentialityPayload) Serialise(b gopacket.SerializeBuffer) error {
 	return nil
 }
 
-// Deserialise reads an confidentiality payload from the supplied byte slice,
+// Deserialise reads a confidentiality payload from the supplied byte slice,
 // returning unconsumed remaining bytes representing other payloads. If the
 // payload is invalid, a nil slice is returned, and the payload is left in an
 // unspecified state.

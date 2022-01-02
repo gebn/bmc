@@ -56,7 +56,7 @@ type GetDCMICapabilitiesInfoReq struct {
 	layers.BaseLayer
 
 	// Parameter specifies the type of attributes or capabilities desired. This
-	// command returns one of several different possible pieces of information
+	// command returns one of several possible pieces of information
 	// depending on this value, e.g. supported DCMI capabilities, platform
 	// attributes and access attributes. The response layer formats for the
 	// different selector values are specified in Table 6-3.
@@ -156,7 +156,7 @@ type GetDCMICapabilitiesInfoSupportedCapabilitiesRsp struct {
 	// backwards compatibility.
 	VLANCapable bool
 
-	// SOLSupportes indicates whether the system supports serial-over-LAN. This
+	// SOLSupported indicates whether the system supports serial-over-LAN. This
 	// is a v1.0-only field, and will be forced to true for v1.1 and v1.5
 	// systems for backwards compatibility.
 	SOLSupported bool
@@ -265,7 +265,7 @@ type GetDCMICapabilitiesInfoMandatoryPlatformAttrsRsp struct {
 	SELFlushOnRollover bool
 
 	// SELRecordLevelFlushOnRollover indicates whether individual SEL records
-	// are flished upon rollover, as opposed to the entire SEL. This should be
+	// are flushed upon rollover, as opposed to the entire SEL. This should be
 	// ignored in SELAutoRollover is false, or if the response is v1.0, where
 	// this is unspecified.
 	SELRecordLevelFlushOnRollover bool

@@ -33,11 +33,11 @@ type Command interface {
 	// otherwise need to have a no-op layer created.
 	Operation() *Operation
 
-	// Request returns the possibly nil request layer that we send to the
+	// Request returns the possibly-nil request layer that we send to the
 	// managed system. This should not allocate any additional memory.
 	Request() gopacket.SerializableLayer
 
-	// Response returns the possibly nil response layer that we expect back from
+	// Response returns the possibly-nil response layer that we expect back from
 	// the managed system following our request. This should not allocate any
 	// additional memory.
 	Response() gopacket.DecodingLayer

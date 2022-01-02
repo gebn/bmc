@@ -25,7 +25,7 @@ type SensorRecordKey struct {
 
 // FullSensorRecord is specified in 37.1 and 43.1 of v1.5 and v2.0 respectively.
 // It describes any type of sensor, and is the only record type that can
-// describe an sensor generating analogue (i.e. non-enumerated/discrete)
+// describe a sensor generating analogue (i.e. non-enumerated/discrete)
 // readings, e.g. a temperature sensor. It is specified as 64 bytes. This layer
 // represents the record key and record body sections.
 type FullSensorRecord struct {
@@ -77,8 +77,8 @@ type FullSensorRecord struct {
 	// IsPercentage indicates whether the reading is a percentage.
 	IsPercentage bool
 
-	// BaseUnit gives the primary unit of the sensor's reading, e.g. celcius or
-	// farenheit for a temperature sensor.
+	// BaseUnit gives the primary unit of the sensor's reading, e.g. Celsius or
+	// Fahrenheit for a temperature sensor.
 	BaseUnit SensorUnit
 
 	// ModifierUnit is contained in the Sensor Units 3 field. Note this is

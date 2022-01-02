@@ -30,10 +30,10 @@ func (t truncatedHash) Size() int {
 }
 
 // authenticationAlgorithmParams produces Hash implementations to generate
-// various values. It contains contains the configurable parameters of the
-// session establishment authentication algorithm. An instance of this struct
-// can be created from an authentication algorithm alone, and means we can treat
-// all algorithms identically from the point it is obtained.
+// various values. It contains the configurable parameters of the session
+// establishment authentication algorithm. An instance of this struct can be
+// created from an authentication algorithm alone, and means we can treat all
+// algorithms identically from the point it is obtained.
 type authenticationAlgorithmParams struct {
 
 	// hashGen is a function returning the underlying hash algorithm of the
