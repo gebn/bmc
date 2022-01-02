@@ -1,6 +1,0 @@
-build --verbose_failures
-test --test_output=errors
-
-build:ci --show_timestamps
-build:ci --noshow_progress
-build:ci --noshow_loading_progress
