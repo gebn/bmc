@@ -74,5 +74,30 @@ func TestRAKPMessage1SerializeTo(t *testing.T) {
 		if !bytes.Equal(got, test.wire) {
 			t.Errorf("serialize %v = %v, want %v", test.layer, got, test.wire)
 		}
+
+		var decoded RAKPMessage1
+		if err := decoded.DecodeFromBytes(got, nil); err != nil {
+			t.Errorf("decode %v = error %v", test.layer, err)
+			continue
+		}
+		r := test.layer
+		if r.Tag != decoded.Tag {
+			t.Errorf("decode %v Tag = got %v, want %v", test.layer, decoded.Tag, r.Tag)
+		}
+		if r.ManagedSystemSessionID != decoded.ManagedSystemSessionID {
+			t.Errorf("decode %v ManagedSystemSessionID = got %v, want %v", test.layer, decoded.ManagedSystemSessionID, r.ManagedSystemSessionID)
+		}
+		if r.RemoteConsoleRandom != decoded.RemoteConsoleRandom {
+			t.Errorf("decode %v RemoteConsoleRandom = got %v, want %v", test.layer, decoded.RemoteConsoleRandom, r.RemoteConsoleRandom)
+		}
+		if r.MaxPrivilegeLevel != decoded.MaxPrivilegeLevel {
+			t.Errorf("decode %v MaxPrivilegeLevel = got %v, want %v", test.layer, decoded.MaxPrivilegeLevel, r.MaxPrivilegeLevel)
+		}
+		if r.PrivilegeLevelLookup != decoded.PrivilegeLevelLookup {
+			t.Errorf("decode %v PrivilegeLevelLookup = got %v, want %v", test.layer, decoded.PrivilegeLevelLookup, r.PrivilegeLevelLookup)
+		}
+		if r.Username != decoded.Username {
+			t.Errorf("decode %v Username = got %v, want %v", test.layer, decoded.Username, r.Username)
+		}
 	}
 }
