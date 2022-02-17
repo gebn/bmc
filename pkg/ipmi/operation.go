@@ -66,6 +66,10 @@ var (
 		Function: NetworkFunctionAppRsp,
 		Command:  0x38,
 	}
+	OperationSetSessionPrivilegeLevelReq = Operation{
+		Function: NetworkFunctionAppReq,
+		Command:  0x3b,
+	}
 	OperationCloseSessionReq = Operation{
 		Function: NetworkFunctionAppReq,
 		Command:  0x3c,
