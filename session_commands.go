@@ -43,6 +43,11 @@ type SessionCommands interface {
 	// it requires the SDR.
 	GetSensorReading(context.Context, uint8) (*ipmi.GetSensorReadingRsp, error)
 
+	// SetSessionPrivilegeLevel sends a Set Session Privilege Level command to the BMC. This is
+	// specified in 18.16 and 22.18 of IPMI v1.5 and 2.0 respectively.
+	// If the PrivilegeLevel argument is 0, it will return the current session privilege level.
+	SetSessionPrivilegeLevel(context.Context, ipmi.PrivilegeLevel) (*ipmi.SetSessionPrivilegeLevelRsp, error)
+
 	// closeSession sends a Close Session command to the BMC. It is unexported
 	// as calling it randomly would leave the session in an invalid state. Call
 	// Close() on the session itself to invoke this.
