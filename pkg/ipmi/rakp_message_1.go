@@ -80,9 +80,9 @@ func (*RAKPMessage1) NextLayerType() gopacket.LayerType {
 }
 
 func (r *RAKPMessage1) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
-	if len(data) < 28 { // minimum in case of non-zero status code
+	if len(data) < 28 { // minimum in case of non-zero status code and empty username
 		df.SetTruncated()
-		return fmt.Errorf("RAKP Message 2 must be at least 28 bytes, got %v", len(data))
+		return fmt.Errorf("RAKP Message 1 must be at least 28 bytes, got %v", len(data))
 	}
 	r.BaseLayer.Contents = data
 	r.Tag = uint8(data[0])
@@ -90,17 +90,16 @@ func (r *RAKPMessage1) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) 
 	copy(r.RemoteConsoleRandom[:], data[8:24])
 	r.MaxPrivilegeLevel = PrivilegeLevel(data[24] & 0xF)
 	r.PrivilegeLevelLookup = (data[24] & (1 << 4)) == 0
-	lenUsername := data[27]
-	if lenUsername > 0 {
-		if lenUsername > 16 {
-			return fmt.Errorf("username should not be more than 16 characters long, got %v", lenUsername)
-		}
-		if len(data) < int(28+lenUsername) {
-			df.SetTruncated()
-			return fmt.Errorf("RAKP Message 2 not long enough to contain username. Expected %v, got %v", 28+lenUsername, len(data))
-		}
-		r.Username = string(data[28 : 28+lenUsername])
+	lenUsername := uint8(data[27])
+
+	if lenUsername > 16 {
+		return fmt.Errorf("username should not be more than 16 characters long, got %v", lenUsername)
 	}
+	if len(data) < int(28+lenUsername) {
+		df.SetTruncated()
+		return fmt.Errorf("RAKP Message 1 not long enough to contain username. Expected %v, got %v", 28+lenUsername, len(data))
+	}
+	r.Username = string(data[28 : 28+lenUsername])
 
 	return nil
 }
