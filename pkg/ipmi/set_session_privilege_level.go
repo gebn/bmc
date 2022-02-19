@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/google/gopacket"
@@ -13,7 +14,8 @@ type SetSessionPrivilegeLevelReq struct {
 	layers.BaseLayer
 
 	// PrivilegeLevel indicates the privilege level to switch to.
-	// Set to 0 to retrieve the present privilege level.
+	// Omitting this field will retrieve the current privilege level without modification.
+	// PrivilegeLevelHighest and PrivilegeLevelCallback are invalid values.
 	PrivilegeLevel PrivilegeLevel
 }
 
@@ -22,6 +24,11 @@ func (*SetSessionPrivilegeLevelReq) LayerType() gopacket.LayerType {
 }
 
 func (c *SetSessionPrivilegeLevelReq) SerializeTo(b gopacket.SerializeBuffer, _ gopacket.SerializeOptions) error {
+	if c.PrivilegeLevel == PrivilegeLevelCallback {
+		// reserved according to the specification
+		return errors.New("Set Session Privilege Level can't be 0x01(CALLBACK level)")
+	}
+
 	bytes, err := b.PrependBytes(1)
 	if err != nil {
 		return err
@@ -33,8 +40,8 @@ func (c *SetSessionPrivilegeLevelReq) SerializeTo(b gopacket.SerializeBuffer, _ 
 type SetSessionPrivilegeLevelRsp struct {
 	layers.BaseLayer
 
-	// PrivilegeLevel indicates the new (or present) privilege level of the user in the
-	// active session.
+	// PrivilegeLevel indicates the new (possibly updated) privilege level
+	// of the user in the active session.
 	PrivilegeLevel PrivilegeLevel
 }
 
@@ -51,9 +58,9 @@ func (*SetSessionPrivilegeLevelRsp) NextLayerType() gopacket.LayerType {
 }
 
 func (r *SetSessionPrivilegeLevelRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
-	if len(data) < 1 { // minimum in case of non-zero status code
+	if len(data) != 1 { // minimum in case of non-zero status code
 		df.SetTruncated()
-		return fmt.Errorf("Set Session Privilege Level Response must be at least 1 bytes, got %v", len(data))
+		return fmt.Errorf("Set Session Privilege Level Response must be 1 byte, got %v", len(data))
 	}
 
 	r.PrivilegeLevel = PrivilegeLevel(data[0] & 0xF)

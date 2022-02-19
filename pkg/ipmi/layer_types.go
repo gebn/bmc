@@ -227,7 +227,6 @@ var (
 			}),
 		},
 	)
-
 	LayerTypeSetSessionPrivilegeLevelReq = gopacket.RegisterLayerType(
 		1027,
 		gopacket.LayerTypeMetadata{

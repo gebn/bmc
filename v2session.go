@@ -283,16 +283,16 @@ func (s *V2Session) GetSensorReading(ctx context.Context, sensor uint8) (*ipmi.G
 	return &cmd.Rsp, nil
 }
 
-func (s *V2Session) SetSessionPrivilegeLevel(ctx context.Context, level ipmi.PrivilegeLevel) (*ipmi.SetSessionPrivilegeLevelRsp, error) {
+func (s *V2Session) SetSessionPrivilegeLevel(ctx context.Context, level ipmi.PrivilegeLevel) (ipmi.PrivilegeLevel, error) {
 	cmd := &ipmi.SetSessionPrivilegeLevelCmd{
 		Req: ipmi.SetSessionPrivilegeLevelReq{
 			PrivilegeLevel: level,
 		},
 	}
 	if err := ValidateResponse(s.SendCommand(ctx, cmd)); err != nil {
-		return nil, err
+		return 0, err
 	}
-	return &cmd.Rsp, nil
+	return cmd.Rsp.PrivilegeLevel, nil
 }
 
 func (s *V2Session) closeSession(ctx context.Context) error {

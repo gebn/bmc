@@ -70,6 +70,10 @@ var (
 		Function: NetworkFunctionAppReq,
 		Command:  0x3b,
 	}
+	OperationSetSessionPrivilegeLevelRsp = Operation{
+		Function: NetworkFunctionAppRsp,
+		Command:  0x3b,
+	}
 	OperationCloseSessionReq = Operation{
 		Function: NetworkFunctionAppReq,
 		Command:  0x3c,
@@ -121,6 +125,7 @@ var (
 		OperationGetChassisStatusRsp:                     LayerTypeGetChassisStatusRsp,
 		OperationGetSystemGUIDRsp:                        LayerTypeGetSystemGUIDRsp,
 		OperationGetChannelAuthenticationCapabilitiesRsp: LayerTypeGetChannelAuthenticationCapabilitiesRsp,
+		OperationSetSessionPrivilegeLevelRsp:             LayerTypeSetSessionPrivilegeLevelRsp,
 		OperationGetSDRRepositoryInfoRsp:                 LayerTypeGetSDRRepositoryInfoRsp,
 		OperationGetSDRRsp:                               LayerTypeGetSDRRsp,
 		OperationGetSensorReadingRsp:                     LayerTypeGetSensorReadingRsp,

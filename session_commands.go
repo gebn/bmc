@@ -46,7 +46,7 @@ type SessionCommands interface {
 	// SetSessionPrivilegeLevel sends a Set Session Privilege Level command to the BMC. This is
 	// specified in 18.16 and 22.18 of IPMI v1.5 and 2.0 respectively.
 	// If the PrivilegeLevel argument is 0, it will return the current session privilege level.
-	SetSessionPrivilegeLevel(context.Context, ipmi.PrivilegeLevel) (*ipmi.SetSessionPrivilegeLevelRsp, error)
+	SetSessionPrivilegeLevel(context.Context, ipmi.PrivilegeLevel) (ipmi.PrivilegeLevel, error)
 
 	// closeSession sends a Close Session command to the BMC. It is unexported
 	// as calling it randomly would leave the session in an invalid state. Call
