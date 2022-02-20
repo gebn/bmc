@@ -43,6 +43,10 @@ type SessionCommands interface {
 	// it requires the SDR.
 	GetSensorReading(context.Context, uint8) (*ipmi.GetSensorReadingRsp, error)
 
+	// GetSessionPrivilegeLevel retrieves the current session privilege level. This is
+	// specified in 18.16 and 22.18 of IPMI v1.5 and 2.0 respectively.
+	GetSessionPrivilegeLevel(context.Context) (ipmi.PrivilegeLevel, error)
+
 	// SetSessionPrivilegeLevel sends a Set Session Privilege Level command to the BMC. This is
 	// specified in 18.16 and 22.18 of IPMI v1.5 and 2.0 respectively.
 	// PrivilegeLevelHighest and PrivilegeLevelCallback are invalid values.
