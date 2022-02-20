@@ -26,12 +26,12 @@ type AES128CBC struct {
 }
 
 func NewAES128CBC(k2 [16]byte) (*AES128CBC, error) {
-	cipher, err := aes.NewCipher(k2[:])
+	c, err := aes.NewCipher(k2[:])
 	if err != nil {
 		return nil, err
 	}
 	return &AES128CBC{
-		cipher: cipher,
+		cipher: c,
 	}, nil
 }
 
@@ -51,7 +51,7 @@ func (a *AES128CBC) NextLayerType() gopacket.LayerType {
 // precise error is returned, care should be taken when displaying this, as it
 // can lead to a padding oracle attack (essentially, don't reveal the difference
 // between "decryption failed" and "invalid padding" errors).
-func (a *AES128CBC) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
+func (a *AES128CBC) DecodeFromBytes(data []byte, _ gopacket.DecodeFeedback) error {
 	if len(data) < a.cipher.BlockSize()+1 || len(data)%a.cipher.BlockSize() != 0 {
 		return fmt.Errorf(
 			"AES payload must be at least %v bytes and have an overall length divisible by %v, got length of %v",
@@ -82,7 +82,7 @@ func (a *AES128CBC) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) err
 	return nil
 }
 
-func (a *AES128CBC) SerializeTo(b gopacket.SerializeBuffer, opts gopacket.SerializeOptions) error {
+func (a *AES128CBC) SerializeTo(b gopacket.SerializeBuffer, _ gopacket.SerializeOptions) error {
 	// write confidentiality trailer so it is there to encrypt next
 	padLength := (a.cipher.BlockSize() - 1) - (len(b.Bytes()) % a.cipher.BlockSize())
 	trailer, err := b.AppendBytes(padLength + 1)
