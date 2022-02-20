@@ -103,14 +103,19 @@ var (
 		Command:  0x3d,
 	}
 
-	// operationLayerTypes tells us which layer comes next given a network
-	// function and command. It should never be modified during runtime, as
-	// there is no way to guarantee exclusive access.
+	// operationLayerTypes is how a Message finds out how to decode its
+	// payload. It tells us which layer comes next given a network function and
+	// command.
+	//
+	// Request layers could be added here, however we have not implemented
+	// gopacket.DecodingLayer for these, so there would be little point.
+	//
+	// We assume this will not be modified during runtime, so there is no
+	// synchronisation.
 	operationLayerTypes = map[Operation]gopacket.LayerType{
-		OperationGetDeviceIDRsp:      LayerTypeGetDeviceIDRsp,
-		OperationGetChassisStatusRsp: LayerTypeGetChassisStatusRsp,
-		OperationGetSystemGUIDRsp:    LayerTypeGetSystemGUIDRsp,
-		//OperationGetChannelAuthenticationCapabilitiesReq: LayerTypeGetChannelAuthenticationCapabilitiesReq,
+		OperationGetDeviceIDRsp:                          LayerTypeGetDeviceIDRsp,
+		OperationGetChassisStatusRsp:                     LayerTypeGetChassisStatusRsp,
+		OperationGetSystemGUIDRsp:                        LayerTypeGetSystemGUIDRsp,
 		OperationGetChannelAuthenticationCapabilitiesRsp: LayerTypeGetChannelAuthenticationCapabilitiesRsp,
 		OperationGetSDRRepositoryInfoRsp:                 LayerTypeGetSDRRepositoryInfoRsp,
 		OperationGetSDRRsp:                               LayerTypeGetSDRRsp,
