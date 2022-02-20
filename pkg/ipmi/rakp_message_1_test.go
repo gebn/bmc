@@ -4,16 +4,18 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/gopacket"
 )
 
 func TestRAKPMessage1SerializeTo(t *testing.T) {
 	table := []struct {
+		name  string
 		layer *RAKPMessage1
 		wire  []byte
 	}{
 		{
-			// empty username, role-based lookup
+			"empty username, role-based lookup",
 			&RAKPMessage1{
 				Tag:                    0x22,
 				ManagedSystemSessionID: 0x1020304,
@@ -29,7 +31,7 @@ func TestRAKPMessage1SerializeTo(t *testing.T) {
 				0x02, 0x00, 0x00, 0x00},
 		},
 		{
-			// non-empty username, username only lookup
+			"non-empty username, username only lookup",
 			&RAKPMessage1{
 				Tag:                    0x1,
 				ManagedSystemSessionID: 0x4030201,
@@ -45,7 +47,7 @@ func TestRAKPMessage1SerializeTo(t *testing.T) {
 				0x14, 0x00, 0x00, 0x06, 'g', 'e', 'o', 'r', 'g', 'e'},
 		},
 		{
-			// non-empty username, role-based lookup
+			"non-empty username, role-based lookup",
 			&RAKPMessage1{
 				Tag:                    0xff,
 				ManagedSystemSessionID: 0x1040203,
@@ -64,15 +66,27 @@ func TestRAKPMessage1SerializeTo(t *testing.T) {
 	}
 	opts := gopacket.SerializeOptions{}
 	for _, test := range table {
-		sb := gopacket.NewSerializeBuffer()
-		if err := test.layer.SerializeTo(sb, opts); err != nil {
-			t.Errorf("serialize %v = error %v, want %v", test.layer, err,
-				test.wire)
-			continue
-		}
-		got := sb.Bytes()
-		if !bytes.Equal(got, test.wire) {
-			t.Errorf("serialize %v = %v, want %v", test.layer, got, test.wire)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			sb := gopacket.NewSerializeBuffer()
+			if err := test.layer.SerializeTo(sb, opts); err != nil {
+				t.Errorf("serialize %v = error %v, want %v", test.layer, err,
+					test.wire)
+				return
+			}
+			got := sb.Bytes()
+			if !bytes.Equal(got, test.wire) {
+				t.Errorf("serialize %v = %v, want %v", test.layer, got, test.wire)
+			}
+
+			layer := &RAKPMessage1{}
+			if err := layer.DecodeFromBytes(got, gopacket.NilDecodeFeedback); err != nil {
+				t.Errorf("decode %v = error %v", test.layer, err)
+				return
+			}
+			test.layer.BaseLayer.Contents = got
+			if diff := cmp.Diff(test.layer, layer); diff != "" {
+				t.Errorf("decode %v = %v, want %v: %v", test.wire, layer, test.layer, diff)
+			}
+		})
 	}
 }
