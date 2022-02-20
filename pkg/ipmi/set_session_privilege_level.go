@@ -58,7 +58,7 @@ func (*SetSessionPrivilegeLevelRsp) NextLayerType() gopacket.LayerType {
 }
 
 func (r *SetSessionPrivilegeLevelRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
-	if len(data) != 1 { // minimum in case of non-zero status code
+	if len(data) != 1 { // in case of non-zero status code
 		df.SetTruncated()
 		return fmt.Errorf("Set Session Privilege Level Response must be 1 byte, got %v", len(data))
 	}
