@@ -9,7 +9,7 @@ import (
 
 	"github.com/gebn/bmc/pkg/ipmi"
 	"github.com/google/gopacket"
-	"github.com/google/gopacket/pcap"
+	"github.com/google/gopacket/pcapgo"
 )
 
 func main() {
@@ -18,18 +18,25 @@ func main() {
 	}
 }
 
+// To capture a pcap file on linux:
+// sudo tcpdump -w ipmidump.pcap -i any "port 623"
 func run() error {
 	if len(os.Args) < 2 {
 		return errors.New("missing required argument: path to .pcap file to decrypt")
 	}
-	file := os.Args[1]
+	filename := os.Args[1]
+	file, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
 
 	password, ok := os.LookupEnv("IPMI_PASSWORD")
 	if !ok {
 		return errors.New("missing required IPMI_PASSWORD env variable")
 	}
 
-	handle, err := pcap.OpenOffline(file)
+	handle, err := pcapgo.NewReader(file)
 	if err != nil {
 		return err
 	}
