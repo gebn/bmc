@@ -227,4 +227,19 @@ var (
 			}),
 		},
 	)
+	LayerTypeSetSessionPrivilegeLevelReq = gopacket.RegisterLayerType(
+		1027,
+		gopacket.LayerTypeMetadata{
+			Name: "Set Session Privilege Level Request",
+		},
+	)
+	LayerTypeSetSessionPrivilegeLevelRsp = gopacket.RegisterLayerType(
+		1028,
+		gopacket.LayerTypeMetadata{
+			Name: "Set Session Privilege Level Response",
+			Decoder: layerexts.BuildDecoder(func() layerexts.LayerDecodingLayer {
+				return &SetSessionPrivilegeLevelRsp{}
+			}),
+		},
+	)
 )
