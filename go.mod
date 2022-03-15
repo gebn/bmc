@@ -9,6 +9,6 @@ require (
 	github.com/google/go-cmp v0.5.5
 	github.com/google/gopacket v1.1.19
 	github.com/prometheus/client_golang v1.12.1
-	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
+	golang.org/x/sys v0.0.0-20220315180522-27bbf83dae87 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 )
