@@ -100,6 +100,21 @@ func TestOpenSessionRspDecodeFromBytes(t *testing.T) {
 				},
 			},
 		},
+		{
+			[]byte{
+				0x01,
+				0x11,
+				0x00,
+				0x01, 0x00, 0x00, 0x00},
+			&OpenSessionRsp{
+				BaseLayer: layers.BaseLayer{
+					Contents: []byte{0x01, 0x11, 0x00, 0x01, 0x00, 0x00, 0x00},
+				},
+				Tag:                    1,
+				Status:                 StatusCodeUnsupportedCipherSuite,
+				RemoteConsoleSessionID: 0x00000001,
+			},
+		},
 	}
 	layer := &OpenSessionRsp{}
 	for _, test := range table {

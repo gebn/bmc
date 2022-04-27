@@ -141,22 +141,22 @@ func (*OpenSessionRsp) NextLayerType() gopacket.LayerType {
 }
 
 func (o *OpenSessionRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
-	if len(data) < 8 { // minimum in case of non-zero status code
+	if len(data) < 7 { // minimum in case of non-zero status code
 		df.SetTruncated()
-		return fmt.Errorf("RMCP+ Open Session Response must be at least 8 bytes, got %v", len(data))
+		return fmt.Errorf("RMCP+ Open Session Response must be at least 7 bytes, got %v", len(data))
 	}
 	o.Tag = uint8(data[0])
 	o.Status = StatusCode(data[1])
-	o.MaxPrivilegeLevel = PrivilegeLevel(data[2])
-	// [3] reserved
-	o.RemoteConsoleSessionID = binary.LittleEndian.Uint32(data[4:8])
 
 	if o.Status == StatusCodeOK {
+		o.MaxPrivilegeLevel = PrivilegeLevel(data[2])
+		// [3] reserved
 		if len(data) != 36 {
 			df.SetTruncated()
 			return fmt.Errorf("Success RMCP+ Open Session Response must be 36 bytes long, got %v", len(data))
 		}
 		o.BaseLayer.Contents = data[:36]
+		o.RemoteConsoleSessionID = binary.LittleEndian.Uint32(data[4:8])
 		o.ManagedSystemSessionID = binary.LittleEndian.Uint32(data[8:12])
 		if _, err := o.AuthenticationPayload.Deserialise(data[12:20], df); err != nil {
 			return err
@@ -168,7 +168,10 @@ func (o *OpenSessionRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback
 			return err
 		}
 	} else {
-		o.BaseLayer.Contents = data[:8]
+		o.BaseLayer.Contents = data[:7]
+		o.MaxPrivilegeLevel = PrivilegeLevel(0) // unspecified
+		// [2] reserved
+		o.RemoteConsoleSessionID = binary.LittleEndian.Uint32(data[3:7])
 		o.ManagedSystemSessionID = 0
 		o.AuthenticationPayload = AuthenticationPayload{}
 		o.IntegrityPayload = IntegrityPayload{}

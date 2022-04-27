@@ -28,14 +28,20 @@ const (
 	// StatusCodeUnauthorisedName is sent in RAKP Message 2 to indicate the
 	// username was not found in the BMC's users table.
 	StatusCodeUnauthorisedName StatusCode = 0x0d
+
+	// StatusCodeUnsupportedCipherSuite is sent in RMCP+ Open Session Response
+	// to indicate the BMC cannot satisfy an acceptable combination of the
+	// requested authentication/integrity/encryption parameters.
+	StatusCodeUnsupportedCipherSuite StatusCode = 0x11
 )
 
 var (
 	statusCodeDescriptions = map[StatusCode]string{
-		StatusCodeOK:                    "Ok",
-		StatusCodeInsufficientResources: "Insufficient Resources",
-		StatusCodeInvalidSessionID:      "Invalid Session ID",
-		StatusCodeUnauthorisedName:      "Unauthorised User",
+		StatusCodeOK:                     "Ok",
+		StatusCodeInsufficientResources:  "Insufficient Resources",
+		StatusCodeInvalidSessionID:       "Invalid Session ID",
+		StatusCodeUnauthorisedName:       "Unauthorised User",
+		StatusCodeUnsupportedCipherSuite: "Unsupported Cipher Suite",
 	}
 )
 
