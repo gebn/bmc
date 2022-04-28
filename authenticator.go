@@ -77,9 +77,9 @@ func (g *authenticationAlgorithmParams) ICV(sik []byte) hash.Hash {
 	}
 }
 
-// algorithmAuthenticationParams builds an authenticator for the specified
-// algorithm, using the provided key. This authenticator can then be used in the
-// RAKP session establishment process.
+// algorithmAuthenticationHashGenerator builds an authenticator for the
+// specified algorithm, using the provided key. This authenticator can then be
+// used in the RAKP session establishment process.
 func algorithmAuthenticationHashGenerator(a ipmi.AuthenticationAlgorithm) (*authenticationAlgorithmParams, error) {
 	switch a {
 	// TODO support ipmi.AuthenticationAlgorithmNone - this is difficult as we
