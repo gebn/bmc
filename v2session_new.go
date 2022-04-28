@@ -180,14 +180,6 @@ func (s *V2SessionlessTransport) newV2Session(ctx context.Context, opts *V2Sessi
 		return nil, ErrIncorrectPassword
 	}
 
-	effectiveBMCKey := opts.KG
-	if len(effectiveBMCKey) == 0 {
-		effectiveBMCKey = opts.Password
-	}
-	sikHash := hashGenerator.SIK(effectiveBMCKey)
-	sik := calculateSIK(sikHash, rakpMessage1, rakpMessage2)
-	icvHash := hashGenerator.ICV(sik)
-
 	rakpMessage4, err := s.rakpMessage3(ctx, &ipmi.RAKPMessage3{
 		Status:                 ipmi.StatusCodeOK,
 		ManagedSystemSessionID: openSessionRsp.ManagedSystemSessionID,
@@ -197,6 +189,14 @@ func (s *V2SessionlessTransport) newV2Session(ctx context.Context, opts *V2Sessi
 	if err != nil {
 		return nil, err
 	}
+
+	effectiveBMCKey := opts.KG
+	if len(effectiveBMCKey) == 0 {
+		effectiveBMCKey = opts.Password
+	}
+	sikHash := hashGenerator.SIK(effectiveBMCKey)
+	sik := calculateSIK(sikHash, rakpMessage1, rakpMessage2)
+	icvHash := hashGenerator.ICV(sik)
 	rakpMessage4ICV := calculateRAKPMessage4ICV(icvHash, rakpMessage1,
 		rakpMessage2)
 	if !hmac.Equal(rakpMessage4.ICV, rakpMessage4ICV) {
