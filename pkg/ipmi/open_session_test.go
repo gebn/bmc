@@ -115,6 +115,15 @@ func TestOpenSessionRspDecodeFromBytes(t *testing.T) {
 				RemoteConsoleSessionID: 0x00000001,
 			},
 		},
+		{
+			[]byte{0xc7},
+			&OpenSessionRsp{
+				BaseLayer: layers.BaseLayer{
+					Contents: []byte{0xc7},
+				},
+				Status: StatusCodeInvalidRequestLength,
+			},
+		},
 	}
 	layer := &OpenSessionRsp{}
 	for _, test := range table {

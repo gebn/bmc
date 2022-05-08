@@ -60,7 +60,7 @@ func (o *OpenSessionReq) SerializeTo(b gopacket.SerializeBuffer, opts gopacket.S
 		return err
 	}
 	d[0] = o.Tag
-	d[1] = uint8(o.MaxPrivilegeLevel) & 0xF
+	d[1] = uint8(o.MaxPrivilegeLevel) & 0x0f
 	d[2] = 0x00
 	d[3] = 0x00
 	binary.LittleEndian.PutUint32(d[4:8], o.SessionID)
@@ -141,20 +141,35 @@ func (*OpenSessionRsp) NextLayerType() gopacket.LayerType {
 }
 
 func (o *OpenSessionRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
-	if len(data) < 7 { // minimum in case of non-zero status code
+	if len(data) == 1 {
+		// some BMCs return just an RMCP+ status code on error (Supermicro),
+		// contrary to the spec, which says they should also return the reserved
+		// byte and Remote Console Session ID
+		o.BaseLayer.Contents = data[:1]
+		o.Tag = 0
+		o.Status = StatusCode(data[0])
+		o.RemoteConsoleSessionID = 0
+	} else if len(data) < 7 {
+		// otherwise, we assume a conformant BMC, in which case the minimum for a
+		// non-zero status code is 7 bytes
 		df.SetTruncated()
 		return fmt.Errorf("RMCP+ Open Session Response must be at least 7 bytes, got %v", len(data))
+	} else {
+		o.BaseLayer.Contents = data[:7]
+		o.Tag = uint8(data[0])
+		o.Status = StatusCode(data[1])
+		o.RemoteConsoleSessionID = binary.LittleEndian.Uint32(data[3:7])
 	}
-	o.Tag = uint8(data[0])
-	o.Status = StatusCode(data[1])
 
 	if o.Status == StatusCodeOK {
-		o.MaxPrivilegeLevel = PrivilegeLevel(data[2])
-		// [3] reserved
+		// validate the length first - an evil BMC may have given us a 1-byte
+		// payload with a successful status
 		if len(data) != 36 {
 			df.SetTruncated()
-			return fmt.Errorf("Success RMCP+ Open Session Response must be 36 bytes long, got %v", len(data))
+			return fmt.Errorf("Successful RMCP+ Open Session Response must be 36 bytes long, got %v", len(data))
 		}
+		o.MaxPrivilegeLevel = PrivilegeLevel(data[2])
+		// [3] reserved
 		o.BaseLayer.Contents = data[:36]
 		o.RemoteConsoleSessionID = binary.LittleEndian.Uint32(data[4:8])
 		o.ManagedSystemSessionID = binary.LittleEndian.Uint32(data[8:12])
@@ -168,10 +183,8 @@ func (o *OpenSessionRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback
 			return err
 		}
 	} else {
-		o.BaseLayer.Contents = data[:7]
 		o.MaxPrivilegeLevel = PrivilegeLevel(0) // unspecified
 		// [2] reserved
-		o.RemoteConsoleSessionID = binary.LittleEndian.Uint32(data[3:7])
 		o.ManagedSystemSessionID = 0
 		o.AuthenticationPayload = AuthenticationPayload{}
 		o.IntegrityPayload = IntegrityPayload{}

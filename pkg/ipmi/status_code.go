@@ -33,6 +33,12 @@ const (
 	// to indicate the BMC cannot satisfy an acceptable combination of the
 	// requested authentication/integrity/encryption parameters.
 	StatusCodeUnsupportedCipherSuite StatusCode = 0x11
+
+	// StatusCodeInvalidRequestLength is sent when the request is too short, or
+	// too long. This is an IPMI rather than RMCP+ value, however some BMCs
+	// return it regardless. It resides in the reserved status code space,
+	// which we assume will never be used.
+	StatusCodeInvalidRequestLength StatusCode = 0xc7
 )
 
 var (
@@ -42,6 +48,7 @@ var (
 		StatusCodeInvalidSessionID:       "Invalid Session ID",
 		StatusCodeUnauthorisedName:       "Unauthorised User",
 		StatusCodeUnsupportedCipherSuite: "Unsupported Cipher Suite",
+		StatusCodeInvalidRequestLength:   "Invalid Request Length",
 	}
 )
 
