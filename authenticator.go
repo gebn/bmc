@@ -141,11 +141,15 @@ type additionalKeyMaterialGenerator struct {
 }
 
 func (g additionalKeyMaterialGenerator) K(n int) []byte {
-	// when the spec says HMAC block size, it means the size of the output tag,
-	// not the block size of the underlying algorithm (e.g. 20 rather than 64
-	// for SHA-1).
-	constant := make([]byte, g.hash.Size())
-	for i := 0; i < g.hash.Size(); i++ {
+	// kConstantLength is the length of constant to compute the MAC of using
+	// the SIK. "These constants are constructed using a hexadecimal octet
+	// value repeated up to the HMAC block size in length" in 13.32 of the spec
+	// is misleading: the length is always 20, regardless of the underlying
+	// algorithm's block size. See #49 for a bug this caused.
+	const kConstantLength = 20
+
+	constant := make([]byte, kConstantLength)
+	for i := 0; i < kConstantLength; i++ {
 		constant[i] = uint8(n)
 	}
 	return executeHash(g.hash, constant)
