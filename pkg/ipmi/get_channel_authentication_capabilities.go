@@ -99,14 +99,15 @@ type GetChannelAuthenticationCapabilitiesRsp struct {
 	// the Activate Session request to be authenticated - and likely only its
 	// reply will be authenticated. Subsequent packets can use an authentication
 	// type of NONE. A remote console is free to authenticate all packets it
-	// sends, however the BMC can choose whether to validate these, and if it is
-	// incorrect, it may still drop the packet.
+	// sends (this one does), however the BMC can choose whether to validate
+	// these, and if it is incorrect, it may still drop the packet.
 	PerMessageAuthentication bool
 
-	// UserLevelAuthentication being disabled means that commands requiring the
-	// User privilege level do not have to be authenticated, regardless of
-	// PerMessageAuthentication. This is normally reasonable, as these commands
-	// are "read-only".
+	// UserLevelAuthentication being disabled means that commands requiring
+	// only the User privilege level do not have to be authenticated,
+	// regardless of PerMessageAuthentication - the idea being because these
+	// commands are read-only. This library authenticates all packets
+	// regardless.
 	UserLevelAuthentication bool
 
 	NonNullUsernamesEnabled bool

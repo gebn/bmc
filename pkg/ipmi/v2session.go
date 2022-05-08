@@ -203,7 +203,7 @@ func (s *V2Session) SerializeTo(b gopacket.SerializeBuffer, opts gopacket.Serial
 		// packet is authenticated
 		if s.Authenticated {
 			authCodeRangeLength := headerLength + int(s.Length) + 2
-			s.Pad = uint8((4 - authCodeRangeLength%4) % 4) // 0, 1, 2, 3
+			s.Pad = uint8((4 - authCodeRangeLength%4) % 4) // {0, 1, 2, 3}
 		}
 	}
 
