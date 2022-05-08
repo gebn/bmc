@@ -17,21 +17,20 @@ var (
 	ErrIncorrectPassword = errors.New("RAKP2 HMAC fail (this indicates the " +
 		"BMC is using a different password)")
 
+	// The algorithms below correspond to cipher suite 3 (RAKP-HMAC-SHA1/HMAC-SHA1-96/AES-CBC-128),
+	// which is broadly compatible. You may wish to try using 17 instead
+	// (RAKP-HMAC-SHA256/HMAC-SHA256-128/AES-CBC-128). Note many BMCs do not support more than one
+	// proposal for each algorithm.
+
 	defaultAuthenticationAlgorithms = []ipmi.AuthenticationAlgorithm{
-		//ipmi.AuthenticationAlgorithmNone,
 		ipmi.AuthenticationAlgorithmHMACSHA1,
-		//ipmi.AuthenticationAlgorithmHMACMD5,
 		//ipmi.AuthenticationAlgorithmHMACSHA256,
 	}
 	defaultIntegrityAlgorithms = []ipmi.IntegrityAlgorithm{
-		//ipmi.IntegrityAlgorithmNone,
 		ipmi.IntegrityAlgorithmHMACSHA196,
-		//ipmi.IntegrityAlgorithmHMACMD5128,
-		//ipmi.IntegrityAlgorithmMD5128,
 		//ipmi.IntegrityAlgorithmHMACSHA256128,
 	}
 	defaultConfidentialityAlgorithms = []ipmi.ConfidentialityAlgorithm{
-		//ipmi.ConfidentialityAlgorithmNone,
 		ipmi.ConfidentialityAlgorithmAESCBC128,
 	}
 )
