@@ -242,4 +242,19 @@ var (
 			}),
 		},
 	)
+	LayerTypeGetChannelCipherSuitesReq = gopacket.RegisterLayerType(
+		1029,
+		gopacket.LayerTypeMetadata{
+			Name: "Get Channel Cipher Suites Request",
+		},
+	)
+	LayerTypeGetChannelCipherSuitesRsp = gopacket.RegisterLayerType(
+		1030,
+		gopacket.LayerTypeMetadata{
+			Name: "Get Channel Cipher Suites Response",
+			Decoder: layerexts.BuildDecoder(func() layerexts.LayerDecodingLayer {
+				return &GetChannelCipherSuitesRsp{}
+			}),
+		},
+	)
 )

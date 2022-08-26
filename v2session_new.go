@@ -16,23 +16,6 @@ import (
 var (
 	ErrIncorrectPassword = errors.New("RAKP2 HMAC fail (this indicates the " +
 		"BMC is using a different password)")
-
-	// The algorithms below correspond to cipher suite 3 (RAKP-HMAC-SHA1/HMAC-SHA1-96/AES-CBC-128),
-	// which is broadly compatible. You may wish to try using 17 instead
-	// (RAKP-HMAC-SHA256/HMAC-SHA256-128/AES-CBC-128). Note many BMCs do not support more than one
-	// proposal for each algorithm.
-
-	defaultAuthenticationAlgorithms = []ipmi.AuthenticationAlgorithm{
-		ipmi.AuthenticationAlgorithmHMACSHA1,
-		//ipmi.AuthenticationAlgorithmHMACSHA256,
-	}
-	defaultIntegrityAlgorithms = []ipmi.IntegrityAlgorithm{
-		ipmi.IntegrityAlgorithmHMACSHA196,
-		//ipmi.IntegrityAlgorithmHMACSHA256128,
-	}
-	defaultConfidentialityAlgorithms = []ipmi.ConfidentialityAlgorithm{
-		ipmi.ConfidentialityAlgorithmAESCBC128,
-	}
 )
 
 // V2SessionOpts contains configurable parameters for RMCP+ session
@@ -104,14 +87,18 @@ func (s *V2SessionlessTransport) NewV2Session(ctx context.Context, opts *V2Sessi
 // return ErrIncorrectPassword if the BMC appears to be using a different
 // password to the remote console.
 func (s *V2SessionlessTransport) newV2Session(ctx context.Context, opts *V2SessionOpts) (*V2Session, error) {
+	// GetBestCipherSuite is safe to not check the error code, it would
+	// fall back to Cipher Suite 3 when it failed
+	bestSuite, _ := s.GetBestCipherSuite(ctx)
+
 	if opts.AuthenticationAlgorithms == nil {
-		opts.AuthenticationAlgorithms = defaultAuthenticationAlgorithms
+		opts.AuthenticationAlgorithms = bestSuite.AuthenticationAlgorithms
 	}
 	if opts.IntegrityAlgorithms == nil {
-		opts.IntegrityAlgorithms = defaultIntegrityAlgorithms
+		opts.IntegrityAlgorithms = bestSuite.IntegrityAlgorithms
 	}
 	if opts.ConfidentialityAlgorithms == nil {
-		opts.ConfidentialityAlgorithms = defaultConfidentialityAlgorithms
+		opts.ConfidentialityAlgorithms = bestSuite.ConfidentialityAlgorithms
 	}
 
 	authenticationPayloads := make([]ipmi.AuthenticationPayload,

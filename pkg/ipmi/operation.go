@@ -110,6 +110,14 @@ var (
 		Function: NetworkFunctionAppRsp,
 		Command:  0x3d,
 	}
+	OperationGetChannelCipherSuitesReq = Operation{
+		Function: NetworkFunctionAppReq,
+		Command:  0x54,
+	}
+	OperationGetChannelCipherSuitesRsp = Operation{
+		Function: NetworkFunctionAppRsp,
+		Command:  0x54,
+	}
 
 	// operationLayerTypes is how a Message finds out how to decode its
 	// payload. It tells us which layer comes next given a network function and
@@ -130,6 +138,7 @@ var (
 		OperationGetSDRRsp:                               LayerTypeGetSDRRsp,
 		OperationGetSensorReadingRsp:                     LayerTypeGetSensorReadingRsp,
 		OperationGetSessionInfoRsp:                       LayerTypeGetSessionInfoRsp,
+		OperationGetChannelCipherSuitesRsp:               LayerTypeGetChannelCipherSuitesRsp,
 	}
 )
 
