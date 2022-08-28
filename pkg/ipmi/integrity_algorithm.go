@@ -1,9 +1,9 @@
 package ipmi
 
-// IntegrityAlgorithm is the identifier of integrity algorithms negotiated in
-// the RMCP+ session establishment process. The numbers are defined in 13.28.4
-// of the spec. The integrity algorithm is used to calculate the signature for
-// authenticated RMCP+ messages.
+// IntegrityAlgorithm is the 6-bit identifier of an integrity algorithm
+// negotiated during the RMCP+ session establishment process. The numbers are
+// defined in 13.28.4 of the spec. The integrity algorithm is used to calculate
+// the signature for authenticated RMCP+ messages.
 type IntegrityAlgorithm uint8
 
 const (
@@ -27,8 +27,13 @@ func (i IntegrityAlgorithm) String() string {
 	case IntegrityAlgorithmHMACSHA256128:
 		return "HMAC-SHA256-128"
 	}
-	if 0xc0 <= i && i <= 0xff {
+	if i >= 0xc0 && i <= 0x3f {
 		return "OEM"
+	}
+	if i > 0x3f {
+		// must fit into 6 bits, otherwise cannot be returned in Get Channel
+		// Cipher Suites response
+		return "Invalid"
 	}
 	return "Unknown"
 }

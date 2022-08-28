@@ -1,9 +1,9 @@
 package ipmi
 
-// ConfidentialityAlgorithm is the identifier of encryption algorithms used in
-// the RMCP+ session establishment process. Packets with the encryption bit set
-// in the session header are encrypted as per the specification for this
-// algorithm.
+// ConfidentialityAlgorithm is the 6-bit identifier of an encryption algorithm
+// used in the RMCP+ session establishment process. Packets with the encryption
+// bit set in the session header are encrypted as per the specification for
+// this algorithm.
 type ConfidentialityAlgorithm uint8
 
 const (
@@ -35,8 +35,13 @@ func (c ConfidentialityAlgorithm) String() string {
 	case ConfidentialityAlgorithmXRC440:
 		return "xRC4-40"
 	}
-	if 0x30 <= c && c <= 0x3f {
+	if c >= 0x30 && c <= 0x3f {
 		return "OEM"
+	}
+	if c > 0x3f {
+		// must fit into 6 bits, otherwise cannot be returned in Get Channel
+		// Cipher Suites response
+		return "Invalid"
 	}
 	return "Unknown"
 }

@@ -1,9 +1,9 @@
 package ipmi
 
-// AuthenticationAlgorithm is the identifier of authentication algorithms used
-// in the RMCP+ session establishment process. It has no use once the session is
-// active. The numbers are defined in 13.28 of the spec. IPMI v1.5's equivalent
-// is authentication type.
+// AuthenticationAlgorithm is the 6-bit identifier of an authentication
+// algorithm used in the RMCP+ session establishment process. It has no use
+// once the session is active. The numbers are defined in 13.28 of the spec.
+// IPMI v1.5's equivalent is authentication type.
 type AuthenticationAlgorithm uint8
 
 const (
@@ -45,8 +45,13 @@ func (a AuthenticationAlgorithm) String() string {
 	case AuthenticationAlgorithmHMACSHA256:
 		return "RAKP-HMAC-SHA256"
 	}
-	if 0xc0 <= a && a <= 0xff {
+	if a >= 0xc0 && a <= 0x3f {
 		return "OEM"
+	}
+	if a > 0x3f {
+		// must fit into 6 bits, otherwise cannot be returned in Get Channel
+		// Cipher Suites response
+		return "Invalid"
 	}
 	return "Unknown"
 }
