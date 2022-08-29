@@ -1,5 +1,9 @@
 package ipmi
 
+import (
+	"fmt"
+)
+
 // PayloadType identifies the layer immediately within the RMCP+ session
 // wrapper. Values are specified in 13.27.3 of the IPMI v2.0 spec. This is a
 // 6-bit uint on the wire.
@@ -24,25 +28,29 @@ const (
 	PayloadTypeRAKPMessage4   PayloadType = 0x15
 )
 
-func (p PayloadType) String() string {
-	switch p {
-	case PayloadTypeIPMI:
-		return "IPMI"
-	case PayloadTypeOEM:
-		return "OEM Explicit"
-	case PayloadTypeOpenSessionReq:
-		return "RMCP+ Open Session Request"
-	case PayloadTypeOpenSessionRsp:
-		return "RMCP+ Open Session Response"
-	case PayloadTypeRAKPMessage1:
-		return "RAKP Message 1"
-	case PayloadTypeRAKPMessage2:
-		return "RAKP Message 2"
-	case PayloadTypeRAKPMessage3:
-		return "RAKP Message 3"
-	case PayloadTypeRAKPMessage4:
-		return "RAKP Message 4"
-	default:
-		return "Unknown" // possibly OEM (0x20 through 0x27)
+var (
+	payloadTypeDescriptions = map[PayloadType]string{
+		PayloadTypeIPMI:           "IPMI",
+		PayloadTypeOEM:            "OEM Explicit",
+		PayloadTypeOpenSessionReq: "RMCP+ Open Session Request",
+		PayloadTypeOpenSessionRsp: "RMCP+ Open Session Response",
+		PayloadTypeRAKPMessage1:   "RAKP Message 1",
+		PayloadTypeRAKPMessage2:   "RAKP Message 2",
+		PayloadTypeRAKPMessage3:   "RAKP Message 3",
+		PayloadTypeRAKPMessage4:   "RAKP Message 4",
 	}
+)
+
+func (p PayloadType) Description() string {
+	if desc, ok := payloadTypeDescriptions[p]; ok {
+		return desc
+	}
+	if p >= 0x20 && p <= 0x27 {
+		return fmt.Sprintf("OEM%d", p-0x20)
+	}
+	return "Unknown"
+}
+
+func (p PayloadType) String() string {
+	return fmt.Sprintf("%#x(%v)", uint8(p), p.Description())
 }
