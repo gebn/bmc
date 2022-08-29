@@ -48,6 +48,9 @@ func (p PayloadType) Description() string {
 	if p >= 0x20 && p <= 0x27 {
 		return fmt.Sprintf("OEM%d", p-0x20)
 	}
+	if p > 0x3f {
+		return "Invalid"
+	}
 	return "Unknown"
 }
 

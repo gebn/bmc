@@ -12,6 +12,7 @@ func TestPayloadTypeDescription(t *testing.T) {
 		{PayloadTypeIPMI, "IPMI"},
 		{0x20, "OEM0"},
 		{0x27, "OEM7"},
+		{0x40, "Invalid"},
 		{0x28, "Unknown"},
 	}
 	for _, test := range tests {
