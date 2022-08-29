@@ -19,30 +19,20 @@ func TestOpenSessionReqSerializeTo(t *testing.T) {
 				Tag:               123,
 				MaxPrivilegeLevel: PrivilegeLevelUser,
 				SessionID:         0x03020401,
-				AuthenticationPayloads: []AuthenticationPayload{
-					{
-						Wildcard: true,
-					},
+				AuthenticationPayload: AuthenticationPayload{
+					Wildcard: true,
 				},
-				IntegrityPayloads: []IntegrityPayload{
-					{
-						Algorithm: IntegrityAlgorithmHMACSHA196,
-					},
+				IntegrityPayload: IntegrityPayload{
+					Algorithm: IntegrityAlgorithmHMACSHA196,
 				},
-				ConfidentialityPayloads: []ConfidentialityPayload{
-					{
-						Algorithm: ConfidentialityAlgorithmAESCBC128,
-					},
-					{
-						Algorithm: ConfidentialityAlgorithmXRC4128,
-					},
+				ConfidentialityPayload: ConfidentialityPayload{
+					Algorithm: ConfidentialityAlgorithmAESCBC128,
 				},
 			},
 			[]byte{0x7b, 0x02, 0x00, 0x00, 0x01, 0x04, 0x02, 0x03,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x01, 0x00, 0x00, 0x08, 0x01, 0x00, 0x00, 0x00,
-				0x02, 0x00, 0x00, 0x08, 0x01, 0x00, 0x00, 0x00,
-				0x02, 0x00, 0x00, 0x08, 0x02, 0x00, 0x00, 0x00},
+				0x02, 0x00, 0x00, 0x08, 0x01, 0x00, 0x00, 0x00},
 		},
 	}
 	opts := gopacket.SerializeOptions{}

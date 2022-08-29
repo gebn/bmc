@@ -16,10 +16,18 @@ import (
 var (
 	ErrIncorrectPassword = errors.New("RAKP2 HMAC fail (this indicates the " +
 		"BMC is using a different password)")
+	ErrNoSupportedCipherSuites = errors.New("none of the provided cipher " +
+		"suite options were supported by the BMC")
+
+	defaultCipherSuites = []ipmi.CipherSuite{
+		ipmi.CipherSuite17,
+		ipmi.CipherSuite3,
+	}
 )
 
 // V2SessionOpts contains configurable parameters for RMCP+ session
-// establishment.
+// establishment. The default value is used when creating a version-agnostic
+// Session instance.
 type V2SessionOpts struct {
 	SessionOpts
 
@@ -38,20 +46,12 @@ type V2SessionOpts struct {
 	// password to be used to preserve the complexity).
 	KG []byte
 
-	// AuthenticationAlgorithms is a slice of authentication algorithms to
-	// propose. If this is unspecified, all supported algorithms will be
-	// proposed.
-	AuthenticationAlgorithms []ipmi.AuthenticationAlgorithm
-
-	// IntegrityAlgorithms is a slice of integrity algorithms to propose for
-	// packet signing. If this is unspecified, all supported algorithms will be
-	// proposed.
-	IntegrityAlgorithms []ipmi.IntegrityAlgorithm
-
-	// ConfidentialityAlgorithms is a slice of confidentiality algorithms to
-	// propose for packet encryption. If this is unspecified, all supported
-	// algorithms will be proposed.
-	ConfidentialityAlgorithms []ipmi.ConfidentialityAlgorithm
+	// CipherSuites is the list of authentication, integrity and confidentiality
+	// algorithms to use in descending order of preference. If omitted, the
+	// library will use Cipher Suite 17 if possible, falling back on Cipher
+	// Suite 3, for which support is mandatory. To avoid performing
+	// discovery, provide a single cipher suite.
+	CipherSuites []ipmi.CipherSuite
 }
 
 // NewSession establishes a new RMCP+ session. Two-key login is assumed to be
@@ -87,50 +87,23 @@ func (s *V2SessionlessTransport) NewV2Session(ctx context.Context, opts *V2Sessi
 // return ErrIncorrectPassword if the BMC appears to be using a different
 // password to the remote console.
 func (s *V2SessionlessTransport) newV2Session(ctx context.Context, opts *V2SessionOpts) (*V2Session, error) {
-	// GetBestCipherSuite is safe to not check the error code, it would
-	// fall back to Cipher Suite 3 when it failed
-	bestSuite, _ := s.GetBestCipherSuite(ctx)
-
-	if opts.AuthenticationAlgorithms == nil {
-		opts.AuthenticationAlgorithms = bestSuite.AuthenticationAlgorithms
-	}
-	if opts.IntegrityAlgorithms == nil {
-		opts.IntegrityAlgorithms = bestSuite.IntegrityAlgorithms
-	}
-	if opts.ConfidentialityAlgorithms == nil {
-		opts.ConfidentialityAlgorithms = bestSuite.ConfidentialityAlgorithms
-	}
-
-	authenticationPayloads := make([]ipmi.AuthenticationPayload,
-		len(opts.AuthenticationAlgorithms))
-	for i, algo := range opts.AuthenticationAlgorithms {
-		authenticationPayloads[i] = ipmi.AuthenticationPayload{
-			Algorithm: algo,
-		}
-	}
-
-	integrityPayloads := make([]ipmi.IntegrityPayload,
-		len(opts.IntegrityAlgorithms))
-	for i, algo := range opts.IntegrityAlgorithms {
-		integrityPayloads[i] = ipmi.IntegrityPayload{
-			Algorithm: algo,
-		}
-	}
-
-	confidentialityPayloads := make([]ipmi.ConfidentialityPayload,
-		len(opts.ConfidentialityAlgorithms))
-	for i, algo := range opts.ConfidentialityAlgorithms {
-		confidentialityPayloads[i] = ipmi.ConfidentialityPayload{
-			Algorithm: algo,
-		}
+	cipherSuite, err := s.determineCipherSuite(ctx, opts.CipherSuites)
+	if err != nil {
+		return nil, err
 	}
 
 	openSessionRsp, err := s.openSession(ctx, &ipmi.OpenSessionReq{
-		MaxPrivilegeLevel:       opts.MaxPrivilegeLevel,
-		SessionID:               1,
-		AuthenticationPayloads:  authenticationPayloads,
-		IntegrityPayloads:       integrityPayloads,
-		ConfidentialityPayloads: confidentialityPayloads,
+		MaxPrivilegeLevel: opts.MaxPrivilegeLevel,
+		SessionID:         1,
+		AuthenticationPayload: ipmi.AuthenticationPayload{
+			Algorithm: cipherSuite.AuthenticationAlgorithm,
+		},
+		IntegrityPayload: ipmi.IntegrityPayload{
+			Algorithm: cipherSuite.IntegrityAlgorithm,
+		},
+		ConfidentialityPayload: ipmi.ConfidentialityPayload{
+			Algorithm: cipherSuite.ConfidentialityAlgorithm,
+		},
 	})
 	if err != nil {
 		return nil, err
@@ -228,4 +201,36 @@ func (s *V2SessionlessTransport) newV2Session(ctx context.Context, opts *V2Sessi
 	dlc = dlc.Put(&sess.messageLayer)
 	sess.decode = dlc.LayersDecoder(sess.rmcpLayer.LayerType(), gopacket.NilDecodeFeedback)
 	return sess, nil
+}
+
+// determineCipherSuite picks the set of algorithms that will be used to
+// establish the session, doing discovery if we have multiple options.
+func (s *V2SessionlessTransport) determineCipherSuite(ctx context.Context, desiredSuites []ipmi.CipherSuite) (*ipmi.CipherSuite, error) {
+	if len(desiredSuites) == 1 {
+		// no discovery required
+		return &desiredSuites[0], nil
+	}
+
+	if len(desiredSuites) == 0 {
+		desiredSuites = defaultCipherSuites
+	}
+
+	supportedSuites, err := RetrieveSupportedCipherSuites(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+
+	// assume all will be unique
+	distinctSupportedSuites := make(map[ipmi.CipherSuite]struct{}, len(supportedSuites))
+	for _, suite := range supportedSuites {
+		// it's fine to discard IDs and OEMs - they are irrelevant for Open Session
+		distinctSupportedSuites[suite.CipherSuite] = struct{}{}
+	}
+
+	for _, desiredSuite := range desiredSuites {
+		if _, ok := distinctSupportedSuites[desiredSuite]; ok {
+			return &desiredSuite, nil
+		}
+	}
+	return nil, ErrNoSupportedCipherSuites
 }

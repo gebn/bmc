@@ -30,20 +30,17 @@ type OpenSessionReq struct {
 	// remote console uses to send packets to the BMC.
 	SessionID uint32
 
-	// AuthenticationPayloads is a slice of authentication payloads to include
-	// in the request. This must have a length of at least 1. If a wildcard
-	// payload is specified, it should be the only one in the slice.
-	AuthenticationPayloads []AuthenticationPayload
+	// AuthenticationPayload indicates the authentication algorithm, if any, to
+	// use for the session.
+	AuthenticationPayload AuthenticationPayload
 
-	// IntegrityPayloads is a slice of integrity payloads to include in the
-	// request. This must have a length of at least 1. If a wildcard payload is
-	// specified, it should be the only one in the slice.
-	IntegrityPayloads []IntegrityPayload
+	// IntegrityPayload indicates the integrity algorithm, if any, to use for
+	// the session.
+	IntegrityPayload IntegrityPayload
 
-	// ConfidentialityPayloads is a slice of confidentiality payloads to include
-	// in the request. This must have a length of at least 1. If a wildcard
-	// payload is specified, it should be the only one in the slice.
-	ConfidentialityPayloads []ConfidentialityPayload
+	// ConfidentialityPayload indicates the confidentiality algorithm, if any,
+	// to use for the session.
+	ConfidentialityPayload ConfidentialityPayload
 }
 
 func (*OpenSessionReq) LayerType() gopacket.LayerType {
@@ -64,22 +61,13 @@ func (o *OpenSessionReq) SerializeTo(b gopacket.SerializeBuffer, opts gopacket.S
 	d[2] = 0x00
 	d[3] = 0x00
 	binary.LittleEndian.PutUint32(d[4:8], o.SessionID)
-	for _, p := range o.AuthenticationPayloads {
-		if err := p.Serialise(b); err != nil {
-			return err
-		}
+	if err := o.AuthenticationPayload.Serialise(b); err != nil {
+		return err
 	}
-	for _, p := range o.IntegrityPayloads {
-		if err := p.Serialise(b); err != nil {
-			return err
-		}
+	if err := o.IntegrityPayload.Serialise(b); err != nil {
+		return err
 	}
-	for _, p := range o.ConfidentialityPayloads {
-		if err := p.Serialise(b); err != nil {
-			return err
-		}
-	}
-	return nil
+	return o.ConfidentialityPayload.Serialise(b)
 }
 
 // OpenSessionRsp represents an RMCP+ Open Session Response message, specified

@@ -307,10 +307,6 @@ func (s *V2Session) SetSessionPrivilegeLevel(ctx context.Context, level ipmi.Pri
 	return cmd.Rsp.PrivilegeLevel, nil
 }
 
-func (s *V2Session) GetBestCipherSuite(ctx context.Context) (*ipmi.GetChannelCipherSuitesRsp, error) {
-	return getBestCipherSuite(ctx, s)
-}
-
 func (s *V2Session) closeSession(ctx context.Context) error {
 	// we decrement regardless of whether this command succeeds, as to not do so
 	// would be overly pessimistic - if it fails, there's nothing we can do;

@@ -7,206 +7,127 @@ import (
 	"github.com/google/gopacket/layers"
 )
 
-// Get Channel Cipher Suites comamand is specified in 22.15 of IPMI v2.0, the
-// command is used to look up what authentication, integrity and confidentiality
-// algorithms are supported, The algorithms are used in combination as
-// 'Cipher Suites'. This command only applies to implementations that support
-// IPMI v2.0/RMCP+ sessions.
-
-// CipherSuiteData represents Cipher Suites type and algorighm tag and its ID.
-type CipherSuiteData uint8
-
-// OEMIANAType represents IANA for the OEM or body that defined the Cipher Suite
-// which includes 3 little endian bytes.
-type OEMIANAType uint32
-
-const (
-	// StandardCipherSuite or OEMCipherSuite is a start of record byte, which is
-	// specified in Table 22-19, IPMI2.0.
-	StandardCipherSuite CipherSuiteData = 0xc0
-	OEMCipherSuite      CipherSuiteData = 0xc1
-
-	// ListAlgorithmByCipherSuite is a bit to list algorighms by Cipher Suite
-	// instead of list all supported algorithms (Table 22-18, IPMI2.0).
-	ListAlgorithmByCipherSuite CipherSuiteData = 0x80
-
-	// AuthenticationAlgorithmTag a tag that indicate last 5 bits is
-	// authentication algorighm number.
-	AuthenticationAlgorithmTag CipherSuiteData = 0x00
-	// IntegrityAlgorithmTag is a tag that indicate last 5 bits is integrity
-	// algorighm number.
-	IntegrityAlgorithmTag CipherSuiteData = 0x01
-	// ConfidentialityAlgorithmTag is a tag that indicate last 5 bits is
-	// confidentiality algorithm number.
-	ConfidentialityAlgorithmTag CipherSuiteData = 0x02
-
-	// CipherSuiteID_* is the IDs for Cipher Suite, specified in Table 22-20 of
-	// IPMI2.0, 17 and 3 are most widely supported so far, they will be used for
-	// detecting the best Cipher Suite.
-	CipherSuiteID_3  CipherSuiteData = 3
-	CipherSuiteID_17 CipherSuiteData = 17
-)
-
-// GetChannelCipherSuitesReq defines a Get Channel Cipher Suites request. Its format
-// is specified in Table 22-18 of IPMV v2.0.
+// GetChannelCipherSuitesReq is defined in section 22.15 of IPMI v2.0. It is
+// used to retrieve the authentication, integrity and confidentiality
+// algorithms supported by a given channel on the BMC. Support for this command
+// is mandatory for IPMI v2.0 BMCs implementing sessions, and it may be sent at
+// all privilege levels, both inside and outside a session.
+//
+// The spec indicates BMCs may narrow the suites they accept at higher
+// privilege levels (a given privilege level supports a subset of suites
+// available at less-privileged levels), however there is no known mechanism to
+// find out which suites apply to which privilege levels. We would expect there
+// to be a MaxPrivilegeLevel field in this request.
 type GetChannelCipherSuitesReq struct {
 	layers.BaseLayer
 
-	// Channel number of current request, bits[7:4] are reserved, and bits[3:0]
-	// are for channel number, and 0h-Bh, Fh are channel numbers, Eh retrieve
-	// information for channel this request was issued on.
+	// Channel defines the channel whose supported cipher suites to retrieve.
+	// Use ChannelPresentInterface to specify the current channel.
 	Channel Channel
 
-	// The Payload Type number is used to look up the Security Algorithm support
-	// when establishing a separate session for a given payload type. Typically
-	// the number is 00h (IPMI).
+	// PayloadType indicates the type of payload that will be sent over the
+	// channel when the session is established, which can influence cipher
+	// suite availability. This is primarily useful for OEM support. If in
+	// doubt, leave as the default PayloadTypeIPMI.
 	PayloadType PayloadType
 
-	// List index (00h-3Fh). 0h selects the first set of 16, 1h selects the next
-	// set of 16, and so on.
-	// When use 00h to get first set of algorithm numbers. The BMC returns 16
-	// bytes at a time per index, starting from index 00h, until the list
-	// data is exhausted, at which point it will 0 bytes or <16 bytes of list
-	// data.
-	ListIndex CipherSuiteData
+	// We only implement "list algorithms by Cipher Suite", not "list supported
+	// algorithms". Although potentially more efficient, the response format of
+	// the latter is not documented, is not implemented by ipmitool, and
+	// returned an unintelligible response on a test BMC.
+
+	// ListIndex is the 6-bit 0-based offset (0 through 63) into the cipher
+	// suite record data, which is returned 16 bytes at a time. This means the
+	// total length of cipher suite records cannot exceed 1024 bytes.
+	ListIndex uint8
 }
 
 func (*GetChannelCipherSuitesReq) LayerType() gopacket.LayerType {
 	return LayerTypeGetChannelCipherSuitesReq
 }
 
-func (g *GetChannelCipherSuitesReq) SerializeTo(b gopacket.SerializeBuffer, _ gopacket.SerializeOptions) error {
+func (c *GetChannelCipherSuitesReq) SerializeTo(b gopacket.SerializeBuffer, _ gopacket.SerializeOptions) error {
 	bytes, err := b.PrependBytes(3)
 	if err != nil {
 		return err
 	}
-	bytes[0] = uint8(g.Channel)
-	bytes[1] = uint8(g.PayloadType)
-
-	// Always list algorighms by Cipher Suite instead of list all supported
-	// algorithms.
-	bytes[2] = uint8(g.ListIndex | ListAlgorithmByCipherSuite)
+	bytes[0] = uint8(c.Channel & 0x0f)
+	bytes[1] = uint8(c.PayloadType & 0x3f)
+	// force list algos by cipher suite (see struct definition for rationale)
+	bytes[2] = uint8(1<<7 | c.ListIndex&0x3f)
 	return nil
 }
 
-// GetChannelCipherSuitesRsp represents the response to a Get Channel Cipher Suites
-// request.
+// GetChannelCipherSuitesRsp represents the response to a Get Channel Cipher
+// Suites request.
 type GetChannelCipherSuitesRsp struct {
 	layers.BaseLayer
 
-	// Channel number that the Authentication Algorithms are being returned
-	// for. If the channel number in the request was set to Eh, this will return
-	// the channel number for the channel that the request was received on.
+	// Channel is the channel number that these cipher suites correspond to.
+	// This will never be ChannelPresentInterface.
 	Channel Channel
 
-	// ID is the Cipher Suite ID, a numeric way of identifying the Cipher Suite
-	// on the platform. It’s used in commands and configuration parameters that
-	// enable and disable Cipher Suites (Table 22-20, IPMI v2.0).
-	ID CipherSuiteData
-
-	// Type indicate the start of record, Standard or OEM Cipher Suite.
-	Type CipherSuiteData
-
-	// OEMIANA is Least significant byte first. 3-byte IANA for the OEM or body
-	// that defined the Cipher Suite.
-	OEMIANA OEMIANAType
-
-	// ListDataExhausted indicate the list data is exhausted.
-	ListDataExhausted bool
-
-	// AuthenticationAlgorithms is a list to align with Session options, a
-	// Cipher Suite is only allowed to utilize one authentication algorithm.
-	AuthenticationAlgorithms []AuthenticationAlgorithm
-
-	// IntegrityAlgorithms defines all supported interity algorithms.
-	IntegrityAlgorithms []IntegrityAlgorithm
-
-	// ConfidentialityAlgorithms defines all supported confidentiality algorithms.
-	ConfidentialityAlgorithms []ConfidentialityAlgorithm
+	// CipherSuiteRecordsChunk is up to 16 bytes of Cipher Suite Record data,
+	// that may begin mid-way through a record, so is typically interpreted
+	// after prior indices' data has been retrieved. Note this references data
+	// in the decoded packet, so should be appended to a buffer before reading
+	// the next packet.
+	CipherSuiteRecordsChunk []byte
 }
 
 func (*GetChannelCipherSuitesRsp) LayerType() gopacket.LayerType {
 	return LayerTypeGetChannelCipherSuitesRsp
 }
 
-func (g *GetChannelCipherSuitesRsp) CanDecode() gopacket.LayerClass {
-	return g.LayerType()
+func (c *GetChannelCipherSuitesRsp) CanDecode() gopacket.LayerClass {
+	return c.LayerType()
 }
 
 func (*GetChannelCipherSuitesRsp) NextLayerType() gopacket.LayerType {
 	return gopacket.LayerTypePayload
 }
 
-func (g *GetChannelCipherSuitesRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
-	length := len(data)
-	if length < 6 {
+func (c *GetChannelCipherSuitesRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
+	if len(data) < 1 {
 		df.SetTruncated()
-		return fmt.Errorf("response must be at least 6 bytes for the cipher suite, got %v",
-			length)
+		return fmt.Errorf("invalid command response, length %v less than 1, expected channel number",
+			len(data))
 	}
 
-	// Check the Cipher Suite type first, they have different data bytes.
-	g.Type = CipherSuiteData(data[1])
-	if g.Type != StandardCipherSuite && g.Type != OEMCipherSuite {
-		return fmt.Errorf("unexpected cipher suite type, got %v", g.Type)
+	cipherSuiteRecordChunkEnd := len(data)
+	if cipherSuiteRecordChunkEnd > 17 {
+		// we have trailing bytes, cap interpreted length
+		cipherSuiteRecordChunkEnd = 17
 	}
 
-	g.Channel = Channel(data[0])
-	g.ID = CipherSuiteData(data[2])
-	offset := 3
+	c.BaseLayer.Contents = data[:cipherSuiteRecordChunkEnd]
+	c.BaseLayer.Payload = data[cipherSuiteRecordChunkEnd:]
 
-	// OEM Chipher Suite need 3 more bytes for OEM IANA.
-	if g.Type == OEMCipherSuite {
-		g.OEMIANA = OEMIANAType(uint32(data[3]) + uint32(data[4])<<8 + uint32(data[5])<<16)
-		offset += 3
-	}
+	c.Channel = Channel(data[0])
+	c.CipherSuiteRecordsChunk = data[1:cipherSuiteRecordChunkEnd]
 
-	// The size of these algorithms is variable, detect them with its tag.
-	for i := offset; i < length; i++ {
-		switch CipherSuiteData(data[i] >> 6) {
-		case AuthenticationAlgorithmTag:
-			g.AuthenticationAlgorithms = append(g.AuthenticationAlgorithms, AuthenticationAlgorithm(data[i]&0x1f))
-		case IntegrityAlgorithmTag:
-			g.IntegrityAlgorithms = append(g.IntegrityAlgorithms, IntegrityAlgorithm(data[i]&0x1f))
-		case ConfidentialityAlgorithmTag:
-			g.ConfidentialityAlgorithms = append(g.ConfidentialityAlgorithms, ConfidentialityAlgorithm(data[i]&0x1f))
-		}
-	}
-
-	// The number 17 is 16 data bytes plus a index.
-	// The BMC returns sixteen (16) bytes at a time per index, starting from index
-	// 00h, until the list data is exhausted, at which point it will 0 bytes or <16
-	// bytes of list data.
-	if length == 17 {
-		g.ListDataExhausted = false
-	} else {
-		g.ListDataExhausted = true
-	}
-
-	g.BaseLayer.Contents = data[:length]
-	g.BaseLayer.Payload = data[length:]
 	return nil
 }
 
-type GetChannelCipherCmd struct {
+type GetChannelCipherSuitesCmd struct {
 	Req GetChannelCipherSuitesReq
 	Rsp GetChannelCipherSuitesRsp
 }
 
-// Name returns "Get Channel Cipher Suite".
-func (*GetChannelCipherCmd) Name() string {
-	return "Get Channel Cipher Suite"
+// Name returns "Get Channel Cipher Suites".
+func (*GetChannelCipherSuitesCmd) Name() string {
+	return "Get Channel Cipher Suites"
 }
 
-// Operation returns &OperationGetChannelCipherSuitesReq.
-func (*GetChannelCipherCmd) Operation() *Operation {
+// Operation returns OperationGetChannelCipherSuitesReq.
+func (*GetChannelCipherSuitesCmd) Operation() *Operation {
 	return &OperationGetChannelCipherSuitesReq
 }
 
-func (c *GetChannelCipherCmd) Request() gopacket.SerializableLayer {
+func (c *GetChannelCipherSuitesCmd) Request() gopacket.SerializableLayer {
 	return &c.Req
 }
 
-func (c *GetChannelCipherCmd) Response() gopacket.DecodingLayer {
+func (c *GetChannelCipherSuitesCmd) Response() gopacket.DecodingLayer {
 	return &c.Rsp
 }

@@ -24,9 +24,4 @@ type SessionlessCommands interface {
 	// as a keepalive, however could be useful to scan an estate for
 	// compatibility.
 	GetChannelAuthenticationCapabilities(context.Context, *ipmi.GetChannelAuthenticationCapabilitiesReq) (*ipmi.GetChannelAuthenticationCapabilitiesRsp, error)
-
-	// GetBestCipherSuite issues the Get Channel Cipher Suites comamand to BMC,
-	// which is specified in 22.15 of IPMI v2.0. Then it would select a best
-	// one from a given list, and fall back to Cipher Suite 3 when it failed.
-	GetBestCipherSuite(context.Context) (*ipmi.GetChannelCipherSuitesRsp, error)
 }

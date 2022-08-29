@@ -16,122 +16,145 @@ func TestGetChannelCipherSuitesReqSerializeTo(t *testing.T) {
 	}{
 		{
 			&GetChannelCipherSuitesReq{
-				Channel:     12,
-				PayloadType: 34,
-				ListIndex:   56,
+				Channel: ChannelPresentInterface,
 			},
-			[]byte{
-				0x0c,
-				0x22,
-				0x38 | 0x80,
-			},
+			[]byte{0x0e, 0x00, 0x80},
 		},
 		{
 			&GetChannelCipherSuitesReq{
-				Channel:     56,
-				PayloadType: 12,
-				ListIndex:   34,
+				Channel:     ChannelPrimaryIPMB,
+				PayloadType: PayloadTypeOEM,
+				ListIndex:   63,
 			},
-			[]byte{
-				0x38,
-				0x0c,
-				0x22 | 0x80,
+			[]byte{0x00, 0x02, 0xbf},
+		},
+		// deliberately use values out of range to check truncation
+		{
+			&GetChannelCipherSuitesReq{
+				Channel:     0xff,
+				PayloadType: 0xff,
+				ListIndex:   0x7f,
 			},
+			[]byte{0x0f, 0x3f, 0xbf},
 		},
 	}
 	for _, test := range table {
 		sb := gopacket.NewSerializeBuffer()
-		err := test.layer.SerializeTo(sb, gopacket.SerializeOptions{})
+		err := test.layer.SerializeTo(sb, gopacket.SerializeOptions{
+			FixLengths: true,
+		})
 		got := sb.Bytes()
 
 		switch {
 		case err != nil && test.want != nil:
-			t.Errorf("serialize %v failed with %v, wanted %v", test.layer, err, test.want)
+			t.Errorf("serialize %v failed with %v, wanted %#v", test.layer, err, test.want)
 		case err == nil && !bytes.Equal(got, test.want):
-			t.Errorf("serialize %v = %v, want %v", test.layer, got, test.want)
+			t.Errorf("serialize %v = %#v, want %#v", test.layer, got, test.want)
 		}
 	}
 }
 
 func TestGetChannelCipherSuitesRspDecodeFromBytes(t *testing.T) {
-	tests := []struct {
-		in   []byte
+	table := []struct {
+		data []byte
 		want *GetChannelCipherSuitesRsp
 	}{
-		// too short
-		{
-			make([]byte, 1),
-			nil,
-		},
+		// no record data, which could happen if the cipher suite records
+		// happen to end on a 16-byte boundary
 		{
 			[]byte{
-				0x03, 0xc0, 0x11, 0x02, 0x42, 0x81,
-			},
-			&GetChannelCipherSuitesRsp{
-				BaseLayer: layers.BaseLayer{
-					Contents: []byte{0x03, 0xc0, 0x11, 0x02, 0x42, 0x81},
-					Payload:  []byte{},
-				},
-				Channel:           3,
-				ID:                17,
-				Type:              0xc0,
-				OEMIANA:           0,
-				ListDataExhausted: true,
-				AuthenticationAlgorithms: []AuthenticationAlgorithm{
-					AuthenticationAlgorithmHMACMD5,
-				},
-				IntegrityAlgorithms: []IntegrityAlgorithm{
-					IntegrityAlgorithmHMACMD5128,
-				},
-				ConfidentialityAlgorithms: []ConfidentialityAlgorithm{
-					ConfidentialityAlgorithmAESCBC128,
-				},
-			},
-		},
-		{
-			[]byte{
-				0x01, 0xc1, 0x03, 0x01, 0x02, 0x03,
-				0x01, 0x41, 0x82, 0x42, 0x81,
+				0x00,
 			},
 			&GetChannelCipherSuitesRsp{
 				BaseLayer: layers.BaseLayer{
 					Contents: []byte{
-						0x01, 0xc1, 0x03, 0x01, 0x02, 0x03,
-						0x01, 0x41, 0x82, 0x42, 0x81,
+						0x00,
 					},
 					Payload: []byte{},
 				},
-				Channel:           1,
-				ID:                3,
-				Type:              0xc1,
-				OEMIANA:           0x030201,
-				ListDataExhausted: true,
-				AuthenticationAlgorithms: []AuthenticationAlgorithm{
-					AuthenticationAlgorithmHMACSHA1,
+				Channel:                 ChannelPrimaryIPMB,
+				CipherSuiteRecordsChunk: []byte{},
+			},
+		},
+		// record data ending mid-way through a response
+		{
+			[]byte{
+				0x01,
+				0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+			},
+			&GetChannelCipherSuitesRsp{
+				BaseLayer: layers.BaseLayer{
+					Contents: []byte{
+						0x01,
+						0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+					},
+					Payload: []byte{},
 				},
-				IntegrityAlgorithms: []IntegrityAlgorithm{
-					IntegrityAlgorithmHMACSHA196,
-					IntegrityAlgorithmHMACMD5128,
+				Channel:                 1,
+				CipherSuiteRecordsChunk: []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07},
+			},
+		},
+		// a full response of data, which will be the case for all possibly up
+		// to the last
+		{
+			[]byte{
+				0x01,
+				0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+				0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+			},
+			&GetChannelCipherSuitesRsp{
+				BaseLayer: layers.BaseLayer{
+					Contents: []byte{
+						0x01,
+						0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+						0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+					},
+					Payload: []byte{},
 				},
-				ConfidentialityAlgorithms: []ConfidentialityAlgorithm{
-					ConfidentialityAlgorithmXRC4128,
-					ConfidentialityAlgorithmAESCBC128,
+				Channel: 1,
+				CipherSuiteRecordsChunk: []byte{
+					0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+					0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+				},
+			},
+		},
+		// full response will trailing data
+		{
+			[]byte{
+				0x01,
+				0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+				0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+				0x00, 0x01, 0x02,
+			},
+			&GetChannelCipherSuitesRsp{
+				BaseLayer: layers.BaseLayer{
+					Contents: []byte{
+						0x01,
+						0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+						0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+					},
+					Payload: []byte{
+						0x00, 0x01, 0x02,
+					},
+				},
+				Channel: 1,
+				CipherSuiteRecordsChunk: []byte{
+					0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+					0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
 				},
 			},
 		},
 	}
-	for _, test := range tests {
-		rsp := &GetChannelCipherSuitesRsp{}
-		err := rsp.DecodeFromBytes(test.in, gopacket.NilDecodeFeedback)
+	layer := &GetChannelCipherSuitesRsp{}
+	for _, test := range table {
+		err := layer.DecodeFromBytes(test.data, gopacket.NilDecodeFeedback)
 		switch {
-		case err == nil && test.want == nil:
-			t.Errorf("expected error decoding %v, got none", test.in)
-		case err == nil && test.want != nil:
-			if diff := cmp.Diff(test.want, rsp); diff != "" {
-				t.Errorf("decode %v = %v, want %v: %v", test.in, rsp, test.want, diff)
-			}
 		case err != nil && test.want != nil:
-			t.Errorf("unexpected error: %v", err)
+			t.Errorf("decode %#v failed with %v, wanted %v", test.data, err, test.want)
+		case err == nil:
+			if diff := cmp.Diff(test.want, layer); diff != "" {
+				t.Errorf("decode %#v = %v, want %v: %v", test.data, layer, test.want, diff)
+			}
 		}
 	}
 }
