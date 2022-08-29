@@ -44,7 +44,7 @@ const (
 
 	// ChannelPresentInterface means the current channel this value is sent
 	// over, or "this" channel.
-	ChannelPresentInterface Channel = 0xE
+	ChannelPresentInterface Channel = 0xe
 
-	ChannelSystemInterface Channel = 0xF
+	ChannelSystemInterface Channel = 0xf
 )
