@@ -119,7 +119,7 @@ func (*GetChannelCipherSuitesCmd) Name() string {
 	return "Get Channel Cipher Suites"
 }
 
-// Operation returns OperationGetChannelCipherSuitesReq.
+// Operation returns &OperationGetChannelCipherSuitesReq.
 func (*GetChannelCipherSuitesCmd) Operation() *Operation {
 	return &OperationGetChannelCipherSuitesReq
 }
