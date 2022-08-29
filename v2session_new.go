@@ -16,7 +16,7 @@ import (
 var (
 	ErrIncorrectPassword = errors.New("RAKP2 HMAC fail (this indicates the " +
 		"BMC is using a different password)")
-	ErrNoSupportedCipherSuites = errors.New("none of the provided cipher " +
+	ErrNoSupportedCipherSuite = errors.New("none of the provided cipher " +
 		"suite options were supported by the BMC")
 
 	defaultCipherSuites = []ipmi.CipherSuite{
@@ -232,5 +232,5 @@ func (s *V2SessionlessTransport) determineCipherSuite(ctx context.Context, desir
 			return &desiredSuite, nil
 		}
 	}
-	return nil, ErrNoSupportedCipherSuites
+	return nil, ErrNoSupportedCipherSuite
 }
