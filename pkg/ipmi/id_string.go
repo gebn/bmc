@@ -68,6 +68,7 @@ var (
 		// it. It might be that StringDecoderFunc(decode8BitAsciiLatin1) is
 		// sufficient.
 
+		StringEncodingUnicode:         StringDecoderFunc(decode8BitAsciiLatin1),
 		StringEncodingBCDPlus:         StringDecoderFunc(decodeBCDPlus),
 		StringEncodingPacked6BitAscii: StringDecoderFunc(decodePacked6BitAscii),
 		StringEncoding8BitAsciiLatin1: StringDecoderFunc(decode8BitAsciiLatin1),
