@@ -44,6 +44,13 @@ func (f StringDecoderFunc) Decode(b []byte, c int) (string, int, error) {
 type StringEncoding uint8
 
 const (
+	// StringEncodingUnicode, contrary to the name, typically suggests an
+	// unspecified encoding. IPMItool displays a hex representation of the
+	// underlying bytes, while OpenIPMI interprets it identically to
+	// StringEncoding8BitAsciiLatin1. Given Unicode is only a character set and
+	// the spec does not suggest any encoding, there is no right answer. The
+	// resulting variety of implementations means use of this value by a BMC
+	// should be regarded as a bug.
 	StringEncodingUnicode StringEncoding = iota
 	StringEncodingBCDPlus
 	StringEncodingPacked6BitAscii
@@ -61,13 +68,7 @@ var (
 	// turning them into Go strings. These functions are not implemented inline
 	// to ease readability and testability
 	stringEncodingDecoders = map[StringEncoding]StringDecoder{
-
-		// N.B. StringEncodingUnicode doesn't mean a bunch of 4 byte runes; it
-		// is implemented more like pass-through binary in other IPMI libraries.
-		// As that is meaningless, we are waiting for a test case to implement
-		// it. It might be that StringDecoderFunc(decode8BitAsciiLatin1) is
-		// sufficient.
-
+		// no decoder for StringEncodingUnicode, as ambiguous
 		StringEncodingBCDPlus:         StringDecoderFunc(decodeBCDPlus),
 		StringEncodingPacked6BitAscii: StringDecoderFunc(decodePacked6BitAscii),
 		StringEncoding8BitAsciiLatin1: StringDecoderFunc(decode8BitAsciiLatin1),
