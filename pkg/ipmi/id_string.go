@@ -79,7 +79,7 @@ func (e StringEncoding) Decoder() (StringDecoder, error) {
 	if decoder, ok := stringEncodingDecoders[e]; ok {
 		return decoder, nil
 	}
-	return nil, fmt.Errorf("no decoder found for encoding %#v", e)
+	return nil, fmt.Errorf("no decoder found for encoding %v", e)
 }
 
 func (e StringEncoding) Description() string {
