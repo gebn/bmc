@@ -206,13 +206,13 @@ func (s *V2SessionlessTransport) newV2Session(ctx context.Context, opts *V2Sessi
 // determineCipherSuite picks the set of algorithms that will be used to
 // establish the session, doing discovery if we have multiple options.
 func (s *V2SessionlessTransport) determineCipherSuite(ctx context.Context, desiredSuites []ipmi.CipherSuite) (*ipmi.CipherSuite, error) {
+	if len(desiredSuites) == 0 {
+		desiredSuites = defaultCipherSuites
+	}
+
 	if len(desiredSuites) == 1 {
 		// no discovery required
 		return &desiredSuites[0], nil
-	}
-
-	if len(desiredSuites) == 0 {
-		desiredSuites = defaultCipherSuites
 	}
 
 	supportedSuites, err := RetrieveSupportedCipherSuites(ctx, s)
