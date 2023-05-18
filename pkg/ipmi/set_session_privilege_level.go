@@ -82,6 +82,10 @@ func (*SetSessionPrivilegeLevelCmd) Operation() *Operation {
 	return &OperationSetSessionPrivilegeLevelReq
 }
 
+func (c *SetSessionPrivilegeLevelCmd) RemoteLUN() LUN {
+	return LUNBMC
+}
+
 func (c *SetSessionPrivilegeLevelCmd) Request() gopacket.SerializableLayer {
 	return &c.Req
 }

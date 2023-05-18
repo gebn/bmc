@@ -152,7 +152,7 @@ func (s *V2Session) buildAndSend(ctx context.Context, c ipmi.Command) error {
 	s.messageLayer = ipmi.Message{
 		Operation:     *c.Operation(),
 		RemoteAddress: ipmi.SlaveAddressBMC.Address(),
-		RemoteLUN:     ipmi.LUNBMC,
+		RemoteLUN:     c.RemoteLUN(),
 		LocalAddress:  ipmi.SoftwareIDRemoteConsole1.Address(),
 		Sequence:      1, // used at the session level
 	}

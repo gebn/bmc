@@ -123,6 +123,10 @@ func (*GetSDRRepositoryInfoCmd) Operation() *Operation {
 	return &OperationGetSDRRepositoryInfoReq
 }
 
+func (*GetSDRRepositoryInfoCmd) RemoteLUN() LUN {
+	return LUNBMC
+}
+
 func (*GetSDRRepositoryInfoCmd) Request() gopacket.SerializableLayer {
 	return nil
 }

@@ -568,6 +568,10 @@ func (*getDCMICapabilitiesInfoCmd) Operation() *ipmi.Operation {
 	return &operationGetDCMICapabilitiesInfoReq
 }
 
+func (c *getDCMICapabilitiesInfoCmd) RemoteLUN() ipmi.LUN {
+	return ipmi.LUNBMC
+}
+
 func (c *getDCMICapabilitiesInfoCmd) Request() gopacket.SerializableLayer {
 	return (*GetDCMICapabilitiesInfoReq)(c)
 }

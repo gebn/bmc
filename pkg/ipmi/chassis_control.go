@@ -103,6 +103,10 @@ func (*ChassisControlCmd) Operation() *Operation {
 	return &OperationChassisControlReq
 }
 
+func (c *ChassisControlCmd) RemoteLUN() LUN {
+	return LUNBMC
+}
+
 func (c *ChassisControlCmd) Request() gopacket.SerializableLayer {
 	return &c.Req
 }

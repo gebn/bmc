@@ -134,6 +134,10 @@ func (*GetDCMISensorInfoCmd) Operation() *ipmi.Operation {
 	return &operationGetDCMISensorInfoReq
 }
 
+func (g *GetDCMISensorInfoCmd) RemoteLUN() ipmi.LUN {
+	return ipmi.LUNBMC
+}
+
 func (g *GetDCMISensorInfoCmd) Request() gopacket.SerializableLayer {
 	return &g.Req
 }

@@ -232,6 +232,10 @@ func (*GetSessionInfoCmd) Operation() *Operation {
 	return &OperationGetSessionInfoReq
 }
 
+func (c *GetSessionInfoCmd) RemoteLUN() LUN {
+	return LUNBMC
+}
+
 func (c *GetSessionInfoCmd) Request() gopacket.SerializableLayer {
 	return &c.Req
 }

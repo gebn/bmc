@@ -125,6 +125,10 @@ func (*GetDeviceIDCmd) Operation() *Operation {
 	return &OperationGetDeviceIDReq
 }
 
+func (c *GetDeviceIDCmd) RemoteLUN() LUN {
+	return LUNBMC
+}
+
 func (c *GetDeviceIDCmd) Request() gopacket.SerializableLayer {
 	return nil
 }

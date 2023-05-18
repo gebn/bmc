@@ -197,6 +197,10 @@ func (*GetChannelAuthenticationCapabilitiesCmd) Operation() *Operation {
 	return &OperationGetChannelAuthenticationCapabilitiesReq
 }
 
+func (c *GetChannelAuthenticationCapabilitiesCmd) RemoteLUN() LUN {
+	return LUNBMC
+}
+
 func (c *GetChannelAuthenticationCapabilitiesCmd) Request() gopacket.SerializableLayer {
 	return &c.Req
 }
