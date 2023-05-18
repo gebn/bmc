@@ -282,6 +282,10 @@ func (*GetChassisStatusCmd) Operation() *Operation {
 	return &OperationGetChassisStatusReq
 }
 
+func (*GetChassisStatusCmd) RemoteLUN() LUN {
+	return LUNBMC
+}
+
 func (*GetChassisStatusCmd) Request() gopacket.SerializableLayer {
 	return nil
 }

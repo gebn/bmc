@@ -124,6 +124,10 @@ func (*GetChannelCipherSuitesCmd) Operation() *Operation {
 	return &OperationGetChannelCipherSuitesReq
 }
 
+func (c *GetChannelCipherSuitesCmd) RemoteLUN() LUN {
+	return LUNBMC
+}
+
 func (c *GetChannelCipherSuitesCmd) Request() gopacket.SerializableLayer {
 	return &c.Req
 }

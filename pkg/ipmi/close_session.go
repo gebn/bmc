@@ -61,6 +61,10 @@ func (*CloseSessionCmd) Operation() *Operation {
 	return &OperationCloseSessionReq
 }
 
+func (c *CloseSessionCmd) RemoteLUN() LUN {
+	return LUNBMC
+}
+
 func (c *CloseSessionCmd) Request() gopacket.SerializableLayer {
 	return &c.Req
 }

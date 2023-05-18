@@ -110,6 +110,10 @@ func (*GetSDRCmd) Operation() *Operation {
 	return &OperationGetSDRReq
 }
 
+func (c *GetSDRCmd) RemoteLUN() LUN {
+	return LUNBMC
+}
+
 func (c *GetSDRCmd) Request() gopacket.SerializableLayer {
 	return &c.Req
 }

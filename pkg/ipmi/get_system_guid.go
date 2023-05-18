@@ -58,6 +58,10 @@ func (*GetSystemGUIDCmd) Operation() *Operation {
 	return &OperationGetSystemGUIDReq
 }
 
+func (*GetSystemGUIDCmd) RemoteLUN() LUN {
+	return LUNBMC
+}
+
 func (*GetSystemGUIDCmd) Request() gopacket.SerializableLayer {
 	return nil
 }

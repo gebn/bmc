@@ -133,6 +133,10 @@ func (*GetPowerReadingCmd) Operation() *ipmi.Operation {
 	return &operationGetPowerReadingReq
 }
 
+func (c *GetPowerReadingCmd) RemoteLUN() ipmi.LUN {
+	return ipmi.LUNBMC
+}
+
 func (c *GetPowerReadingCmd) Request() gopacket.SerializableLayer {
 	return &c.Req
 }

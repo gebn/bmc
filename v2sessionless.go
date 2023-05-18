@@ -211,7 +211,7 @@ func (s *V2Sessionless) buildAndSendCommand(ctx context.Context, c ipmi.Command)
 	s.messageLayer = ipmi.Message{
 		Operation:     *c.Operation(),
 		RemoteAddress: ipmi.SlaveAddressBMC.Address(),
-		RemoteLUN:     ipmi.LUNBMC,
+		RemoteLUN:     c.RemoteLUN(),
 		LocalAddress:  ipmi.SoftwareIDRemoteConsole1.Address(),
 		Sequence:      1,
 	}
