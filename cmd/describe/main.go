@@ -40,10 +40,18 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
+	// call into run() so that we can use log.Fatal() to set a non-zero exit code,
+	// while still allowing run()'s deferred calls to close the session and
+	// transport before exiting
+	if err := run(ctx); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run(ctx context.Context) error {
 	machine, err := bmc.Dial(ctx, *argBMCAddr)
 	if err != nil {
-		log.Print(err)
-		return
+		return err
 	}
 	defer machine.Close()
 
@@ -78,8 +86,7 @@ func main() {
 		MaxPrivilegeLevel: ipmi.PrivilegeLevelUser,
 	})
 	if err != nil {
-		log.Print(err)
-		return
+		return err
 	}
 	defer sess.Close(ctx)
 
@@ -97,8 +104,7 @@ func main() {
 
 	repo, err := bmc.RetrieveSDRRepository(ctx, sess)
 	if err != nil {
-		log.Print(err)
-		return
+		return err
 	}
 	recordIDs := make([]ipmi.RecordID, 0, len(repo))
 	for recordID := range repo {
@@ -164,6 +170,8 @@ func main() {
 		fmt.Printf("\tBaseboard:\n")
 		printRecords(dcmiSensors.Baseboard, repo)
 	}
+
+	return nil
 }
 
 func presencePing(ctx context.Context, t transport.Transport) (*layers.ASFPresencePong, error) {
