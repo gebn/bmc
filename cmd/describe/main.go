@@ -35,20 +35,20 @@ var (
 )
 
 func main() {
-	kingpin.Parse()
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-
 	// call into run() so that we can use log.Fatal() to set a non-zero exit code,
 	// while still allowing run()'s deferred calls to close the session and
 	// transport before exiting
-	if err := run(ctx); err != nil {
+	if err := run(context.Background()); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func run(ctx context.Context) error {
+	kingpin.Parse()
+
+	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+	defer cancel()
+
 	machine, err := bmc.Dial(ctx, *argBMCAddr)
 	if err != nil {
 		return err
