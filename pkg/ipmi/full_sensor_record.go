@@ -19,7 +19,9 @@ type SensorRecordKey struct {
 	Channel      Channel
 	OwnerLUN     LUN
 
-	// Number is the sensor number.
+	// Number uniquely identifies the sensor within the context of a given
+	// owner. 0xff is used to indicate no more sensors, so there are 255 useful
+	// values.
 	Number uint8
 }
 
