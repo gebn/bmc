@@ -68,9 +68,9 @@ func newLinearSensorReader(r *ipmi.FullSensorRecord) (*linearSensorReader, error
 	return &linearSensorReader{
 		readingCmd: ipmi.GetSensorReadingCmd{
 			Req: ipmi.GetSensorReadingReq{
-				RemoteLUN: r.OwnerLUN,
-				Number:    r.Number,
+				Number: r.Number,
 			},
+			OwnerLUN: r.OwnerLUN,
 		},
 		factors: r.ConversionFactors,
 		parser:  parser,
