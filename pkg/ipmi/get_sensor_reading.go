@@ -89,8 +89,11 @@ func (r *GetSensorReadingRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFee
 }
 
 type GetSensorReadingCmd struct {
-	Req      GetSensorReadingReq
-	Rsp      GetSensorReadingRsp
+	Req GetSensorReadingReq
+	Rsp GetSensorReadingRsp
+
+	// OwnerLUN is the remote LUN of the sensor being retrieved. We learn this
+	// from the SDR.
 	OwnerLUN LUN
 }
 

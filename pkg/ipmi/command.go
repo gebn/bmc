@@ -33,8 +33,9 @@ type Command interface {
 	// otherwise need to have a no-op layer created.
 	Operation() *Operation
 
-	// RemoteLUN is usually, but not always, 0. One exception is
-	// GetSensorReading which may return a nonzero value for some sensors.
+	// RemoteLUN is set in the Message layer. This is usually LUNBMC, however
+	// some sensors may come under OEM LUNs, requiring a Get Sensor Reading
+	// invocation to use these.
 	RemoteLUN() LUN
 
 	// Request returns the possibly-nil request layer that we send to the
