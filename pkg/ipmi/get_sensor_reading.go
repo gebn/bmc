@@ -12,9 +12,6 @@ import (
 type GetSensorReadingReq struct {
 	layers.BaseLayer
 
-	// Use the value from FullSensorRecord.OwnerLUN.
-	RemoteLUN LUN
-
 	// Number is the number of the sensor whose reading to retrieve. The sensor
 	// number is specified in an SDR returned by the BMC. 0xff is reserved.
 	Number uint8
@@ -92,8 +89,9 @@ func (r *GetSensorReadingRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFee
 }
 
 type GetSensorReadingCmd struct {
-	Req GetSensorReadingReq
-	Rsp GetSensorReadingRsp
+	Req      GetSensorReadingReq
+	Rsp      GetSensorReadingRsp
+	OwnerLUN LUN
 }
 
 // Name returns "Get Sensor Reading".
@@ -107,7 +105,7 @@ func (*GetSensorReadingCmd) Operation() *Operation {
 }
 
 func (c *GetSensorReadingCmd) RemoteLUN() LUN {
-	return c.Req.RemoteLUN
+	return c.OwnerLUN
 }
 
 func (c *GetSensorReadingCmd) Request() gopacket.SerializableLayer {
