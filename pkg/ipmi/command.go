@@ -33,8 +33,8 @@ type Command interface {
 	// otherwise need to have a no-op layer created.
 	Operation() *Operation
 
-	// Most commands use RemoteLUN 0 (LUNBMC). Others (such as GetSensorReading
-	// when OwnerLUN!=0) can use this field to set it as needed.
+	// RemoteLUN is usually, but not always, 0. One exception is
+	// GetSensorReading which may return a nonzero value for some sensors.
 	RemoteLUN() LUN
 
 	// Request returns the possibly-nil request layer that we send to the
