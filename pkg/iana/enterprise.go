@@ -18,6 +18,9 @@ const (
 	// EnterpriseDell is the enterprise number of Dell Inc.
 	EnterpriseDell Enterprise = 674
 
+	// EnterpriseNvidia is the enterprise number of NVIDIA Corporation.
+	EnterpriseNvidia Enterprise = 5703
+
 	// EnterpriseQuanta is the enterprise number of Quanta Computer Inc.
 	EnterpriseQuanta Enterprise = 7244
 
@@ -39,6 +42,7 @@ var (
 	enterpriseOrganisations = map[Enterprise]string{
 		EnterpriseIntel:      "Intel Corporation",
 		EnterpriseDell:       "Dell Inc.",
+		EnterpriseNvidia:     "NVIDIA Corporation",
 		EnterpriseQuanta:     "Quanta Computer Inc.",
 		EnterpriseSuperMicro: "Super Micro Computer Inc.",
 		EnterpriseGigaByte:   "GIGA-BYTE TECHNOLOGY CO., LTD",
