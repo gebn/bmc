@@ -108,6 +108,7 @@ func (a *AES128CBC) SerializeTo(b gopacket.SerializeBuffer, _ gopacket.Serialize
 	if _, err := rand.Read(iv); err != nil {
 		return err
 	}
+
 	// encrypt everything after IV
 	mode := cipher.NewCBCEncrypter(a.cipher, iv)
 	mode.CryptBlocks(toEncrypt, toEncrypt)
