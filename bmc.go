@@ -39,6 +39,10 @@ func Dial(_ context.Context, addr string) (SessionlessTransport, error) {
 // functionality. Note v4 is preferred to v6 if a hostname is passed returning
 // both A and AAAA records.
 func DialV2(addr string) (*V2SessionlessTransport, error) {
+	return DialV2WithCustomTimeout(addr, 1*time.Second)
+}
+
+func DialV2WithCustomTimeout(addr string, timeout time.Duration) (*V2SessionlessTransport, error) {
 	v2ConnectionOpenAttempts.Inc()
 	t, err := newTransport(addr)
 	if err != nil {
@@ -46,13 +50,13 @@ func DialV2(addr string) (*V2SessionlessTransport, error) {
 		return nil, err
 	}
 	v2ConnectionsOpen.Inc()
-	return newV2SessionlessTransport(t), nil
+	return newV2SessionlessTransport(t, timeout), nil
 }
 
-func newV2SessionlessTransport(t transport.Transport) *V2SessionlessTransport {
+func newV2SessionlessTransport(t transport.Transport, timeout time.Duration) *V2SessionlessTransport {
 	return &V2SessionlessTransport{
 		Transport:     t,
-		V2Sessionless: newV2Sessionless(t, time.Second),
+		V2Sessionless: newV2Sessionless(t, timeout),
 	}
 }
 
