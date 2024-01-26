@@ -66,7 +66,11 @@ func (a *AES128CBC) DecodeFromBytes(data []byte, _ gopacket.DecodeFeedback) erro
 	mode.CryptBlocks(data[a.cipher.BlockSize():], data[a.cipher.BlockSize():])
 
 	padBytes := uint8(data[len(data)-1])
-	if padBytes > uint8(a.cipher.BlockSize()-1) {
+	// table 13-20 of the spec says the confidentiality pad length ranges from
+	// 0 to 15 bytes if using AES, but we may receive 16 bytes if the BMC's
+	// implementation of AES in CBC mode requires a minimum of one pad byte
+	// (which is how OpenSSL works) and the message is already aligned.
+	if padBytes > uint8(a.cipher.BlockSize()) {
 		return fmt.Errorf("invalid number of pad bytes: %v", padBytes)
 	}
 	padStart := len(data) - int(padBytes) - 1
