@@ -86,6 +86,14 @@ var (
 		Function: NetworkFunctionStorageRsp,
 		Command:  0x20,
 	}
+	OperationReserveSDRRepositoryReq = Operation{
+		Function: NetworkFunctionStorageReq,
+		Command:  0x22,
+	}
+	OperationReserveSDRRepositoryRsp = Operation{
+		Function: NetworkFunctionStorageRsp,
+		Command:  0x22,
+	}
 	OperationGetSDRReq = Operation{
 		Function: NetworkFunctionStorageReq,
 		Command:  0x23,
@@ -135,6 +143,7 @@ var (
 		OperationGetChannelAuthenticationCapabilitiesRsp: LayerTypeGetChannelAuthenticationCapabilitiesRsp,
 		OperationSetSessionPrivilegeLevelRsp:             LayerTypeSetSessionPrivilegeLevelRsp,
 		OperationGetSDRRepositoryInfoRsp:                 LayerTypeGetSDRRepositoryInfoRsp,
+		OperationReserveSDRRepositoryRsp:                 LayerTypeReserveSDRRepositoryRsp,
 		OperationGetSDRRsp:                               LayerTypeGetSDRRsp,
 		OperationGetSensorReadingRsp:                     LayerTypeGetSensorReadingRsp,
 		OperationGetSessionInfoRsp:                       LayerTypeGetSessionInfoRsp,

@@ -8,7 +8,7 @@ import (
 	"github.com/google/gopacket/layers"
 )
 
-func TestGetDecideIDRspDecodeFromBytes(t *testing.T) {
+func TestGetDeviceIDRspDecodeFromBytes(t *testing.T) {
 	tests := []struct {
 		in   []byte
 		want *GetDeviceIDRsp

@@ -28,8 +28,8 @@ Be sure to add response operations to the `operationLayerTypes` map in this file
 If the request or response payload has any enum-style fields, e.g. `ChassisControl`, create a new type with constants for its possible values, then implement `fmt.Stringer` to make it print nicely.
 It is recommended not to embed any fields implementing `fmt.Stringer` in a layer, as this means it cannot be printed by `gopacket` (there is an issue [here](https://github.com/google/gopacket/issues/683)).
 
-Session-less commands should be added to the `SessionlessCommands` interface, and the response, if any, to the `sessionlessRspLayers` struct, then the appropriate decoders in `v(1|2)sessionless.go`.
-Commands that must be sent inside a session should be added to the `SessionCommands` interface, and the response, if any, to the `sessionRspLayers` struct, then the appropriate decoders in `v(1|2)session.go`.
+Session-less commands should be added to the `SessionlessCommands` interface, then the appropriate decoders in `v(1|2)sessionless.go`.
+Commands that must be sent inside a session should be added to the `SessionCommands` interface, then the appropriate decoders in `v(1|2)session.go`.
 Writing appropriate implementations for IPMI v1.5 and v2.0 in `v1session(less).go` and `v2session(less).go` respectively makes the command easy for users to execute.
 
 ### Examples

@@ -257,4 +257,13 @@ var (
 			}),
 		},
 	)
+	LayerTypeReserveSDRRepositoryRsp = gopacket.RegisterLayerType(
+		1031,
+		gopacket.LayerTypeMetadata{
+			Name: "Reserve SDR Repository Response",
+			Decoder: layerexts.BuildDecoder(func() layerexts.LayerDecodingLayer {
+				return &ReserveSDRRepositoryRsp{}
+			}),
+		},
+	)
 )

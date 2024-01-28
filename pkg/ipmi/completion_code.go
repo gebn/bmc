@@ -26,6 +26,11 @@ const (
 	CompletionCodeUnrecognisedCommand CompletionCode = 0xc1
 	CompletionCodeTimeout             CompletionCode = 0xc3
 
+	// CompletionCodeReservationCanceledOrInvalid means that either the
+	// requester's reservation has been canceled or the request's reservation
+	// ID is invalid.
+	CompletionCodeReservationCanceledOrInvalid CompletionCode = 0xc5
+
 	// CompletionCodeRequestTruncated means the request ended prematurely. Did
 	// you forget to add the final request data layer?
 	CompletionCodeRequestTruncated CompletionCode = 0xc6
