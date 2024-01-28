@@ -38,6 +38,7 @@ func TestSDRDecodeFromBytes(t *testing.T) {
 				ID:      61455,
 				Version: 99,
 				Type:    RecordTypeFullSensor,
+				Length:  22,
 			},
 		},
 		{
@@ -61,6 +62,7 @@ func TestSDRDecodeFromBytes(t *testing.T) {
 				ID:      4080,
 				Version: 15,
 				Type:    RecordTypeCompactSensor,
+				Length:  32,
 			},
 		},
 	}

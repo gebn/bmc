@@ -30,8 +30,6 @@ type SDRRepository map[ipmi.RecordID]*ipmi.FullSensorRecord
 func RetrieveSDRRepository(ctx context.Context, s Session) (SDRRepository, error) {
 	var repo *SDRRepository
 	err := backoff.Retry(func() error {
-		// TODO(pfialho): should both GetSDRRepositoryInfo be removed now that
-		//  we use reservation IDs?
 		initialInfo, err := s.GetSDRRepositoryInfo(ctx)
 		if err != nil {
 			return err
@@ -60,10 +58,15 @@ func RetrieveSDRRepository(ctx context.Context, s Session) (SDRRepository, error
 	return *repo, nil
 }
 
-// walkSDRs iterates over the SDR Repository.
+// walkSDRs iterates over the SDR Repository. It is not concerned with the repo
+// changing behind its back.
+//
 // For each SDR, it starts by requesting the header and inspecting the type. If
-// the latter is FullSensorRecord, it then requests the key fields and body.
-// Otherwise, it skips to the next SDR.
+// it's a FullSensorRecord, it then requests the key fields and body. Otherwise,
+// it skips to the next SDR.
+// This is more expensive than reading the entire SDR at once, but it's
+// resilient to BMCs that return a malformed packet when the request's Length is
+// 0xff.
 func walkSDRs(ctx context.Context, s Session) (SDRRepository, error) {
 	repo := SDRRepository{} // we could set a size; it's a micro-optimisation
 	reserveSDRRepoCmdResp, err := s.ReserveSDRRepository(ctx)
