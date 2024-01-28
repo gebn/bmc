@@ -109,7 +109,7 @@ func walkSDRs(ctx context.Context, s Session) (SDRRepository, error) {
 					getSDRCmd.Req.RecordID, header.Length)
 			}
 
-			getSDRCmd.Req.Offset = getSDRCmd.Req.Length
+			getSDRCmd.Req.Offset = numBytesSDRHeader
 			getSDRCmd.Req.Length = header.Length
 			if err := ValidateResponse(s.SendCommand(ctx, getSDRCmd)); err != nil {
 				return nil, err
