@@ -96,7 +96,7 @@ func walkSDRs(ctx context.Context, s Session) (SDRRepository, error) {
 				getSDRCmd.Req.RecordID)
 		}
 		headerLayer := headerPacket.Layer(ipmi.LayerTypeSDR)
-		if headerLayer != nil {
+		if headerLayer == nil {
 			return nil, fmt.Errorf("invalid SDR for record ID %d: missing SDR layer",
 				getSDRCmd.Req.RecordID)
 		}
@@ -121,7 +121,7 @@ func walkSDRs(ctx context.Context, s Session) (SDRRepository, error) {
 					getSDRCmd.Req.RecordID)
 			}
 			fsrLayer := fsrPacket.Layer(ipmi.LayerTypeFullSensorRecord)
-			if fsrLayer != nil {
+			if fsrLayer == nil {
 				return nil, fmt.Errorf("invalid SDR for record ID %d: missing FSR layer",
 					getSDRCmd.Req.RecordID)
 			}
