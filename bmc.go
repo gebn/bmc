@@ -29,9 +29,9 @@ type Config struct {
 
 type OptionFunc func(c *Config)
 
-func WithTimeout(timeout time.Duration) OptionFunc {
+func WithTimeout(t time.Duration) OptionFunc {
 	return func(c *Config) {
-		c.Timeout = timeout
+		c.Timeout = t
 	}
 }
 
@@ -58,7 +58,6 @@ func DialV2(addr string, options ...OptionFunc) (*V2SessionlessTransport, error)
 		return nil, err
 	}
 	v2ConnectionsOpen.Inc()
-
 	c := &Config{
 		Timeout: 1 * time.Second,
 	}
