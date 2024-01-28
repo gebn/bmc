@@ -41,8 +41,8 @@ func WithTimeout(t time.Duration) OptionFunc {
 // will be returned. If you know the BMC's capabilities, or need a specific
 // feature (e.g. DCMI), use the DialV*() functions instead, which expose
 // additional information and functionality.
-func Dial(_ context.Context, addr string, options ...OptionFunc) (SessionlessTransport, error) {
-	return DialV2(addr, options...)
+func Dial(_ context.Context, addr string, opts ...OptionFunc) (SessionlessTransport, error) {
+	return DialV2(addr, opts...)
 }
 
 // DialV2 establishes a new IPMI v2.0 connection with the supplied BMC. The
@@ -50,7 +50,7 @@ func Dial(_ context.Context, addr string, options ...OptionFunc) (SessionlessTra
 // Use this if you know the BMC supports IPMI v2.0 and/or require DCMI
 // functionality. Note v4 is preferred to v6 if a hostname is passed returning
 // both A and AAAA records.
-func DialV2(addr string, options ...OptionFunc) (*V2SessionlessTransport, error) {
+func DialV2(addr string, opts ...OptionFunc) (*V2SessionlessTransport, error) {
 	v2ConnectionOpenAttempts.Inc()
 	t, err := newTransport(addr)
 	if err != nil {
@@ -61,8 +61,8 @@ func DialV2(addr string, options ...OptionFunc) (*V2SessionlessTransport, error)
 	c := &Config{
 		Timeout: 1 * time.Second,
 	}
-	for _, option := range options {
-		option(c)
+	for _, opt := range opts {
+		opt(c)
 	}
 	return newV2SessionlessTransport(t, c), nil
 }
