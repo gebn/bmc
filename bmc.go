@@ -23,14 +23,26 @@ var (
 	namespace = "bmc"
 )
 
+type dialConfig struct {
+	timeout time.Duration
+}
+
+type DialConfigOption func(c *dialConfig)
+
+func WithTimeout(t time.Duration) DialConfigOption {
+	return func(c *dialConfig) {
+		c.timeout = t
+	}
+}
+
 // Dial is currently an alias for DialV2. When IPMI v1.5 is implemented, this
 // will query the BMC for IPMI v2.0 capability. If it supports IPMI v2.0, a
 // V2SessionlessTransport will be returned, otherwise a V1SessionlessTransport
 // will be returned. If you know the BMC's capabilities, or need a specific
 // feature (e.g. DCMI), use the DialV*() functions instead, which expose
 // additional information and functionality.
-func Dial(_ context.Context, addr string) (SessionlessTransport, error) {
-	return DialV2(addr)
+func Dial(_ context.Context, addr string, opts ...DialConfigOption) (SessionlessTransport, error) {
+	return DialV2(addr, opts...)
 }
 
 // DialV2 establishes a new IPMI v2.0 connection with the supplied BMC. The
@@ -38,7 +50,7 @@ func Dial(_ context.Context, addr string) (SessionlessTransport, error) {
 // Use this if you know the BMC supports IPMI v2.0 and/or require DCMI
 // functionality. Note v4 is preferred to v6 if a hostname is passed returning
 // both A and AAAA records.
-func DialV2(addr string) (*V2SessionlessTransport, error) {
+func DialV2(addr string, opts ...DialConfigOption) (*V2SessionlessTransport, error) {
 	v2ConnectionOpenAttempts.Inc()
 	t, err := newTransport(addr)
 	if err != nil {
@@ -46,13 +58,19 @@ func DialV2(addr string) (*V2SessionlessTransport, error) {
 		return nil, err
 	}
 	v2ConnectionsOpen.Inc()
-	return newV2SessionlessTransport(t), nil
+	c := &dialConfig{
+		timeout: 1 * time.Second,
+	}
+	for _, opt := range opts {
+		opt(c)
+	}
+	return newV2SessionlessTransport(t, c), nil
 }
 
-func newV2SessionlessTransport(t transport.Transport) *V2SessionlessTransport {
+func newV2SessionlessTransport(t transport.Transport, c *dialConfig) *V2SessionlessTransport {
 	return &V2SessionlessTransport{
 		Transport:     t,
-		V2Sessionless: newV2Sessionless(t, time.Second),
+		V2Sessionless: newV2Sessionless(t, c.timeout),
 	}
 }
 
