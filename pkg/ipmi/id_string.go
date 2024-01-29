@@ -68,7 +68,9 @@ var (
 	// turning them into Go strings. These functions are not implemented inline
 	// to ease readability and testability
 	stringEncodingDecoders = map[StringEncoding]StringDecoder{
-		// no decoder for StringEncodingUnicode, as ambiguous
+		// despite the ambiguity of StringEncodingUnicode, we follow OpenIPMI
+		// and decode it as 8-bit ASCII
+		StringEncodingUnicode:         StringDecoderFunc(decode8BitAsciiLatin1),
 		StringEncodingBCDPlus:         StringDecoderFunc(decodeBCDPlus),
 		StringEncodingPacked6BitAscii: StringDecoderFunc(decodePacked6BitAscii),
 		StringEncoding8BitAsciiLatin1: StringDecoderFunc(decode8BitAsciiLatin1),

@@ -218,6 +218,101 @@ func TestFullSensorRecordDecodeFromBytes(t *testing.T) {
 				Identity:                `8$ ='[\V_`,
 			},
 		},
+		{
+			[]byte{
+				// key
+				0x20, // owned by the BMC
+				0x00, // channel 0, primary IPMB
+				0x12, // sensor number 18
+
+				// body
+				0x07, // system board entity ID
+				0x05, // instance 5, system-relative
+				0x7f, // not settable, scanning, event generation, thresholds, hysteresis and sensor event type/reading type code initialised, event generation and scanning enabled on power-up
+				0x68, // don't ignore sensor if Entity is not present or disabled, sensor automatically rearms itself when the event clears, hysteresis is readable and settable, thresholds are readable and settable per Reading Mask and Settable Threshold Mask respectively, per threshold/discrete-state event enable/disable control (implies that entire sensor and global disable are also supported). Basically, it can do everything.
+				0x02, // sensor type 2 (Voltage)
+				0x01, // Event / Reading Type Code 1
+				0x00, 0x72,
+				0x00, 0x72,
+				0x3f, 0x3f,
+				0x00,                                           // units 1: unsigned, no rate unit, no modifier unit, not a percentage
+				0x04,                                           // units 2: base unit is voltage
+				0x00,                                           // units 3: modifier unit is unused
+				0x00,                                           // linearisation: linear
+				0x01,                                           // LS 8 bits of M, which is a signed 10-bit 2's complement value
+				0x00,                                           // MS 2 bits of M (can now see M = 1), tolerance: 0
+				0x00,                                           // LS 8 bits of B, which is a signed 10-bit 2's complement value
+				0x00,                                           // MS 2 bits of B (can now see B = 0), LS 6 bits of accuracy
+				0x00,                                           // MS 4 bits of accuracy (can now see accuracy = 0), accuracy exp: 0, sensor direction N/A
+				0x00,                                           // R exp: 0, B exp: 0
+				0x07,                                           // analogue characteristic flags: normal min and max specified, nominal reading specified
+				0x00,                                           // nominal reading
+				0x00,                                           // nominal max
+				0x00,                                           // nominal min
+				0x0a,                                           // sensor max
+				0x00,                                           // sensor min
+				0x64, 0x64, 0x5f, 0x00, 0x00, 0x00, 0x02, 0x02, // thresholds
+				0x00, 0x00, 0x00, // reserved
+				0x07, // Unicode, followed by 7 chars
+				0x56, // V
+				0x6f, // o
+				0x6c, // l
+				0x74, // t
+				0x61, // a
+				0x67, // g
+				0x65, // e
+			},
+			&FullSensorRecord{
+				BaseLayer: layers.BaseLayer{
+					Contents: []byte{
+						0x20, 0x00, 0x12, 0x07, 0x05, 0x7f, 0x68, 0x02, 0x01,
+						0x00, 0x72, 0x00, 0x72, 0x3f, 0x3f, 0x00, 0x04, 0x00,
+						0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x00,
+						0x00, 0x00, 0x0a, 0x00, 0x64, 0x64, 0x5f, 0x00, 0x00,
+						0x00, 0x02, 0x02, 0x00, 0x00, 0x00, 0x07, 0x56, 0x6f,
+						0x6c, 0x74, 0x61, 0x67, 0x65,
+					},
+					Payload: []byte{},
+				},
+				SensorRecordKey: SensorRecordKey{
+					OwnerAddress: SlaveAddressBMC.Address(),
+					Channel:      ChannelPrimaryIPMB,
+					OwnerLUN:     LUNBMC,
+					Number:       18,
+				},
+				ConversionFactors: ConversionFactors{
+					M:    1,
+					B:    0,
+					BExp: 0,
+					RExp: 0,
+				},
+				Entity:                  EntityIDSystemBoard,
+				IsContainerEntity:       false,
+				Instance:                5,
+				Ignore:                  false,
+				SensorType:              SensorTypeVoltage,
+				OutputType:              OutputTypeThreshold,
+				AnalogDataFormat:        AnalogDataFormatUnsigned,
+				RateUnit:                RateUnitNone,
+				IsPercentage:            false,
+				BaseUnit:                SensorUnitVolts,
+				ModifierUnit:            0,
+				Linearisation:           LinearisationLinear,
+				Tolerance:               0,
+				Accuracy:                0,
+				AccuracyExp:             0,
+				Direction:               SensorDirectionUnspecified,
+				NominalReadingSpecified: true,
+				NormalMinSpecified:      true,
+				NormalMaxSpecified:      true,
+				NominalReading:          0x00,
+				NormalMin:               0x00,
+				NormalMax:               0x00,
+				SensorMin:               0x00,
+				SensorMax:               0x0a,
+				Identity:                "Voltage",
+			},
+		},
 	}
 	for _, test := range tests {
 		fsr := &FullSensorRecord{}
