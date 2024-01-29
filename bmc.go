@@ -23,15 +23,15 @@ var (
 	namespace = "bmc"
 )
 
-type Config struct {
-	Timeout time.Duration
+type dialConfig struct {
+	timeout time.Duration
 }
 
-type OptionFunc func(c *Config)
+type DialConfigOption func(c *dialConfig)
 
-func WithTimeout(t time.Duration) OptionFunc {
-	return func(c *Config) {
-		c.Timeout = t
+func WithTimeout(t time.Duration) DialConfigOption {
+	return func(c *dialConfig) {
+		c.timeout = t
 	}
 }
 
@@ -41,7 +41,7 @@ func WithTimeout(t time.Duration) OptionFunc {
 // will be returned. If you know the BMC's capabilities, or need a specific
 // feature (e.g. DCMI), use the DialV*() functions instead, which expose
 // additional information and functionality.
-func Dial(_ context.Context, addr string, opts ...OptionFunc) (SessionlessTransport, error) {
+func Dial(_ context.Context, addr string, opts ...DialConfigOption) (SessionlessTransport, error) {
 	return DialV2(addr, opts...)
 }
 
@@ -50,7 +50,7 @@ func Dial(_ context.Context, addr string, opts ...OptionFunc) (SessionlessTransp
 // Use this if you know the BMC supports IPMI v2.0 and/or require DCMI
 // functionality. Note v4 is preferred to v6 if a hostname is passed returning
 // both A and AAAA records.
-func DialV2(addr string, opts ...OptionFunc) (*V2SessionlessTransport, error) {
+func DialV2(addr string, opts ...DialConfigOption) (*V2SessionlessTransport, error) {
 	v2ConnectionOpenAttempts.Inc()
 	t, err := newTransport(addr)
 	if err != nil {
@@ -58,8 +58,8 @@ func DialV2(addr string, opts ...OptionFunc) (*V2SessionlessTransport, error) {
 		return nil, err
 	}
 	v2ConnectionsOpen.Inc()
-	c := &Config{
-		Timeout: 1 * time.Second,
+	c := &dialConfig{
+		timeout: 1 * time.Second,
 	}
 	for _, opt := range opts {
 		opt(c)
@@ -67,10 +67,10 @@ func DialV2(addr string, opts ...OptionFunc) (*V2SessionlessTransport, error) {
 	return newV2SessionlessTransport(t, c), nil
 }
 
-func newV2SessionlessTransport(t transport.Transport, c *Config) *V2SessionlessTransport {
+func newV2SessionlessTransport(t transport.Transport, c *dialConfig) *V2SessionlessTransport {
 	return &V2SessionlessTransport{
 		Transport:     t,
-		V2Sessionless: newV2Sessionless(t, c.Timeout),
+		V2Sessionless: newV2Sessionless(t, c.timeout),
 	}
 }
 
