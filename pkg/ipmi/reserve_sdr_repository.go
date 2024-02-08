@@ -29,9 +29,9 @@ func (*ReserveSDRRepositoryRsp) NextLayerType() gopacket.LayerType {
 }
 
 func (r *ReserveSDRRepositoryRsp) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
-	if len(data) != 2 {
+	if len(data) < 2 {
 		df.SetTruncated()
-		return fmt.Errorf("response must be 2 bytes, got %v", len(data))
+		return fmt.Errorf("response must be at least 2 bytes, got %v", len(data))
 	}
 
 	r.BaseLayer.Contents = data[:2]

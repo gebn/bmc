@@ -11,10 +11,14 @@ import (
 	"github.com/google/gopacket"
 )
 
+const (
+	sdrHeaderLength = uint8(5)
+	sdrMaxLength    = uint8(64)
+)
+
 var (
 	errSDRRepositoryModified = errors.New(
 		"the SDR Repository was modified during enumeration")
-	numBytesSDRHeader = uint8(5)
 )
 
 // SDRRepository is a retrieved SDR Repository. For the time being, this is a
@@ -76,7 +80,7 @@ func walkSDRs(ctx context.Context, s Session) (SDRRepository, error) {
 	getSDRCmd := &ipmi.GetSDRCmd{
 		Req: ipmi.GetSDRReq{
 			RecordID:      ipmi.RecordIDFirst,
-			Length:        numBytesSDRHeader,                   // read header only
+			Length:        sdrHeaderLength,                     // read header only
 			ReservationID: reserveSDRRepoCmdResp.ReservationID, // needed for partial reads
 		},
 	}
@@ -95,24 +99,24 @@ func walkSDRs(ctx context.Context, s Session) (SDRRepository, error) {
 				// we can't set NoCopy because we reuse getSDRCmd.Rsp
 			})
 		if headerPacket == nil {
-			return nil, fmt.Errorf("invalid SDR for record ID %d: empty packet",
-				getSDRCmd.Req.RecordID)
+			return nil, fmt.Errorf("invalid SDR: %v", getSDRCmd)
 		}
 		headerLayer := headerPacket.Layer(ipmi.LayerTypeSDR)
 		if headerLayer == nil {
-			return nil, fmt.Errorf("invalid SDR for record ID %d: missing SDR layer",
-				getSDRCmd.Req.RecordID)
+			return nil, fmt.Errorf("packet is missing SDR layer: %v", getSDRCmd)
 		}
 		header := headerLayer.(*ipmi.SDR)
 
 		if header.Type == ipmi.RecordTypeFullSensor {
-			if header.Length > 64-numBytesSDRHeader {
-				// SDR exceeds the specified length of 64. Need to implement partial reads.
-				return nil, fmt.Errorf("invalid SDR for record ID %d: length %d exceeds max of 64 bytes",
-					getSDRCmd.Req.RecordID, header.Length)
+			if header.Length > sdrMaxLength {
+				// SDR exceeds the specified max length, which means we need to implement
+				// partial reading. Hopefully we'll be alright - yet to see a SDR >70 bytes
+				// long - they're specified as 64 after all.
+				return nil, fmt.Errorf("SDR length %d exceeds max of %d bytes: %v",
+					header.Length, sdrMaxLength, getSDRCmd)
 			}
 
-			getSDRCmd.Req.Offset = numBytesSDRHeader
+			getSDRCmd.Req.Offset = sdrHeaderLength
 			getSDRCmd.Req.Length = header.Length
 			if err := ValidateResponse(s.SendCommand(ctx, getSDRCmd)); err != nil {
 				return nil, err
@@ -120,20 +124,19 @@ func walkSDRs(ctx context.Context, s Session) (SDRRepository, error) {
 			fsrPacket := gopacket.NewPacket(getSDRCmd.Rsp.Payload, ipmi.LayerTypeFullSensorRecord,
 				gopacket.DecodeOptions{Lazy: true})
 			if fsrPacket == nil {
-				return nil, fmt.Errorf("invalid SDR for record ID %d: empty FSR packet",
-					getSDRCmd.Req.RecordID)
+				return nil, fmt.Errorf("invalid Full Sensor Record: %v", getSDRCmd)
 			}
 			fsrLayer := fsrPacket.Layer(ipmi.LayerTypeFullSensorRecord)
 			if fsrLayer == nil {
-				return nil, fmt.Errorf("invalid SDR for record ID %d: missing FSR layer",
-					getSDRCmd.Req.RecordID)
+				return nil, fmt.Errorf("packet is missing Full Sensor Record layer: %v",
+					getSDRCmd)
 			}
 			repo[getSDRCmd.Req.RecordID] = fsrLayer.(*ipmi.FullSensorRecord)
 		}
 
 		getSDRCmd.Req.RecordID = getSDRCmd.Rsp.Next
 		getSDRCmd.Req.Offset = 0x00
-		getSDRCmd.Req.Length = numBytesSDRHeader
+		getSDRCmd.Req.Length = sdrHeaderLength
 	}
 	return repo, nil
 }

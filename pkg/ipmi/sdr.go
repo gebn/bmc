@@ -38,13 +38,14 @@ type SDR struct {
 	//
 	// This means the max SDR size on the wire is 260 bytes. In practice, OEM
 	// records notwithstanding, it is unlikely to be >60.
+	//
 	// If it weren't for this field, the limit for the whole SDR including
 	// header could theoretically be 255 + the max supported payload size (the
 	// SDR Repo Device commands provide no way to address subsequent sections
 	// for reading).
-	//
-	// payload contains the record key and body.
 	Length uint8
+
+	// payload contains the record key and body.
 }
 
 func (*SDR) LayerType() gopacket.LayerType {
@@ -68,7 +69,7 @@ func (s *SDR) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
 	s.ID = RecordID(binary.LittleEndian.Uint16(data[0:2]))
 	s.Version = bcd.Decode(data[2]&0xf)*10 + bcd.Decode(data[2]>>4)
 	s.Type = RecordType(data[3])
-	s.Length = data[4]
+	s.Length = uint8(data[4])
 
 	s.BaseLayer.Contents = data[:5]
 	s.BaseLayer.Payload = data[5:]
