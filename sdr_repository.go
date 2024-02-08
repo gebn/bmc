@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	sdrHeaderLength = uint8(5)
-	sdrMaxLength    = uint8(64)
+	sdrHeaderLength = 5
+	sdrMaxLength    = 64
 )
 
 var (
