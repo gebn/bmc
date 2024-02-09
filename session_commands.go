@@ -36,6 +36,12 @@ type SessionCommands interface {
 	// respectively.
 	GetSDRRepositoryInfo(context.Context) (*ipmi.GetSDRRepositoryInfoRsp, error)
 
+	// ReserveSDRRepository sets the requester as the present "owner" of the
+	// repository. The returned reservation ID must be included in requests that
+	// either delete or partially read/write an SDR.
+	// This is specified in 33.11 of IPMI v2.0.
+	ReserveSDRRepository(context.Context) (*ipmi.ReserveSDRRepositoryRsp, error)
+
 	// GetSensorReading retrieves the current value of a sensor, identified by
 	// its number. It is specified in 29.14 and 35.14 of IPMI v1.5 and 2.0
 	// respectively. Note, the raw value is in one of three formats, and is

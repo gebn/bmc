@@ -271,6 +271,14 @@ func (s *V2Session) GetSDRRepositoryInfo(ctx context.Context) (*ipmi.GetSDRRepos
 	return &cmd.Rsp, nil
 }
 
+func (s *V2Session) ReserveSDRRepository(ctx context.Context) (*ipmi.ReserveSDRRepositoryRsp, error) {
+	cmd := &ipmi.ReserveSDRRepositoryCmd{}
+	if err := ValidateResponse(s.SendCommand(ctx, cmd)); err != nil {
+		return nil, err
+	}
+	return &cmd.Rsp, nil
+}
+
 func (s *V2Session) GetSensorReading(ctx context.Context, sensor uint8) (*ipmi.GetSensorReadingRsp, error) {
 	cmd := &ipmi.GetSensorReadingCmd{
 		Req: ipmi.GetSensorReadingReq{
