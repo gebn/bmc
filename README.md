@@ -11,14 +11,14 @@ This project implements an IPMI v2.0 remote console in pure Go, to interact with
 All section references in the code use the following documents:
 
  - ASF
-    - [v2.0](https://www.dmtf.org/sites/default/files/standards/documents/DSP0136.pdf)
+    - [v2.0](specifications/asf_v2.0.pdf)
  - DCMI
-    - [v1.0](https://www.intel.com/content/dam/www/public/us/en/documents/technical-specifications/dcmi-spec.pdf)
-    - [v1.1](https://www.intel.com/content/dam/www/public/us/en/documents/technical-specifications/dcmi-v1-1-rev1-0-spec.pdf)
-    - [v1.5](https://www.intel.com/content/dam/www/public/us/en/documents/technical-specifications/dcmi-v1-5-rev-spec.pdf)
+    - [v1.0](specifications/dcmi_v1.0.pdf)
+    - [v1.1](specifications/dcmi_v1.1.pdf)
+    - [v1.5](specifications/dcmi_v1.5.pdf)
  - IPMI
-    - [v1.5](https://www.intel.com/content/dam/www/public/us/en/documents/product-briefs/second-gen-interface-spec-v1.5-rev1.1.pdf)
-    - [v2.0](https://www.intel.com/content/dam/www/public/us/en/documents/specification-updates/ipmi-intelligent-platform-mgt-interface-spec-2nd-gen-v2-0-spec-update.pdf)
+    - [v1.5](specifications/ipmi_v1.5.pdf)
+    - [v2.0](specifications/ipmi_v2.0.pdf)
 
 ## Contributing
 
